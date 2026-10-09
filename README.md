@@ -1,4 +1,4 @@
-# Sidetable (사이드테이블)
+# Sidetable
 
 MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 
