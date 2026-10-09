@@ -1,0 +1,13 @@
+# member data, photos and the push-notification keys: never in the repo
+app/data/
+# build output (npm run demo makes it again)
+app/dist/
+# downloaded film clips (npm run film fetches them again)
+app/art/.film/
+node_modules/
+.env
+.env.*
+*.log
+*.zip
+.DS_Store
+Thumbs.db

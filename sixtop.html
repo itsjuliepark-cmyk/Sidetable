@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sixtop</title>
+<meta name="description" content="Six seats. Both sides of the Charles. Small dinners for people tired of big rooms. Starting at Harvard and MIT." />
+<meta name="theme-color" content="#F4F5F4" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Newsreader:ital,opsz,wght@1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+<style>
+  /* Tokens follow Amie design C (soft light). Rose = HBS side, mist = Sloan side. */
+  :root{
+    --paper:#F4F5F4;--ink:#1C2024;--ink-2:#343A41;--ink-soft:#5B626B;--ink-faint:#8A9097;
+    --accent:#9F4D5A;--accent-fill:#C7848C;
+    --hbs:#C7848C;--hbs-text:#9F4D5A;--hbs-soft:#F4E4E3;--hbs-grad:linear-gradient(140deg,#EDCDCF 0%,#C7848C 100%);
+    --mit:#8DA3B8;--mit-text:#3F5B74;--mit-soft:#E3EAF0;--mit-grad:linear-gradient(140deg,#D6E0E9 0%,#8DA3B8 100%);
+    --candle:#E2B271;--candle-soft:rgba(226,178,113,.22);
+    --line:rgba(28,32,36,.09);--line-2:rgba(28,32,36,.14);
+    --glass:rgba(255,255,255,.74);--glass-edge:rgba(255,255,255,.95);
+    --sans:'Geist',ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    --italic:'Newsreader','Iowan Old Style','Palatino Linotype',Georgia,serif;
+    --shadow-phone:0 40px 100px -46px rgba(18,28,38,.5),0 16px 36px -28px rgba(18,28,38,.3);
+    --shadow-card:0 16px 36px -24px rgba(18,28,38,.32),0 2px 6px -3px rgba(18,28,38,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow:hidden;
+    background:radial-gradient(900px 640px at 8% 6%,#DFE7EE 0%,rgba(223,231,238,0) 60%),radial-gradient(820px 620px at 94% 94%,#F2E1E0 0%,rgba(242,225,224,0) 60%),#ECEFEF}
+  button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;text-align:inherit}
+  input{font:inherit;color:inherit}
+  .it{font-family:var(--italic);font-style:italic;font-weight:300;letter-spacing:-.005em}
+
+  /* ---------- Stage, guide, phone ---------- */
+  .stage{height:100%;display:flex;align-items:center;justify-content:center;gap:44px;padding:18px}
+  .guide{width:310px;max-height:min(880px,94dvh);overflow:auto;padding:22px 18px;border-radius:26px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(10px)}
+  .g-head{display:flex;align-items:center;gap:9px;font-size:15px}
+  .g-head b{font-weight:650}
+  .g-sub{font-size:12.5px;line-height:1.6;color:var(--ink-soft);margin:10px 0 6px}
+  .guide ol{list-style:none;padding:0;margin:10px 0 0}
+  .guide li button{display:grid;grid-template-columns:24px 1fr;gap:9px;width:100%;padding:9px 10px;border-radius:13px;transition:background .2s}
+  .guide li button:hover{background:rgba(255,255,255,.6)}
+  .guide li button.on{background:#fff;box-shadow:var(--shadow-card)}
+  .g-n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:650;background:rgba(28,32,36,.06);color:var(--ink-soft);margin-top:1px}
+  .on .g-n{background:var(--ink);color:#fff}
+  .g-t{font-size:13.5px;font-weight:600}
+  .g-d{font-size:12px;line-height:1.5;color:var(--ink-soft);margin-top:2px}
+  .g-foot{font-size:11.5px;color:var(--ink-faint);margin:14px 4px 0;line-height:1.6}
+  .gbtn{display:none;position:fixed;right:0;top:50%;z-index:60;width:24px;height:52px;margin-top:-26px;border-radius:14px 0 0 14px;background:rgba(28,32,36,.55);color:#fff;align-items:center;justify-content:center;box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+  .gbtn svg{width:14px;height:14px}
+  .guide-close{display:none}
+
+  .phone{position:relative;width:430px;max-width:100%;height:min(880px,94dvh);background:linear-gradient(180deg,#FBFBFA 0%,#F3F4F3 100%);border-radius:40px;box-shadow:var(--shadow-phone),0 0 0 1px rgba(255,255,255,.7) inset;overflow:hidden;overflow:clip;flex:none}
+
+  @media (max-width:1099px){
+    .guide{display:none}
+    .gbtn{display:flex}
+    .guide.open{display:block;position:fixed;inset:12px;width:auto;max-height:none;z-index:70;background:rgba(250,250,250,.97)}
+    .guide.open .guide-close{display:block;position:absolute;top:14px;right:16px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+  }
+  @media (max-width:520px){
+    .stage{padding:0}
+    .phone{width:100%;height:100dvh;border-radius:0;box-shadow:none}
+  }
+
+  /* ---------- Screens ---------- */
+  .scr{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateX(18px);transition:opacity .38s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+  .scr.on{opacity:1;pointer-events:auto;transform:none}
+  .scr.out{transform:translateX(-18px)}
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+  .pad{padding:6px 22px 28px}
+  .scr.tabbed .scroll{padding-bottom:96px}
+  .dock{padding:12px 22px 22px;background:linear-gradient(180deg,rgba(244,245,244,0),#F4F5F4 30%)}
+
+  .topbar{display:flex;align-items:center;gap:10px;padding:14px 18px 10px}
+  .back{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);background:rgba(255,255,255,.7);border:1px solid var(--line)}
+  .tb-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+  .tb-step{margin-left:auto;font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .pbar{height:3px;margin:0 20px;border-radius:3px;background:rgba(28,32,36,.07);overflow:hidden}
+  .pfill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--mit),#C9B6C0,var(--hbs));transition:width .5s cubic-bezier(.2,.8,.2,1)}
+
+  .orb{display:inline-block;width:22px;height:22px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,#fff 0%,#F7E9E9 30%,#E1E8EE 66%,#BFCCD8 100%);box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 4px 10px -3px rgba(40,55,75,.35)}
+  .orb.sm{width:16px;height:16px}
+  .orb.md{width:40px;height:40px}
+  .orb.big{width:96px;height:96px;display:grid;place-items:center;margin:0 auto;box-shadow:0 0 0 10px rgba(255,255,255,.55),0 0 0 11px rgba(28,32,36,.04),0 22px 44px -18px rgba(30,45,65,.45)}
+  .orb.breathe{animation:breathe 4.5s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+  .kick{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--ink-2)}
+  .stepk{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:650;color:var(--accent);margin:10px 0 10px}
+  h1.big{font-size:37px;line-height:1.05;letter-spacing:-.028em;font-weight:600;margin:14px 0 14px}
+  h2.q{font-size:26px;line-height:1.16;letter-spacing:-.022em;font-weight:600;margin:0 0 10px;text-wrap:balance}
+  h2.q.sm{font-size:19px;margin-top:26px}
+  .sub{font-size:15px;line-height:1.55;color:var(--ink-soft);margin:0 0 18px;text-wrap:pretty}
+  .sub2{font-size:13.5px;color:var(--ink-soft);margin-top:2px}
+  .label{font-size:12px;font-weight:600;color:var(--ink-soft);letter-spacing:.02em;margin:22px 0 10px}
+  .foot{font-size:12px;line-height:1.6;color:var(--ink-faint);text-align:center;margin:14px 0 0}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:54px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;font-size:16px;letter-spacing:-.005em;box-shadow:0 14px 28px -16px rgba(18,28,38,.7);transition:transform .15s,background .2s,opacity .2s}
+  .btn:active{transform:scale(.985)}
+  .btn:disabled{background:#DCDFE1;color:#8A9097;box-shadow:none;cursor:default}
+  .btn.ghost{background:rgba(255,255,255,.6);color:var(--ink);border:1px solid var(--line-2);box-shadow:none;margin-top:10px}
+  .btn.sm{height:42px;font-size:14px;width:auto;padding:0 18px}
+  .link{display:block;margin:14px auto 0;font-size:13.5px;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(28,32,36,.25)}
+
+  .cardg{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--shadow-card);padding:16px 18px}
+  .field{width:100%;height:52px;border-radius:16px;border:1px solid var(--line-2);background:#fff;padding:0 16px;font-size:16px;outline:none;transition:border .2s,box-shadow .2s}
+  .field:focus{border-color:var(--ink-2);box-shadow:0 0 0 4px rgba(28,32,36,.06)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.75);font-size:14px;font-weight:500;transition:all .18s;white-space:nowrap}
+  .chip.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+  .chip .star{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:2px 6px;border-radius:999px;background:var(--candle);color:#3A2A14}
+  .chip.mini{padding:5px 10px;font-size:12px}
+  .chip.mine{border-color:rgba(226,178,113,.9);background:#FFF7EC}
+  .chip.mine.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+  .scrollx{flex-wrap:nowrap;overflow-x:auto;margin:0 -22px;padding:2px 22px 6px;scrollbar-width:none}
+  .scrollx::-webkit-scrollbar{display:none}
+
+  .opt{display:block;width:100%;padding:17px 18px;margin:0 0 10px;border-radius:18px;background:rgba(255,255,255,.78);border:1px solid var(--line);font-size:15.5px;line-height:1.4;font-weight:500;box-shadow:0 6px 16px -14px rgba(18,28,38,.4);transition:all .18s}
+  .opt:hover{background:#fff}
+  .opt.sel{background:#fff;border-color:var(--ink);box-shadow:0 0 0 3px rgba(28,32,36,.07),0 10px 22px -16px rgba(18,28,38,.5)}
+  .opt small{display:block;font-size:12.5px;color:var(--ink-soft);font-weight:400;margin-top:3px}
+  .opts.locked .opt:not(.sel){opacity:.45}
+
+  /* Charlie's note */
+  .cnote{display:flex;gap:10px;align-items:flex-start;margin:16px 0 0;padding:13px 15px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-card);animation:noteIn .5s cubic-bezier(.2,.8,.2,1) both}
+  .cnote .orb{margin-top:2px}
+  .cnote p{margin:0;font-family:var(--italic);font-style:italic;font-size:17px;line-height:1.38;color:var(--ink-2)}
+  .cnote b{display:block;font-family:var(--sans);font-style:normal;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+  @keyframes noteIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+
+  /* ---------- Start ---------- */
+  .hero{position:relative;height:300px;background:linear-gradient(180deg,#DCE4EA 0%,#EDF0F1 55%,rgba(250,250,249,0) 100%);overflow:hidden}
+  .hero svg{position:absolute;inset:0;width:100%;height:100%}
+  .hero text{font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;font-weight:600}
+  .plate{transform-box:fill-box;transform-origin:center;animation:plateIn .7s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes plateIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+  .flame{transform-box:fill-box;transform-origin:center;animation:flick 2.8s ease-in-out infinite}
+  .flame.b{animation-delay:-1.3s}
+  @keyframes flick{0%,100%{opacity:.85;transform:scale(1)}40%{opacity:1;transform:scale(1.08)}70%{opacity:.78;transform:scale(.96)}}
+  .flow{stroke-dasharray:5 15;animation:flow 6s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-200}}
+
+  /* ---------- School ---------- */
+  .schools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sch{position:relative;padding:16px 14px 15px;border-radius:20px;background:rgba(255,255,255,.78);border:1px solid var(--line);min-height:112px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;transition:all .2s;overflow:hidden}
+  .sch::before{content:"";position:absolute;top:14px;left:14px;width:26px;height:26px;border-radius:50%}
+  .sch.hbs::before{background:var(--hbs-grad)}
+  .sch.mit::before{background:var(--mit-grad)}
+  .sch b{font-size:15px;font-weight:600;line-height:1.25}
+  .sch small{font-size:12px;color:var(--ink-soft)}
+  .sch.sel.hbs{border-color:var(--hbs);box-shadow:0 0 0 3px rgba(199,132,140,.2);background:#fff}
+  .sch.sel.mit{border-color:var(--mit);box-shadow:0 0 0 3px rgba(141,163,184,.25);background:#fff}
+  .sch-soon{font-size:12.5px;color:var(--ink-faint);margin:10px 2px 0}
+  .hide{display:none!important}
+
+  /* ---------- Rooms ---------- */
+  .room-open{position:relative;padding:18px;border-radius:22px;background:#fff;border:1px solid var(--ink);box-shadow:0 0 0 3px rgba(28,32,36,.06),var(--shadow-card);margin-bottom:12px}
+  .room-open h3{margin:0;font-size:22px;letter-spacing:-.02em;font-weight:600}
+  .room-open p{margin:4px 0 12px;font-size:13.5px;color:var(--ink-soft)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:rgba(85,122,100,.12);color:#3E6B50}
+  .pill.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:#4F8A63}
+  .room-check{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center}
+  .rooms{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .room{padding:14px;border-radius:18px;background:rgba(255,255,255,.62);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;transition:all .2s}
+  .room.wl{background:#fff;border-color:var(--line-2)}
+  .room b{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .room b svg{opacity:.45}
+  .rbar{height:4px;border-radius:4px;background:rgba(28,32,36,.08);overflow:hidden}
+  .rbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--mit),var(--hbs));transition:width .5s}
+  .room small{font-size:11.5px;color:var(--ink-soft)}
+  .room .rb{font-size:12px;font-weight:600;color:var(--ink-2)}
+  .room.wl .rb{color:#3E6B50}
+
+  /* ---------- Interests ---------- */
+  .overlap{display:flex;gap:14px;align-items:center;margin-top:20px}
+  .overlap .num{font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1;min-width:64px;font-variant-numeric:tabular-nums}
+  .overlap p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+  .overlap p b{color:var(--ink)}
+  .split-bar{display:flex;height:6px;border-radius:6px;overflow:hidden;margin-top:8px;background:rgba(28,32,36,.06)}
+  .split-bar i{display:block;height:100%;transition:width .5s}
+
+  /* ---------- Reading panel ---------- */
+  .read{margin:4px 18px 4px;padding:12px 16px 10px;border-radius:18px}
+  .axhint{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .ax{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .axl,.axr{font-size:11px;color:var(--ink-faint);width:82px;flex:none;white-space:nowrap;transition:color .4s}
+  .axl{text-align:right}
+  .axl.lead,.axr.lead{color:var(--ink);font-weight:650}
+  .axtrack{position:relative;flex:1;height:3px;border-radius:3px;background:rgba(28,32,36,.1)}
+  .axtrack::before{content:"";position:absolute;left:50%;top:-3px;width:1px;height:9px;background:rgba(28,32,36,.18)}
+  .axthumb{position:absolute;top:50%;left:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid var(--accent-fill);box-shadow:0 2px 8px -2px rgba(159,77,90,.5);transition:left .7s cubic-bezier(.2,.8,.2,1)}
+
+  /* ---------- Takes ---------- */
+  .take{padding:16px 16px 14px;border-radius:20px;background:rgba(255,255,255,.8);border:1px solid var(--line);margin-bottom:12px}
+  .take p{margin:0 0 12px;font-size:17px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+  .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:rgba(28,32,36,.05)}
+  .seg button{height:38px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--ink-soft);transition:all .18s}
+  .seg button.sel{background:#fff;color:var(--ink);box-shadow:0 4px 12px -6px rgba(18,28,38,.4)}
+
+  /* ---------- Result ---------- */
+  .res-top{position:relative;padding:36px 22px 0;text-align:center;background:radial-gradient(420px 240px at 50% 0%,#E3EAF0 0%,rgba(227,234,240,0) 70%),radial-gradient(300px 200px at 80% 30%,rgba(241,220,219,.7) 0%,rgba(241,220,219,0) 70%)}
+  .persona{font-size:38px;line-height:1.04;letter-spacing:-.03em;font-weight:600;margin:24px 0 10px}
+  .persona .it{display:block;font-size:44px}
+  .code{display:inline-block;font-size:12px;letter-spacing:.24em;font-weight:650;padding:5px 12px;border-radius:999px;background:rgba(28,32,36,.06);color:var(--ink-2)}
+  .tagline{font-size:16.5px;line-height:1.5;color:var(--ink-2);margin:14px auto 0;max-width:320px;text-wrap:balance}
+  .trait{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.45}
+  .trait:first-of-type{border-top:0}
+  .trait i{font-style:normal;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;background:rgba(28,32,36,.06)}
+  .ctitle{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--ink-soft);margin:0 0 8px}
+  .bigstat{font-size:44px;font-weight:600;letter-spacing:-.035em;line-height:1}
+
+  /* ---------- Seat ---------- */
+  .seg2{display:flex;gap:8px}
+  .dep{display:flex;gap:12px;align-items:flex-start;margin-top:22px;font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+  .dep b{color:var(--ink)}
+  .confirm{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px;background:rgba(247,247,246,.96);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .4s}
+  .confirm.on{opacity:1;pointer-events:auto}
+  .confirm h2{font-size:30px;letter-spacing:-.025em;margin:22px 0 8px;font-weight:600}
+  .confirm p{font-size:15px;line-height:1.55;color:var(--ink-soft);margin:0 0 26px;max-width:300px}
+  .check-big{width:74px;height:74px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 10px rgba(28,32,36,.05)}
+
+  /* ---------- Home ---------- */
+  .hello{display:flex;align-items:flex-end;justify-content:space-between;padding-top:22px;margin-bottom:18px}
+  .hello h2{margin:6px 0 0}
+  .tl{margin:0;padding:0;list-style:none}
+  .tl li{position:relative;display:flex;gap:12px;padding:0 0 16px}
+  .tl li:last-child{padding-bottom:0}
+  .tl li::before{content:"";position:absolute;left:9px;top:22px;bottom:2px;width:2px;background:rgba(28,32,36,.08)}
+  .tl li:last-child::before{display:none}
+  .tl .d{width:20px;height:20px;border-radius:50%;flex:none;border:2px solid rgba(28,32,36,.18);background:#fff;display:grid;place-items:center;color:#fff}
+  .tl li.done .d{background:var(--ink);border-color:var(--ink)}
+  .tl li.now .d{border-color:var(--candle);box-shadow:0 0 0 4px var(--candle-soft)}
+  .tl b{display:block;font-size:14px;font-weight:600}
+  .tl small{font-size:12.5px;color:var(--ink-soft)}
+  .tl li:not(.done):not(.now) b{color:var(--ink-faint)}
+  .sp{height:12px}
+  .avs{display:flex}
+  .avs .av{margin-left:-8px;box-shadow:0 0 0 2px #fff}
+  .avs .av:first-child{margin-left:0}
+  .weekq{font-family:var(--italic);font-style:italic;font-size:22px;line-height:1.3;color:var(--ink);margin:4px 0 0}
+  .row{display:flex;align-items:center;gap:12px}
+  .row .grow{flex:1;min-width:0}
+
+  /* ---------- Avatars ---------- */
+  .av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:650;font-size:15px;color:#fff;flex:none;text-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .av.hbs{background:var(--hbs-grad)}
+  .av.mit{background:var(--mit-grad)}
+  .av.s{width:28px;height:28px;font-size:11px}
+  .av.l{width:64px;height:64px;font-size:22px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;letter-spacing:.04em;padding:3px 8px;border-radius:999px}
+  .badge.hbs{background:var(--hbs-soft);color:var(--hbs-text)}
+  .badge.mit{background:var(--mit-soft);color:var(--mit-text)}
+
+  /* ---------- Table reveal ---------- */
+  .tv{position:relative;height:320px;margin:10px -6px 4px}
+  .tv .tbl{position:absolute;left:50%;top:50%;width:62%;height:108px;transform:translate(-50%,-50%);border-radius:60px;background:linear-gradient(180deg,#FFFFFF,#EEF1F1);box-shadow:0 22px 40px -22px rgba(18,28,38,.4),0 0 0 1px rgba(255,255,255,.9) inset;overflow:hidden}
+  .tv .tbl svg{position:absolute;inset:0;width:100%;height:100%}
+  .tv .bank{position:absolute;left:0;right:0;text-align:center;font-size:9.5px;letter-spacing:.2em;font-weight:650;text-transform:uppercase}
+  .tv .bank.t{top:9px;color:var(--mit-text);opacity:.7}
+  .tv .bank.b{bottom:9px;color:var(--hbs-text);opacity:.7}
+  .tv svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .tv svg.lines path{fill:none;stroke:var(--candle);stroke-width:1.6;stroke-linecap:round;opacity:0;animation:lineIn .6s ease forwards}
+  @keyframes lineIn{to{opacity:.75}}
+  .seat{position:absolute;width:76px;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-30px);text-align:center;z-index:2;transition:opacity .35s;animation:seatIn .6s cubic-bezier(.2,.8,.2,1) both}
+  .seat.up{flex-direction:column-reverse;transform:translate(-50%,calc(-100% + 30px));animation-name:seatInUp}
+  .seat.up .nm{margin-top:0}
+  .seat.up .sc{margin-bottom:6px}
+  @keyframes seatInUp{from{opacity:0;transform:translate(-50%,calc(-100% + 46px)) scale(.8)}to{opacity:1;transform:translate(-50%,calc(-100% + 30px))}}
+  @keyframes seatIn{from{opacity:0;transform:translate(-50%,-14px) scale(.8)}to{opacity:1;transform:translate(-50%,-30px)}}
+  .seat .av{width:60px;height:60px;font-size:20px;margin:0 auto;transition:box-shadow .3s}
+  .seat .nm{font-size:12.5px;font-weight:650;margin-top:6px}
+  .seat .sc{font-size:10.5px;color:var(--ink-soft)}
+  .seat.me .av{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)}
+  .seat.dim{opacity:.28}
+  .seat.hi .av{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--candle),0 10px 24px -8px rgba(226,178,113,.8)}
+  .seat.me.hi .av{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--candle),0 0 0 7px var(--ink)}
+  .tvcap{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0;min-height:18px}
+  .tvcap b{color:var(--ink)}
+  .why p{margin:0;padding:9px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.5}
+  .why p:first-of-type{border-top:0;padding-top:2px}
+  .prow{display:flex;gap:12px;align-items:flex-start;width:100%;padding:14px 0;border-top:1px solid var(--line)}
+  .prow:first-child{border-top:0}
+  .prow .nm{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .prow .meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+  .prow .ask{font-family:var(--italic);font-style:italic;font-size:15.5px;line-height:1.35;color:var(--ink-2);margin-top:6px}
+  .prow .chips{margin-top:8px;gap:5px}
+
+  /* ---------- Sheet ---------- */
+  .sheet-bg{position:absolute;inset:0;z-index:30;background:rgba(20,24,28,.3);opacity:0;pointer-events:none;transition:opacity .3s}
+  .sheet-bg.on{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:86%;overflow:auto;background:#FBFBFA;border-radius:28px 28px 0 0;padding:10px 22px 26px;transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1);box-shadow:0 -20px 50px -20px rgba(18,28,38,.4)}
+  .sheet.on{transform:none}
+  .grab{width:38px;height:4px;border-radius:4px;background:rgba(28,32,36,.15);margin:0 auto 16px}
+  .kv{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.45}
+  .kv span{color:var(--ink-soft);font-size:12.5px}
+  .stance{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-top:5px;background:rgba(28,32,36,.06)}
+
+  /* ---------- Chat ---------- */
+  .chathead{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--line);background:rgba(251,251,250,.85);backdrop-filter:blur(8px)}
+  .chathead b{display:block;font-size:15px}
+  .chathead small{font-size:12px;color:var(--ink-soft)}
+  .chathead .avs{margin-left:auto}
+  .msgs{flex:1;overflow-y:auto;padding:16px 16px 8px;scrollbar-width:none}
+  .msgs::-webkit-scrollbar{display:none}
+  .day{text-align:center;font-size:11.5px;color:var(--ink-faint);margin:2px 0 14px}
+  .m{display:flex;gap:8px;align-items:flex-end;margin:0 0 12px;animation:noteIn .45s cubic-bezier(.2,.8,.2,1) both}
+  .m .bub{max-width:76%;padding:10px 13px;border-radius:18px 18px 18px 6px;background:#fff;border:1px solid var(--line);font-size:14.5px;line-height:1.45}
+  .m .who{font-size:11px;font-weight:650;color:var(--ink-soft);margin:0 0 3px 2px}
+  .m.me{justify-content:flex-end}
+  .m.me .bub{background:var(--ink);color:#fff;border-color:var(--ink);border-radius:18px 18px 6px 18px}
+  .host{margin:0 0 14px;padding:14px 15px;border-radius:20px;background:linear-gradient(180deg,#FFFFFF,#F7F8F8);border:1px solid var(--line);box-shadow:var(--shadow-card);animation:noteIn .45s cubic-bezier(.2,.8,.2,1) both}
+  .host .hh{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--accent);margin-bottom:8px}
+  .host p{margin:0 0 6px;font-size:14.5px;line-height:1.5}
+  .host p:last-child{margin-bottom:0}
+  .host .wq{font-family:var(--italic);font-style:italic;font-size:19px;line-height:1.35;margin-top:2px}
+  .qr{display:flex;gap:8px;overflow-x:auto;padding:6px 16px 8px;scrollbar-width:none}
+  .qr::-webkit-scrollbar{display:none}
+  .composer{display:flex;gap:8px;padding:8px 14px 18px}
+  .composer input{flex:1;height:46px;border-radius:999px;border:1px solid var(--line-2);background:#fff;padding:0 18px;outline:none;font-size:15px}
+  .composer button{width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center}
+  .typing{display:inline-flex;gap:4px;padding:12px 14px}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+  /* ---------- Dinner ---------- */
+  .deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 22px 18px;scrollbar-width:none}
+  .deck::-webkit-scrollbar{display:none}
+  .dcard{flex:0 0 82%;scroll-snap-align:center;min-height:300px;border-radius:26px;padding:20px 20px 22px;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-card)}
+  .dcard:nth-child(2){background:linear-gradient(180deg,#fff,#F8EFEF)}
+  .dcard:nth-child(3){background:linear-gradient(180deg,#fff,#EEF2F6)}
+  .dcard:nth-child(4){background:linear-gradient(180deg,#fff,#FBF4EA)}
+  .dk{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--ink-soft)}
+  .dk span:last-child{letter-spacing:.02em;text-transform:none;font-weight:600;padding:2px 9px;border-radius:999px;background:rgba(28,32,36,.06)}
+  .dcard h3{font-size:24px;letter-spacing:-.02em;margin:18px 0 0;font-weight:600}
+  .dcard .dq{font-family:var(--italic);font-style:italic;font-size:22px;line-height:1.3;margin:12px 0 0;color:var(--ink)}
+  .dcard .dh{margin-top:auto;padding-top:18px;font-size:13.5px;line-height:1.55;color:var(--ink-soft)}
+  .dots{display:flex;justify-content:center;gap:6px;margin:0 0 16px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:rgba(28,32,36,.15);transition:all .2s}
+  .dots i.on{width:18px;border-radius:6px;background:var(--ink)}
+  .venue{display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.45}
+  .pd{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#EDEFEF;background:radial-gradient(260px 260px at 50% 42%,rgba(226,178,113,.28),rgba(20,23,26,0) 70%),#14171A;opacity:0;pointer-events:none;transition:opacity .6s}
+  .pd.on{opacity:1;pointer-events:auto}
+  .pd h2{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:34px 0 8px}
+  .pd p{font-family:var(--italic);font-style:italic;font-size:18px;line-height:1.45;color:rgba(237,239,239,.75);margin:0;max-width:290px}
+  .pd small{position:absolute;bottom:34px;font-size:12px;color:rgba(237,239,239,.45)}
+  .candle{position:relative;width:26px;height:110px}
+  .candle .wax{position:absolute;bottom:0;left:3px;width:20px;height:70px;border-radius:5px 5px 3px 3px;background:linear-gradient(90deg,#E8E1D8,#FBF8F3 45%,#D9D1C6)}
+  .candle .fl{position:absolute;left:50%;bottom:72px;width:14px;height:30px;margin-left:-7px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 50% 70%,#FFF6DA 0%,#F5C46F 45%,rgba(226,140,60,.0) 75%);filter:blur(.4px);transform-origin:50% 90%;animation:fl 1.8s ease-in-out infinite}
+  @keyframes fl{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.08,1.14) rotate(2deg)}}
+
+  /* ---------- After ---------- */
+  .rate{display:flex;justify-content:space-between;gap:6px;margin-top:6px}
+  .rate button{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-soft)}
+  .rate button i{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line-2);background:#fff;transition:all .2s}
+  .rate button.sel i{background:radial-gradient(circle at 40% 35%,#FFF2D9,var(--candle));border-color:var(--candle);box-shadow:0 0 0 5px var(--candle-soft)}
+  .rate button.sel{color:var(--ink);font-weight:600}
+  .pick{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.8);border:1px solid var(--line);margin-bottom:8px;transition:all .18s}
+  .pick .grow{flex:1;text-align:left}
+  .pick b{font-size:15px;font-weight:600}
+  .pick small{display:block;font-size:12px;color:var(--ink-soft)}
+  .box{width:24px;height:24px;border-radius:8px;border:1.5px solid var(--line-2);display:grid;place-items:center;color:#fff;transition:all .18s}
+  .pick.sel{background:#fff;border-color:var(--ink)}
+  .pick.sel .box{background:var(--ink);border-color:var(--ink)}
+  .tog{position:relative;width:46px;height:28px;border-radius:999px;background:rgba(28,32,36,.15);flex:none;transition:background .2s}
+  .tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .tog.on{background:var(--ink)}
+  .tog.on::after{transform:translateX(18px)}
+  .mutual{margin-top:18px;animation:noteIn .5s cubic-bezier(.2,.8,.2,1) both}
+
+  /* ---------- Bridge ---------- */
+  .bridgeCard{padding:6px;overflow:hidden}
+  .bridgeCard svg{display:block;width:100%;height:auto}
+  .bridgeCard text{font-family:var(--sans);font-size:9px;letter-spacing:.18em;font-weight:650}
+  .bridgeCard .nm{font-size:10.5px;letter-spacing:0;font-weight:600;fill:var(--ink-2)}
+  .barc{opacity:0;animation:lineIn .8s ease forwards}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+  .stat{padding:12px;border-radius:16px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+  .stat b{display:block;font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .stat small{font-size:11.5px;color:var(--ink-soft);line-height:1.35;display:block;margin-top:2px}
+
+  /* ---------- Me ---------- */
+  .setrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);font-size:14.5px;width:100%}
+  .setrow:first-child{border-top:0}
+  .setrow .grow{flex:1;text-align:left}
+  .setrow small{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+  .chev{color:var(--ink-faint)}
+  .norm{display:flex;gap:10px;font-size:14px;line-height:1.5;padding:7px 0}
+  .norm i{font-style:normal;color:var(--accent);font-weight:700}
+
+  /* ---------- Tracks, table types, ladder ---------- */
+  .track{display:flex;gap:13px;align-items:center;width:100%;padding:14px 15px;border-radius:20px;background:rgba(255,255,255,.78);border:1px solid var(--line);margin-bottom:10px;transition:all .2s}
+  .track:hover{background:#fff}
+  .track.sel{background:#fff;border-color:var(--ink);box-shadow:0 0 0 3px rgba(28,32,36,.07),var(--shadow-card)}
+  .track .ti{width:42px;height:42px;border-radius:14px;flex:none;display:grid;place-items:center;color:var(--ink-2);background:linear-gradient(140deg,#E3EAF0,#F4E4E3)}
+  .track .grow{flex:1;min-width:0}
+  .track b{display:block;font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .track small{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+  .track .tn{font-size:11.5px;color:#3E6B50;font-weight:600;margin-top:5px}
+  .track .tick{width:24px;height:24px;border-radius:50%;flex:none;border:1.5px solid var(--line-2);display:grid;place-items:center;color:#fff;transition:all .2s}
+  .track.sel .tick{background:var(--ink);border-color:var(--ink)}
+  .track .tag{display:inline-block;font-size:10px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:rgba(226,178,113,.22);color:#7A5320;margin-left:7px;vertical-align:2px}
+  .igroup{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--ink-soft);margin:20px 0 9px}
+  .igroup:first-child{margin-top:4px}
+  .ladder{display:flex;gap:6px;margin-top:2px}
+  .ladder span{flex:1;text-align:center;font-size:11.5px;font-weight:600;padding:9px 4px;border-radius:12px;background:rgba(28,32,36,.05);color:var(--ink-faint)}
+  .ladder span.done{background:var(--ink);color:#fff}
+  .ladder span.now{background:#FFF4E4;color:#7A5320;box-shadow:inset 0 0 0 1px rgba(226,178,113,.7)}
+  .trow{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+  .trow:first-of-type{border-top:0}
+  .trow .ti{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;color:var(--ink-2);background:linear-gradient(140deg,#E3EAF0,#F4E4E3)}
+  .trow b{display:block;font-size:14.5px;font-weight:600}
+  .trow small{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:1px;line-height:1.4}
+
+  /* ---------- Tab bar & toast ---------- */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);padding:8px 10px 16px;background:rgba(251,251,250,.86);backdrop-filter:blur(14px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  .tabbar.on{transform:none}
+  .tabbar button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;font-size:11px;font-weight:600;color:var(--ink-faint);transition:color .2s}
+  .tabbar button.on{color:var(--ink)}
+  .tabbar button .tdot{width:4px;height:4px;border-radius:50%;background:transparent}
+  .tabbar button.on .tdot{background:var(--accent-fill)}
+  .toast{position:absolute;top:10px;left:12px;right:12px;z-index:50;display:flex;gap:11px;align-items:center;padding:12px 14px;border-radius:20px;background:rgba(255,255,255,.95);border:1px solid var(--line);box-shadow:0 18px 40px -18px rgba(18,28,38,.45);transform:translateY(-140%);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+  .toast.on{transform:none}
+  .toast b{display:block;font-size:12px}
+  .toast span{font-size:13.5px;color:var(--ink-2);line-height:1.4}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="guide" id="guide" aria-label="Screen guide">
+    <button class="guide-close" onclick="toggleGuide(false)">닫기</button>
+    <div class="g-head"><span class="orb sm"></span><b>Sixtop</b><span style="color:var(--ink-faint)">프로토타입 v0.2</span></div>
+    <p class="g-sub">보스턴에서 찐친 찾기. HBS × MIT부터 시작해요. 화면을 누르면 바로 이동해요. 앱 문구는 영어, 설명은 한국어예요. 처음부터 눌러 보면 고른 답이 끝까지 이어져요.</p>
+    <ol id="glist"></ol>
+    <p class="g-foot">기획 문서: CONCEPT.md<br>디자인은 Amie C(soft light) 그대로, 로즈 = HBS, 미스트 블루 = MIT.<br>Part one(What you love) → Part two(Friend test) → Topic / Kindred 테이블.</p>
+  </aside>
+  <button class="gbtn" onclick="toggleGuide(true)" aria-label="Screens">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+
+  <main class="phone" id="phone">
+
+    <!-- Start -->
+    <section class="scr" id="s-start">
+      <div class="scroll">
+        <div class="hero" aria-hidden="true">
+          <svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="linen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EDF0F0"/></linearGradient>
+              <linearGradient id="river" x1="0" x2="1"><stop offset="0" stop-color="#AFC2D3" stop-opacity="0"/><stop offset=".14" stop-color="#AFC2D3" stop-opacity=".75"/><stop offset=".86" stop-color="#C3D2DF" stop-opacity=".75"/><stop offset="1" stop-color="#C3D2DF" stop-opacity="0"/></linearGradient>
+              <radialGradient id="glow"><stop offset="0" stop-color="#FFD9A0" stop-opacity=".95"/><stop offset=".45" stop-color="#F6C98A" stop-opacity=".35"/><stop offset="1" stop-color="#F6C98A" stop-opacity="0"/></radialGradient>
+              <filter id="tshadow" x="-20%" y="-30%" width="140%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#1C2430" flood-opacity=".16"/></filter>
+            </defs>
+            <text x="44" y="36" fill="#3F5B74" opacity=".75">KENDALL · MIT</text>
+            <text x="44" y="264" fill="#9F4D5A" opacity=".8">ALLSTON · HBS</text>
+            <rect x="26" y="62" width="338" height="176" rx="88" fill="url(#linen)" filter="url(#tshadow)"/>
+            <path d="M44 150 C 96 134, 146 168, 196 150 S 296 132, 346 150" fill="none" stroke="url(#river)" stroke-width="34" stroke-linecap="round"/>
+            <path class="flow" d="M44 150 C 96 134, 146 168, 196 150 S 296 132, 346 150" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5" stroke-linecap="round"/>
+            <circle class="flame" cx="150" cy="152" r="34" fill="url(#glow)"/>
+            <circle class="flame b" cx="242" cy="146" r="34" fill="url(#glow)"/>
+            <circle cx="150" cy="152" r="4" fill="#FFF6E4" stroke="#E2B271" stroke-width="1"/>
+            <circle cx="242" cy="146" r="4" fill="#FFF6E4" stroke="#E2B271" stroke-width="1"/>
+            <g class="plate" style="animation-delay:.15s"><circle cx="105" cy="104" r="24" fill="#fff" stroke="#A9BCCD" stroke-width="2"/><circle cx="105" cy="104" r="15" fill="none" stroke="#DCE5EC" stroke-width="1.5"/><circle cx="131" cy="124" r="6" fill="none" stroke="#C3D2DF" stroke-width="1.5"/></g>
+            <g class="plate" style="animation-delay:.3s"><circle cx="195" cy="100" r="24" fill="#fff" stroke="#A9BCCD" stroke-width="2"/><circle cx="195" cy="100" r="15" fill="none" stroke="#DCE5EC" stroke-width="1.5"/><circle cx="221" cy="120" r="6" fill="none" stroke="#C3D2DF" stroke-width="1.5"/></g>
+            <g class="plate" style="animation-delay:.45s"><circle cx="285" cy="104" r="24" fill="#fff" stroke="#A9BCCD" stroke-width="2"/><circle cx="285" cy="104" r="15" fill="none" stroke="#DCE5EC" stroke-width="1.5"/><circle cx="311" cy="124" r="6" fill="none" stroke="#C3D2DF" stroke-width="1.5"/></g>
+            <g class="plate" style="animation-delay:.6s"><circle cx="105" cy="196" r="24" fill="#fff" stroke="#D9A3A8" stroke-width="2"/><circle cx="105" cy="196" r="15" fill="none" stroke="#F2DFDE" stroke-width="1.5"/><circle cx="79" cy="176" r="6" fill="none" stroke="#E7C3C5" stroke-width="1.5"/></g>
+            <g class="plate" style="animation-delay:.75s"><circle cx="195" cy="200" r="24" fill="#fff" stroke="#D9A3A8" stroke-width="2"/><circle cx="195" cy="200" r="15" fill="none" stroke="#F2DFDE" stroke-width="1.5"/><circle cx="169" cy="180" r="6" fill="none" stroke="#E7C3C5" stroke-width="1.5"/></g>
+            <g class="plate" style="animation-delay:.9s"><circle cx="285" cy="196" r="24" fill="#fff" stroke="#D9A3A8" stroke-width="2"/><circle cx="285" cy="196" r="15" fill="none" stroke="#F2DFDE" stroke-width="1.5"/><circle cx="259" cy="176" r="6" fill="none" stroke="#E7C3C5" stroke-width="1.5"/></g>
+          </svg>
+        </div>
+        <div class="pad">
+          <div class="kick"><span class="orb sm"></span>Meet Charlie, your dinner host</div>
+          <h1 class="big">Six seats.<br>Both sides of the <span class="it">Charles</span>.</h1>
+          <p class="sub">Small dinners for people tired of big rooms. Charlie seats you with people who love what you love, and who you’d actually be friends with.</p>
+          <button class="btn" onclick="go('school')">Find my table</button>
+          <p class="foot">Starting at Harvard and MIT · Opening with Tech<br>Verified with your school email. Not a dating app.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- School -->
+    <section class="scr" id="s-school" data-step="1">
+      <div class="scroll pad">
+        <div class="stepk">The basics</div>
+        <h2 class="q">What should the table call you?</h2>
+        <input id="nameIn" class="field" placeholder="First name" maxlength="18" autocomplete="given-name" />
+        <h2 class="q sm">Which side of the river are you on?</h2>
+        <div class="schools">
+          <button class="sch mit" data-s="mit" onclick="pickSchool('mit')"><b>MIT</b><small>Kendall Square</small></button>
+          <button class="sch hbs" data-s="hbs" onclick="pickSchool('hbs')"><b>Harvard Business School</b><small>Allston</small></button>
+        </div>
+        <div class="sch-soon">Elsewhere at Harvard or MIT? Your tables open in spring. The rest of Boston, after that.</div>
+        <div id="yearWrap" class="hide"><div class="label">Your program</div><div class="chips" id="yearRow"></div></div>
+        <div id="schoolNote"></div>
+      </div>
+      <div class="dock"><button class="btn" id="schoolNext" disabled onclick="go('tracks')">Continue</button></div>
+    </section>
+
+    <!-- Tracks -->
+    <section class="scr" id="s-tracks" data-step="2">
+      <div class="scroll pad">
+        <div class="stepk">Part one · What you love</div>
+        <h2 class="q">Tech opens first. Which corner pulls you in?</h2>
+        <p class="sub">Pick one or two. Every Topic table is one track, half HBS and half MIT.</p>
+        <div id="trackList"></div>
+        <div class="label">More rooms after Tech · tap to get notified</div>
+        <div class="rooms" id="roomGrid"></div>
+      </div>
+      <div class="dock"><button class="btn" id="tracksNext" disabled onclick="go('interests')">Pick a track</button></div>
+    </section>
+
+    <!-- Interests -->
+    <section class="scr" id="s-interests" data-step="3">
+      <div class="scroll pad">
+        <div class="stepk">Part one · What you love</div>
+        <h2 class="q">What exactly are you obsessed with?</h2>
+        <p class="sub">Pick three to five. Your first pick is your <b style="color:var(--ink)">anchor</b>, the one you could talk about all night.</p>
+        <div id="intChips"></div>
+        <div class="cardg overlap" id="overlap"></div>
+      </div>
+      <div class="dock"><button class="btn" id="intNext" disabled onclick="go('lens')">Pick at least 3</button></div>
+    </section>
+
+    <!-- Lens -->
+    <section class="scr" id="s-lens" data-step="4">
+      <div class="scroll pad">
+        <div class="stepk">Part one · What you love</div>
+        <h2 class="q">What’s your angle?</h2>
+        <div id="lensList"></div>
+        <div class="label">Before school, you were…</div>
+        <div class="chips" id="beforeChips"></div>
+        <div id="lensNote"></div>
+      </div>
+      <div class="dock"><button class="btn" id="lensNext" disabled onclick="go('takes')">Continue</button></div>
+    </section>
+
+    <!-- Hot takes -->
+    <section class="scr" id="s-takes" data-step="5">
+      <div class="scroll pad">
+        <div class="stepk">Part one · What you love</div>
+        <h2 class="q">Three hot takes. Where do you stand?</h2>
+        <p class="sub">I use these to make sure someone at your table sees it differently.</p>
+        <div id="takeList"></div>
+        <div id="takeNote"></div>
+      </div>
+      <div class="dock"><button class="btn" id="takeNext" disabled onclick="S.qi=0;go('q')">On to part two</button></div>
+    </section>
+
+    <!-- Friend test -->
+    <section class="scr" id="s-q" data-step="6">
+      <div class="cardg read" id="readPanel"></div>
+      <div class="scroll pad">
+        <div class="stepk" id="qk"></div>
+        <p class="sub" id="qsub" style="margin:-4px 0 12px;font-size:14px">Topics get you to the table. This part decides who you’d actually click with.</p>
+        <h2 class="q" id="qq"></h2>
+        <div class="opts" id="qopts"></div>
+        <div id="qnote"></div>
+      </div>
+    </section>
+
+    <!-- Life & rhythm -->
+    <section class="scr" id="s-life" data-step="10">
+      <div class="scroll pad">
+        <div class="stepk">Part two · How you connect</div>
+        <h2 class="q">A few practical things</h2>
+        <div class="label">How often do you want to see a close friend?</div>
+        <div class="seg" id="rhythmSeg"></div>
+        <div class="label">Right now, you’re…</div>
+        <div class="chips" id="lifeChips"></div>
+        <div class="label">Outside of dinner, I’d love a friend to…</div>
+        <div class="chips" id="actChips"></div>
+        <div class="label">What are you hoping to find?</div>
+        <div id="lookList"></div>
+        <div id="lookNote"></div>
+      </div>
+      <div class="dock"><button class="btn" id="lifeNext" disabled onclick="go('result')">See my Friend Persona</button></div>
+    </section>
+
+    <!-- Result -->
+    <section class="scr" id="s-result">
+      <div class="scroll">
+        <div class="res-top">
+          <div class="stepk" id="resK" style="margin:0 0 22px"></div>
+          <div class="orb big breathe">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><ellipse cx="20" cy="20" rx="11" ry="6.5" fill="#fff" stroke="#9F4D5A" stroke-opacity=".5"/><circle cx="11" cy="9" r="2.6" fill="#8DA3B8"/><circle cx="20" cy="7.5" r="2.6" fill="#8DA3B8"/><circle cx="29" cy="9" r="2.6" fill="#8DA3B8"/><circle cx="11" cy="31" r="2.6" fill="#C7848C"/><circle cx="20" cy="32.5" r="2.6" fill="#C7848C"/><circle cx="29" cy="31" r="2.6" fill="#C7848C"/></svg>
+          </div>
+          <h1 class="persona" id="pName"></h1>
+          <span class="code" id="pCode"></span>
+          <p class="tagline" id="pTag"></p>
+        </div>
+        <div class="pad" style="padding-top:24px">
+          <div class="cardg"><div class="ctitle">With friends, you…</div><div id="pTraits"></div></div>
+          <div class="sp"></div>
+          <div class="cardg" id="pBest"></div>
+          <div class="sp"></div>
+          <div class="cardg" id="pTables"></div>
+          <div style="height:22px"></div>
+          <button class="btn" onclick="go('seat')">Save me a seat</button>
+          <button class="btn ghost" onclick="toast('Share card','Saved to your photos. Your persona, not your answers.')">Share my Friend Persona</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seat -->
+    <section class="scr" id="s-seat">
+      <div class="topbar">
+        <button class="back" onclick="back()" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="tb-title"><span class="orb sm"></span>Save a seat</div>
+      </div>
+      <div class="scroll pad">
+        <h2 class="q" style="margin-top:6px">Pick your table</h2>
+        <p class="sub">7:30 PM in Central Square. One stop from Harvard, one stop from Kendall.</p>
+        <div id="typeCards"></div>
+        <div class="label" id="dateLabel">Which Wednesday?</div>
+        <div class="chips" id="dateChips"></div>
+        <div class="label">Table size</div>
+        <div class="seg" id="sizeSeg"></div>
+        <div class="label">Anything the kitchen should know?</div>
+        <div class="chips" id="dietChips"></div>
+        <div class="dep cardg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--ink-2)"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg>
+          <div><b>$10 hold, returned when you show up.</b><br>Cancel free until 24 hours before. You pay for your own dinner at the restaurant.</div>
+        </div>
+      </div>
+      <div class="dock"><button class="btn" onclick="holdSeat()">Hold my seat</button></div>
+      <div class="confirm" id="seatConfirm">
+        <div class="check-big"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h2>You’re in.</h2>
+        <p id="seatConfirmP"></p>
+        <button class="btn" style="max-width:300px" onclick="go('home')">Go to This week</button>
+      </div>
+    </section>
+
+    <!-- Home -->
+    <section class="scr tabbed" id="s-home">
+      <div class="scroll pad">
+        <div class="hello">
+          <div><div class="kick">This week</div><h2 class="q" id="homeDate"></h2><div class="sub2" id="homeSub"></div></div>
+          <span class="orb md breathe"></span>
+        </div>
+        <div id="homeMain"></div>
+        <div class="sp"></div>
+        <div class="cardg"><div class="ctitle">How the week goes</div><ul class="tl" id="timeline"></ul></div>
+        <div class="sp"></div>
+        <div class="cardg">
+          <div class="ctitle" id="weekK"></div>
+          <p class="weekq" id="weekQ"></p>
+          <div class="sub2" style="margin-top:8px" id="weekS"></div>
+        </div>
+        <div class="sp"></div>
+        <div class="cardg row" onclick="go('bridge')" style="cursor:pointer">
+          <div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles this semester</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">214</b> first meetings · <b style="color:var(--ink)">38</b> third ones</div></div>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section class="scr tabbed" id="s-table">
+      <div class="scroll pad">
+        <div style="padding-top:20px" class="kick" id="tKick"></div>
+        <h2 class="q" style="margin-top:8px;font-size:30px" id="tTitle"></h2>
+        <div class="sub2" id="tSub"></div>
+        <div class="tv" id="tv"></div>
+        <div class="label" style="margin-top:6px" id="tvLabel"></div>
+        <div class="chips scrollx" id="tvChips"></div>
+        <p class="tvcap" id="tvCap"></p>
+        <div class="sp"></div>
+        <div class="cardg why"><div class="ctitle">Why these six</div><div id="why"></div></div>
+        <div class="sp"></div>
+        <div class="cardg" style="padding-top:4px;padding-bottom:4px" id="plist"></div>
+        <div style="height:18px"></div>
+        <button class="btn" onclick="go('chat')">Open group chat</button>
+        <button class="link" onclick="toast('Charlie','Your seat goes to the waitlist. The table won’t be told why.')">I can’t make it</button>
+      </div>
+    </section>
+
+    <!-- Chat -->
+    <section class="scr" id="s-chat">
+      <div class="chathead">
+        <button class="back" onclick="back()" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div><b id="chatTitle">Table 7</b><small id="chatSub"></small></div>
+        <div class="avs" id="chatStack"></div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="qr" id="qr"></div>
+      <div class="composer"><input id="chatIn" placeholder="Message the table" onkeydown="if(event.key==='Enter')sendChat()" /><button onclick="sendChat()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+    </section>
+
+    <!-- Dinner -->
+    <section class="scr" id="s-dinner">
+      <div class="topbar">
+        <button class="back" onclick="back()" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="tb-title"><span class="orb sm"></span><span id="dinTitle"></span></div>
+      </div>
+      <div class="scroll">
+        <div class="pad" style="padding-bottom:10px">
+          <div class="stepk">At the table</div>
+          <h2 class="q">The table <span class="it">deck</span></h2>
+          <p class="sub" style="margin-bottom:12px" id="deckSub"></p>
+          <div class="cardg venue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <div><b>Mass Ave, Central Square</b><br><span style="color:var(--ink-soft)">Ask for the Sixtop table. Priya and Dev are already there.</span></div>
+          </div>
+        </div>
+        <div class="deck" id="deck"></div>
+        <div class="dots" id="deckDots"></div>
+        <div class="pad" style="padding-top:0">
+          <button class="btn" onclick="phonesDown(true)">Phones down</button>
+          <button class="btn ghost" id="skipAfter" onclick="go('after')"></button>
+        </div>
+      </div>
+      <div class="pd" id="pd" onclick="phonesDown(false)">
+        <div class="candle"><div class="fl"></div><div class="wax"></div></div>
+        <h2>Phones down.</h2>
+        <p>Round one is ten minutes. I’ll buzz you at 7:50 for round two.</p>
+        <small>Tap anywhere to come back</small>
+      </div>
+    </section>
+
+    <!-- After -->
+    <section class="scr" id="s-after">
+      <div class="topbar">
+        <button class="back" onclick="back()" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="tb-title"><span class="orb sm"></span><span id="afterTitle"></span></div>
+      </div>
+      <div class="scroll pad">
+        <h2 class="q" style="margin-top:8px">How was the table?</h2>
+        <div class="rate" id="rate"></div>
+        <h2 class="q sm">Who would you like to see again?</h2>
+        <p class="sub" style="font-size:14px">Only mutual picks are shared. Nobody learns who didn’t pick them.</p>
+        <div id="picks"></div>
+        <div class="cardg row" style="margin-top:12px">
+          <div class="grow"><b style="font-size:15px">Same table next month?</b><div class="sub2">If four of you say yes, I’ll hold the date.</div></div>
+          <button class="tog on" id="standTog" onclick="this.classList.toggle('on')" aria-label="Same table next month"></button>
+        </div>
+        <div style="height:18px"></div>
+        <button class="btn" id="afterBtn" onclick="sendAfter()">Send to Charlie</button>
+        <div id="afterRes"></div>
+      </div>
+    </section>
+
+    <!-- Bridge -->
+    <section class="scr tabbed" id="s-bridge">
+      <div class="scroll pad">
+        <div class="kick" style="padding-top:22px">Bridge</div>
+        <h2 class="q" style="margin-top:8px;font-size:30px">Across the <span class="it">Charles</span></h2>
+        <p class="sub" id="bridgeSub"></p>
+        <div class="cardg bridgeCard"><svg id="bridgeSvg" viewBox="0 0 360 300"></svg></div>
+        <div class="stats" id="bstats"></div>
+        <div class="cardg" id="blist"></div>
+        <div class="sp"></div>
+        <div class="cardg"><div class="ctitle">Everyone, this semester</div><div style="font-size:14px;line-height:1.7;color:var(--ink-soft)"><b style="color:var(--ink)">214</b> first meetings across the river<br><b style="color:var(--ink)">38</b> pairs who’ve met three times<br><b style="color:var(--ink)">9</b> crews with a standing table</div></div>
+      </div>
+    </section>
+
+    <!-- Me -->
+    <section class="scr tabbed" id="s-me">
+      <div class="scroll pad">
+        <div class="row" style="padding-top:24px" id="meHead"></div>
+        <div class="sp"></div>
+        <div class="cardg row" id="mePersona" style="cursor:pointer" onclick="go('result')"></div>
+        <div class="label">What you love</div>
+        <div class="chips" id="meInts"></div>
+        <div class="label">How you connect</div>
+        <div class="chips" id="meConnect"></div>
+        <div class="label">Rooms you’re waiting on</div>
+        <div class="chips" id="meRooms"></div>
+        <div class="sp"></div>
+        <div class="cardg" style="padding-top:2px;padding-bottom:2px">
+          <button class="setrow" onclick="toast('Never seat me with','Add a name, school email or phone. Stored as a fingerprint, never shown to anyone.')"><div class="grow">Never seat me with<small>People you already know, or would rather not</small></div><span class="sub2">0</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <div class="setrow"><div class="grow">Pause my seat<small>Skip weeks without losing your persona</small></div><button class="tog" onclick="this.classList.toggle('on')" aria-label="Pause"></button></div>
+          <div class="setrow"><div class="grow">Table reminders<small>Table set, spot revealed, see-again picks</small></div><button class="tog on" onclick="this.classList.toggle('on')" aria-label="Reminders"></button></div>
+        </div>
+        <div class="sp"></div>
+        <div class="cardg">
+          <div class="ctitle">Table norms</div>
+          <div class="norm"><i>1</i>No pitching. Curiosity first, decks never.</div>
+          <div class="norm"><i>2</i>Phones down during rounds.</div>
+          <div class="norm"><i>3</i>Can’t make it? Tell me 24 hours before. Two no-shows pauses your seat.</div>
+          <div class="norm"><i>4</i>Not a dating app. Partners and spouses are very welcome to exist.</div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabbar" id="tabbar">
+      <button data-t="home" onclick="tab('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>This week<span class="tdot"></span></button>
+      <button data-t="table" onclick="tab('table')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="7" ry="3.8"/><circle cx="6" cy="4.5" r="1.7"/><circle cx="12" cy="3.5" r="1.7"/><circle cx="18" cy="4.5" r="1.7"/><circle cx="6" cy="19.5" r="1.7"/><circle cx="12" cy="20.5" r="1.7"/><circle cx="18" cy="19.5" r="1.7"/></svg>Table<span class="tdot"></span></button>
+      <button data-t="bridge" onclick="tab('bridge')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17c3-6.5 6.5-9 10-9s7 2.5 10 9"/><path d="M2 17h20M7 17v-4.6M12 17V8M17 17v-4.6"/></svg>Bridge<span class="tdot"></span></button>
+      <button data-t="me" onclick="tab('me')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Me<span class="tdot"></span></button>
+    </nav>
+
+    <div class="toast" id="toast"><span class="orb"></span><div><b id="toastT">Charlie</b><span id="toastM"></span></div></div>
+    <div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet"></div>
+  </main>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const SV = (p, w = 20) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICON = {
+  back:SV('<path d="M15 18l-6-6 6-6"/>', 18),
+  check:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`,
+  lock:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
+  chev:`<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>`,
+  genai:SV('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>'),
+  hcai:SV('<path d="M3 12h4l2-5 3 10 2-5h7"/>'),
+  founders:SV('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/>'),
+  climate:SV('<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l7-7"/>'),
+  kin:SV('<circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/>')
+};
+const NUMW = ['zero','one','two','three','four','five','six'];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const lc1 = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+const TRACKS = [
+  {id:'genai', t:'Generative AI', d:'Agents, models, AI products, AI and work', n:142, q:'Are AI agents doing real work yet, or just great demos?'},
+  {id:'hcai', t:'Healthcare AI', d:'Clinical AI, bio, digital health, health systems', n:96, q:'Will a hospital ever trust an AI to make the call?'},
+  {id:'founders', t:'Entrepreneurship', d:'Cofounders, fundraising, building from zero', n:131, q:'Should you start a company right out of school?'},
+  {id:'climate', t:'Climate', d:'Energy, the grid, carbon, climate fintech', n:88, q:'Is AI’s power demand a climate problem or a climate opportunity?'}
+];
+const ROOMS = [
+  {id:'books', t:'Books & Ideas', w:19}, {id:'food', t:'Food & Boston', w:16},
+  {id:'outdoors', t:'Running & Outdoors', w:14}, {id:'arts', t:'Arts & Music', w:11},
+  {id:'money', t:'Money & Markets', w:13}, {id:'global', t:'Global tables', w:9},
+  {id:'parents', t:'Partners & Parents', w:12}, {id:'faith', t:'Faith & Meaning', w:7}
+];
+const INTS = [
+  {id:'agents', tr:'genai', t:'AI agents', n:84}, {id:'models', tr:'genai', t:'Foundation models', n:61}, {id:'aiux', tr:'genai', t:'AI products & UX', n:58},
+  {id:'work', tr:'genai', t:'AI & the future of work', n:55}, {id:'devtools', tr:'genai', t:'Developer tools', n:29}, {id:'safety', tr:'genai', t:'AI policy & safety', n:33},
+  {id:'clinical', tr:'hcai', t:'Clinical AI', n:52}, {id:'bio', tr:'hcai', t:'Drug discovery & bio', n:47}, {id:'dighealth', tr:'hcai', t:'Digital health', n:44},
+  {id:'systems', tr:'hcai', t:'Health systems & payers', n:31}, {id:'medtech', tr:'hcai', t:'Medtech & devices', n:27}, {id:'mental', tr:'hcai', t:'Mental health', n:36},
+  {id:'cofounder', tr:'founders', t:'Finding a cofounder', n:71}, {id:'raise', tr:'founders', t:'Fundraising', n:63}, {id:'consumer', tr:'founders', t:'Consumer', n:44},
+  {id:'b2b', tr:'founders', t:'B2B & SaaS', n:49}, {id:'spinout', tr:'founders', t:'Lab spinouts', n:35}, {id:'search', tr:'founders', t:'Search funds & ETA', n:30},
+  {id:'grid', tr:'climate', t:'Energy & the grid', n:46}, {id:'carbon', tr:'climate', t:'Carbon removal', n:28}, {id:'cfin', tr:'climate', t:'Climate fintech', n:24},
+  {id:'mobility', tr:'climate', t:'Mobility & EVs', n:31}, {id:'agfood', tr:'climate', t:'Food & ag', n:22}, {id:'cpolicy', tr:'climate', t:'Climate policy', n:27}
+];
+const INTNAME = Object.fromEntries(INTS.map(i => [i.id, i.t]));
+const trOf = id => INTS.find(i => i.id === id).tr;
+const DEFAULT_INTS = {genai:['agents','devtools','work'], hcai:['clinical','dighealth','bio'], founders:['cofounder','raise','b2b'], climate:['grid','carbon','cfin']};
+const LENS = [
+  {id:'build', t:'Building it', s:'Founder, engineer, maker', note:'A builder. I’ll make sure someone at your table asks who pays.'},
+  {id:'fund', t:'Funding it', s:'VC, angel, corporate venture', note:'An investor. Two per table at most, so it never turns into pitch night.'},
+  {id:'run', t:'Running it', s:'PM, operator, GM', note:'An operator. Every table needs one person who has shipped the thing.'},
+  {id:'study', t:'Studying it', s:'Research, policy, medicine, science', note:'A researcher. You’ll keep everyone honest.'},
+  {id:'pivot', t:'Pivoting into it', s:'New to this and curious', note:'New to this? Best seat in the house. You get to ask the obvious question nobody else will.'}
+];
+const BEFORE = ['Engineer','Product','Consulting','Banking / PE','Founder','Medicine','Military','Something else'];
+
+/* Friend test: four axes, Amie-style */
+const AXES = [
+  {k:'s', lo:'Listen', hi:'Spark'},
+  {k:'d', lo:'Playful', hi:'Deep'},
+  {k:'h', lo:'Guest', hi:'Host'},
+  {k:'a', lo:'Ritual', hi:'Adventure'}
+];
+const QS = [
+  {q:'Friday, 7 PM. Your plans just fell through. You…', o:[
+    {t:'Text three people and rally a new plan', d:{h:26,s:10}, note:'A rallier. Every table needs one, or nobody ever meets again.'},
+    {t:'Honestly? Relieved. Takeout and a long call with one friend', d:{s:-16,d:12,a:-10}, note:'One good conversation over a crowd. Noted.'},
+    {t:'Go somewhere new alone and see who you meet', d:{a:26,s:8}, note:'Brave. You’re the friend with the best stories.'},
+    {t:'Wait for someone to invite me somewhere', d:{h:-24}, note:'A joiner. Good news: I’ll make sure your table has a planner.'}]},
+  {q:'The conversation you’d stay up until 2 AM for…', o:[
+    {t:'What we’d do if we weren’t scared', d:{d:28}, note:'Deep end. Your people will go there with you.'},
+    {t:'Ranking things that don’t need ranking', d:{d:-26,s:8}, note:'Ha. Bits over big questions. Your table will be loud.'},
+    {t:'A book, a paper, a wild theory', d:{d:14,a:8}, note:'A thinker who still wants to have fun.'},
+    {t:'Stories. The more embarrassing, the better', d:{d:-12,s:14}, note:'A storyteller. Good. Someone has to go first.'}]},
+  {q:'The group chat has been dead for two weeks. You…', o:[
+    {t:'Propose a plan with a date and a place', d:{h:28}, note:'A host. Friendships survive because of people like you.'},
+    {t:'Revive it with a meme and see what happens', d:{h:8,d:-10,s:6}, note:'Low effort, high return. Respect.'},
+    {t:'Wait. Someone will text eventually', d:{h:-22}, note:'Fair. I’ll make sure someone does.'},
+    {t:'Skip the group and call one person', d:{d:14,s:-10,h:6}, note:'Straight to one-on-one. A classic close-friend move.'}]},
+  {q:'Your ideal Saturday with friends is…', o:[
+    {t:'Our usual spot, our usual order', d:{a:-28}, note:'Rituals. The best friendships run on them.'},
+    {t:'Something none of us has done before', d:{a:28}, note:'Adventure first. I’ll find you people who say yes.'},
+    {t:'A long walk along the Charles that turns into dinner', d:{a:-8,d:10}, note:'Unhurried. My kind of Saturday.'},
+    {t:'Anything with a scoreboard', d:{a:10,s:10,d:-8}, note:'A little competition. Great for bonding, apparently.'}]}
+];
+const RHYTHM = [['Every week','Weekly'],['Every two weeks','Every 2 weeks'],['Once a month','Monthly']];
+const LIFE = ['New to Boston','Partnered','Married','A parent','International','Staying in Boston'];
+const LIFEV = {'New to Boston':'are new to Boston','Partnered':'are partnered','Married':'are married','A parent':'are parents','International':'moved here from abroad','Staying in Boston':'plan to stay in Boston after school'};
+const ACTS = ['Run the Charles','Climb','Cook together','Museums','Live music','Celtics & Red Sox','Hike','Board games','Try new restaurants'];
+const ACTV = {'Run the Charles':'run the Charles','Climb':'climb','Cook together':'cook together','Museums':'go to museums','Live music':'see live music','Celtics & Red Sox':'catch a Celtics game','Hike':'hike','Board games':'play board games','Try new restaurants':'try new restaurants'};
+const LOOK = [
+  {id:'crew', t:'A crew I see every month', note:'A crew. I’ll keep seating you with the same faces until it sticks.'},
+  {id:'close', t:'One or two close friends', note:'Close friends. Fewer people, more often. I can do that.'},
+  {id:'ideas', t:'People to argue ideas with', note:'Sparring partners. Your Topic tables will be loud.'},
+  {id:'acts', t:'People to do things with', note:'Activity people. I’ll turn dinners into Saturday plans.'}
+];
+const TRACK_TAKE = {genai:'AGI arrives before our 10-year reunion.', hcai:'Hospitals will buy AI long before doctors trust it.', founders:'You should start a company right out of school.', climate:'AI’s power demand is a climate opportunity, not a problem.'};
+const takesList = () => [{id:'track', t:TRACK_TAKE[trk().id]}, {id:'code', t:'Every MBA should learn to code.'}, {id:'lab', t:'The best startups come out of a lab, not a case study.'}];
+const STANCE = {agree:'Agree', disagree:'Disagree', depends:'It depends'};
+/* Friend Persona: [S|L][D|P][H|G][R|A] */
+const PERSONAS = {
+  SDHR:['The Hearth','Keeper','You host the dinner everyone still talks about, and you do it every month.'],
+  SDHA:['The Expedition','Leader','You plan the trip, then ask the question nobody else would.'],
+  SDGR:['The Late-Night','Philosopher','Show up, sit down, and take the conversation somewhere real.'],
+  SDGA:['The Restless','Thinker','You’ll say yes to anything, as long as it ends in a good argument.'],
+  SPHR:['The','Ringleader','Same place, same night, same people. You make it happen.'],
+  SPHA:['The','Instigator','“Wait, what if we…” is how most of your best nights start.'],
+  SPGR:['The Life of the','Table','You make every room louder, in the best way.'],
+  SPGA:['The Perfect','Plus-One','Invite you anywhere. You’ll make it fun.'],
+  LDHR:['The Quiet','Host','You remember everyone’s news and quietly make sure the dinner happens.'],
+  LDHA:['The','Curator','You find the tiny exhibit, the hidden bar, the book, and bring one friend.'],
+  LDGR:['The','Confidant','Two hours, one friend, no phones. That’s your kind of night.'],
+  LDGA:['The Quiet','Explorer','You say little on the way there, then the thing everyone remembers.'],
+  LPHR:['The Group-Chat','Keeper','You keep the thread alive, the birthdays straight, and the memes flowing.'],
+  LPHA:['The','Scout','You’ve already found the new place. You just need five people to try it.'],
+  LPGR:['The','Regular','Same table, same jokes, and somehow it never gets old.'],
+  LPGA:['The Easy','Yes','Low drama, high fun, always up for whatever.']
+};
+const TRAITS = {
+  S:'Get the conversation going', L:'Notice the person who hasn’t talked yet',
+  D:'Take small talk somewhere real', P:'Keep it light enough that everyone relaxes',
+  H:'Turn “we should do this again” into a date on the calendar', G:'Show up, every time, fully there',
+  R:'Turn one good night into a tradition', A:'Drag everyone somewhere new'
+};
+const PEOPLE = {
+  dev:{n:'Dev', l:'M', sc:'hbs', yr:'RC · Class of 2027', before:'VC associate in the Bay Area', lens:'fund', code:'SPHA',
+    life:['Partnered'], acts:['Celtics & Red Sox','Try new restaurants','Live music'], soc:'The worst trip I’ve ever planned (I planned it)',
+    takes:{track:'agree', code:'disagree', lab:'disagree'},
+    tk:{genai:{i:['agents','aiux','work'], a:'The agent startup I passed on, and why I regret it'}, hcai:{i:['clinical','dighealth','systems'], a:'Why digital health is the hardest pitch I hear'},
+        founders:{i:['raise','consumer','cofounder'], a:'What actually happens in a partner meeting'}, climate:{i:['grid','cfin','mobility'], a:'Why climate funds went quiet, and what brings them back'}}},
+  sam:{n:'Sam', l:'O', sc:'hbs', yr:'EC · Class of 2026', before:'Army officer, then a climate-hardware founder', lens:'build', code:'SDHR',
+    life:['Married','A parent'], acts:['Run the Charles','Cook together','Hike'], soc:'My sourdough, at your own risk',
+    takes:{track:'disagree', code:'agree', lab:'agree'},
+    tk:{genai:{i:['agents','work','safety'], a:'Running a five-person hardware company with AI agents'}, hcai:{i:['clinical','medtech','systems'], a:'What the Army taught me about triage'},
+        founders:{i:['raise','spinout','b2b'], a:'Raising a seed round from a barracks in Texas'}, climate:{i:['grid','carbon','mobility'], a:'Building batteries in a garage, legally'}}},
+  hannah:{n:'Hannah', l:'L', sc:'hbs', yr:'RC · Class of 2027', before:'Healthcare consultant', lens:'pivot', code:'LPHR',
+    life:['New to Boston'], acts:['Museums','Try new restaurants','Run the Charles'], soc:'The 14 Boston restaurants on my list',
+    takes:{track:'disagree', code:'agree', lab:'depends'},
+    tk:{genai:{i:['agents','aiux','safety'], a:'Why big companies buy AI and never switch it on'}, hcai:{i:['clinical','systems','dighealth'], a:'Why hospitals buy AI and never switch it on'},
+        founders:{i:['cofounder','b2b','search'], a:'Why I almost bought a dental practice'}, climate:{i:['grid','cpolicy','agfood'], a:'Heat waves and emergency rooms'}}},
+  priya:{n:'Priya', l:'R', sc:'mit', yr:'Sloan MBA · 2027', before:'ML engineer at a robotics startup', lens:'build', code:'LDGR',
+    life:['New to Boston','International'], acts:['Climb','Board games','Run the Charles'], soc:'Climbing in a city with no mountains',
+    takes:{track:'disagree', code:'agree', lab:'agree'},
+    tk:{genai:{i:['agents','devtools','models'], a:'Why most agent demos break on step four'}, hcai:{i:['clinical','bio','medtech'], a:'Why a model that beats doctors in a paper fails in a clinic'},
+        founders:{i:['cofounder','spinout','b2b'], a:'Leaving a lab without a cofounder, then finding one'}, climate:{i:['grid','mobility','carbon'], a:'Robots that inspect power lines'}}},
+  mei:{n:'Mei', l:'C', sc:'mit', yr:'Sloan MBA · 2026', before:'PM at a consumer fintech app', lens:'run', code:'LPGA',
+    life:['Partnered','Staying in Boston'], acts:['Live music','Try new restaurants','Museums'], soc:'The concert I flew to Tokyo for',
+    takes:{track:'agree', code:'disagree', lab:'disagree'},
+    tk:{genai:{i:['agents','aiux','work'], a:'Shipping an AI feature to three million users'}, hcai:{i:['clinical','dighealth','mental'], a:'Why most health apps get deleted in a month'},
+        founders:{i:['cofounder','raise','consumer'], a:'Growing an app from zero to a million downloads'}, climate:{i:['cfin','agfood','mobility'], a:'Getting people to pay for green anything'}}},
+  tomas:{n:'Tomás', l:'R', sc:'mit', yr:'Sloan MBA · 2027', before:'Grid engineer at a utility', lens:'study', code:'LDHA',
+    life:['International','Staying in Boston'], acts:['Hike','Cook together','Run the Charles'], soc:'The best hike within two hours of Boston',
+    takes:{track:'agree', code:'agree', lab:'agree'},
+    tk:{genai:{i:['agents','models','safety'], a:'What AI data centers are doing to the power grid'}, hcai:{i:['medtech','systems','bio'], a:'What hospitals and power plants have in common'},
+        founders:{i:['raise','spinout','b2b'], a:'Selling software to utilities, slowly'}, climate:{i:['grid','carbon','cpolicy'], a:'What AI data centers are doing to the power grid'}}}
+};
+const LIKES_YOU = ['priya','dev','tomas'];
+const YEARS = {hbs:['RC · Class of 2027','EC · Class of 2026'], mit:['Sloan MBA · 2027','Sloan MBA · 2026','MIT grad student','Sloan Fellows / EMBA']};
+const SCHOOLNAME = {hbs:'HBS', mit:'MIT'};
+
+const SCREENS = [
+  {id:'start', t:'시작', d:'큰 모임에 지친 사람들을 위한 4~6인 테이블. 히어로는 위에서 본 테이블이고, 가운데 러너가 찰스강. 위는 MIT, 아래는 HBS.'},
+  {id:'school', t:'이름 · 학교', d:'지금은 HBS와 MIT. 다음은 Harvard·MIT 전체, 그다음 Greater Boston.'},
+  {id:'tracks', t:'트랙 (What you love)', d:'Tech 안의 4개 트랙: Generative AI, Healthcare AI, Entrepreneurship, Climate. 1~2개. 다른 룸은 대기 등록.'},
+  {id:'interests', t:'세부 관심사', d:'고른 트랙의 세부 관심사 3~5개. 첫 번째가 앵커.'},
+  {id:'lens', t:'앵글', d:'만드는/투자하는/운영하는/연구하는/넘어오는 쪽 + 이전 직업.'},
+  {id:'takes', t:'핫테이크', d:'첫 번째는 트랙별 핫테이크. 테이블을 일부러 갈리게 짜요. 여기까지가 Part one.'},
+  {id:'q', t:'Friend test (How you connect)', d:'Amie 테스트의 친구 버전. Spark/Listen, Deep/Playful, Host/Guest, Ritual/Adventure 4축이 위 패널에서 움직여요.'},
+  {id:'life', t:'만남 리듬 · 생활 · 활동', d:'얼마나 자주, 지금 생활 단계, 같이 하고 싶은 활동, 찾는 관계. 찐친 매칭과 디너 다음 약속에 써요.'},
+  {id:'result', t:'Friend Persona', d:'16유형 + Best seated with(말하는/듣는 쪽, 약속 잡는/따라오는 쪽만 반대로) + 두 종류 테이블에서 맞는 사람 수.'},
+  {id:'seat', t:'테이블 고르기', d:'Topic table(수, 주제 60:사람 40) vs Kindred table(금, 주제 20:사람 80). 위에서 바꿔보세요.'},
+  {id:'home', t:'This week', d:'고른 테이블 종류에 맞춰 요일과 이번 주 질문이 바뀌어요. 데모 버튼으로 테이블 공개로 넘어가요.'},
+  {id:'table', t:'테이블 공개', d:'Topic이면 관심사, Kindred면 활동·생활 칩. 누르면 공유하는 사람끼리 선이 이어져요. "Why these six"에 주제 핏과 사람 핏이 같이 나와요.'},
+  {id:'chat', t:'단톡방', d:'Charlie가 왜 이 6명인지와 워밍업 질문으로 열어요. 입력도 돼요.'},
+  {id:'dinner', t:'디너: Table deck', d:'Topic: Origins → The split → Napkin startup. Kindred: Origins → Go deeper → Plan the next one.'},
+  {id:'after', t:'다음 날: See again?', d:'서로 고른 사람끼리 3주 뒤 재회 테이블로 다시 앉혀요. 찐친 사다리 2~3단계.'},
+  {id:'bridge', t:'Bridge', d:'강 건너 연결 + 찐친 사다리(Met once → Reunion → Regulars).'},
+  {id:'me', t:'Me', d:'What you love / How you connect, 이미 아는 사람, 일시정지, 테이블 규칙.'}
+];
+
+/* ---------------- State ---------------- */
+const S = {name:'', school:null, year:null, tracks:[], waitRooms:new Set(), interests:[], lens:null, before:null, takes:{}, answers:{}, qi:0,
+  rhythm:null, life:new Set(), acts:new Set(), look:null,
+  tableType:'topic', date:null, size:'Either', diet:new Set(), seatSaved:false, tableSet:false, dinnerDone:false, rating:0, picks:new Set(), mutual:[], chatKey:null, chatCount:0};
+let cur = null; const hist = [];
+
+/* ---------------- Helpers ---------------- */
+const $ = id => document.getElementById(id);
+const meName = () => (S.name || 'Jordan');
+const trk = () => TRACKS.find(t => t.id === (S.tracks[0] || 'genai'));
+const isKin = () => S.tableType === 'kindred';
+function T(){
+  const k = isKin(), date = S.date || (k ? 'Fri, Oct 16' : 'Wed, Oct 14');
+  return {k, label:k ? 'Kindred table' : 'Topic table', day:k ? 'Friday' : 'Wednesday', set:k ? 'Wednesday' : 'Monday', next:k ? 'Saturday' : 'Thursday', no:k ? 12 : 7, date,
+    long:(k ? 'Friday, ' : 'Wednesday, ') + date.split(', ')[1]};
+}
+function shiftDate(days){ const d = new Date(T().date.split(', ')[1] + ', 2026'); d.setDate(d.getDate() + days); return d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'}); }
+const ax = () => {
+  const a = {s:50, d:50, h:50, a:50};
+  Object.entries(S.answers).forEach(([qi, oi]) => { const d = QS[qi].o[oi].d; for (const k in d) a[k] = Math.max(6, Math.min(94, a[k] + d[k])); });
+  return a;
+};
+const codeOf = v => (v.s >= 50 ? 'S' : 'L') + (v.d >= 50 ? 'D' : 'P') + (v.h >= 50 ? 'H' : 'G') + (v.a >= 50 ? 'A' : 'R');
+const pretty = c => c.split('').join(' · ');
+const personaHTML = c => `${PERSONAS[c][0]} <span class="it">${PERSONAS[c][1]}</span>`;
+const personaText = c => `${PERSONAS[c][0]} ${PERSONAS[c][1]}`;
+const tableInts = () => { const t = trk().id, m = S.interests.filter(i => trOf(i) === t); return m.length ? m : DEFAULT_INTS[t]; };
+function getP(id){
+  if (id === 'me') return {n:meName(), l:'', sc:S.school || 'hbs', yr:S.year, lens:S.lens || 'build', code:codeOf(ax()), ints:tableInts(), acts:[...S.acts], life:[...S.life], takes:S.takes, me:true};
+  const p = PEOPLE[id], tk = p.tk[trk().id];
+  return {...p, ints:tk.i, ask:isKin() ? p.soc : tk.a};
+}
+const tags = id => { const p = getP(id); return isKin() ? [...p.acts, ...p.life] : p.ints; };
+const tagName = t => INTNAME[t] || t;
+const members = () => S.school === 'mit' ? ['dev','sam','hannah','priya','tomas'] : ['dev','sam','priya','mei','tomas'];
+const everyone = () => ['me', ...members()];
+const initials = p => p.me ? (meName()[0] || 'Y').toUpperCase() : p.n[0];
+const av = (id, cls = '') => { const p = getP(id); return `<div class="av ${p.sc} ${cls}">${initials(p)}</div>`; };
+const otherSchool = () => S.school === 'mit' ? 'HBS' : 'MIT';
+const countWord = n => n === 6 ? 'All six' : cap(NUMW[n]);
+
+function toast(t, m){
+  $('toastT').textContent = t; $('toastM').textContent = m;
+  const el = $('toast'); el.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3400);
+}
+function note(slot, text){ $(slot).innerHTML = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>${text}</p></div>`; }
+
+/* ---------------- Navigation ---------------- */
+const TABBED = ['home','table','bridge','me'];
+const STEPS = 10;
+function go(id, opts = {}){
+  if (id === cur) { enter(id); return; }
+  const prev = cur ? $('s-' + cur) : null;
+  if (prev) { prev.classList.remove('on'); prev.classList.add('out'); setTimeout(() => prev.classList.remove('out'), 450); }
+  if (cur && !opts.noHist) hist.push(cur);
+  cur = id;
+  enter(id);
+  const next = $('s-' + id); next.classList.add('on');
+  const sc = next.querySelector('.scroll'); if (sc) sc.scrollTop = 0;
+  $('tabbar').classList.toggle('on', TABBED.includes(id));
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.t === id));
+  document.querySelectorAll('#glist button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  closeSheet();
+}
+function back(){
+  if (cur === 'q' && S.qi > 0) { S.qi--; renderQ(); return; }
+  const p = hist.pop(); if (p) go(p, {noHist:true});
+}
+function tab(id){
+  if (id === 'table' && !S.tableSet) { toast('Charlie', S.seatSaved ? `Your table appears ${T().set} at noon. I’ll tell you the moment it’s set.` : 'Save a seat first. Then I’ll set you a table.'); return; }
+  go(id);
+}
+function setStep(id){
+  const scr = $('s-' + id), step = scr.dataset.step; if (!step) return;
+  const n = id === 'q' ? 6 + S.qi : +step;
+  scr.querySelector('.pfill').style.width = (n / STEPS * 100) + '%';
+  scr.querySelector('.tb-step').textContent = `${n} of ${STEPS}`;
+}
+function enter(id){
+  const f = {school:renderSchool, tracks:renderTracks, interests:renderInts, lens:renderLens, takes:renderTakes, q:renderQ, life:renderLife, result:renderResult, seat:renderSeat,
+    home:renderHome, table:renderTable, chat:renderChat, dinner:renderDinner, after:renderAfter, bridge:renderBridge, me:renderMe}[id];
+  if (f) f();
+  setStep(id);
+}
+function jump(id){
+  // Fill sensible defaults so any screen works on its own.
+  const idx = SCREENS.findIndex(s => s.id === id);
+  if (idx >= 2 && !S.school) { S.school = 'hbs'; S.year = YEARS.hbs[0]; }
+  if (idx >= 3 && !S.tracks.length) S.tracks = ['genai'];
+  if (idx >= 4 && !S.interests.length) S.interests = DEFAULT_INTS[S.tracks[0]].slice();
+  if (idx >= 5 && !S.lens) { S.lens = 'build'; S.before = 'Engineer'; }
+  if (idx >= 6 && Object.keys(S.takes).length < 3) S.takes = {track:'agree', code:'disagree', lab:'depends'};
+  if (idx >= 7 && Object.keys(S.answers).length < 4) S.answers = {0:0, 1:0, 2:0, 3:2};
+  if (idx >= 8 && !S.look) { S.rhythm = 'Every two weeks'; S.life = new Set(['New to Boston']); S.acts = new Set(['Run the Charles','Try new restaurants']); S.look = 'crew'; }
+  if (idx >= 10) S.seatSaved = true;
+  if (idx >= 11) S.tableSet = true;
+  if (id === 'bridge' && !S.dinnerDone) { S.dinnerDone = true; S.picks = new Set(['priya','dev','tomas']); S.mutual = ['priya','dev','tomas']; }
+  if (id === 'q') S.qi = 0;
+  hist.length = 0;
+  go(id, {noHist:true});
+  toggleGuide(false);
+}
+function toggleGuide(open){ $('guide').classList.toggle('open', open); }
+
+/* ---------------- Part one: What you love ---------------- */
+function renderSchool(){
+  $('nameIn').value = S.name;
+  document.querySelectorAll('.sch').forEach(b => b.classList.toggle('sel', b.dataset.s === S.school));
+  renderYears(); checkSchool();
+}
+$('nameIn').addEventListener('input', e => { S.name = e.target.value.trim(); });
+function pickSchool(s){
+  const changed = S.school !== s; S.school = s; if (changed) S.year = null;
+  document.querySelectorAll('.sch').forEach(b => b.classList.toggle('sel', b.dataset.s === s));
+  renderYears();
+  note('schoolNote', s === 'hbs' ? 'Allston. Good. I’ll find you people from Kendall.' : 'Kendall. Good. I’ll find you people from Allston.');
+  checkSchool();
+}
+function renderYears(){
+  if (!S.school) { $('yearWrap').classList.add('hide'); return; }
+  $('yearWrap').classList.remove('hide');
+  $('yearRow').innerHTML = YEARS[S.school].map((y, i) => `<button class="chip ${S.year===y?'sel':''}" onclick="S.year=YEARS[S.school][${i}];renderYears();checkSchool()">${y}</button>`).join('');
+}
+function checkSchool(){ $('schoolNext').disabled = !(S.school && S.year); }
+
+function renderTracks(){
+  $('trackList').innerHTML = TRACKS.map(t => {
+    const k = S.tracks.indexOf(t.id);
+    return `<button class="track ${k>=0?'sel':''}" onclick="toggleTrack('${t.id}')"><span class="ti">${ICON[t.id]}</span><div class="grow"><b>${t.t}${k===0 && S.tracks.length>1 ? '<span class="tag">First</span>' : ''}</b><small>${t.d}</small><div class="tn">${t.n} people saving seats</div></div><span class="tick">${ICON.check}</span></button>`;
+  }).join('');
+  $('roomGrid').innerHTML = ROOMS.map(r => {
+    const on = S.waitRooms.has(r.id), n = r.w + (on ? 1 : 0);
+    return `<button class="room ${on?'wl':''}" onclick="toggleRoom('${r.id}')"><b>${ICON.lock}${r.t}</b><div class="rbar"><i style="width:${n/24*100}%"></i></div><small>${n} of 24 to open</small><span class="rb">${on ? '✓ On the list' : 'Notify me'}</span></button>`;
+  }).join('');
+  const b = $('tracksNext'); b.disabled = !S.tracks.length; b.textContent = S.tracks.length ? 'Continue' : 'Pick a track';
+}
+function toggleTrack(id){
+  const k = S.tracks.indexOf(id);
+  if (k >= 0) S.tracks.splice(k, 1);
+  else if (S.tracks.length < 2) S.tracks.push(id);
+  else { toast('Charlie', 'Two tracks at most. Your first pick is where I seat you.'); return; }
+  S.interests = S.interests.filter(i => S.tracks.includes(trOf(i)));
+  renderTracks();
+}
+function toggleRoom(id){ S.waitRooms.has(id) ? S.waitRooms.delete(id) : S.waitRooms.add(id); renderTracks(); }
+
+function overlapCount(ids){ return ids.length >= 2 ? Math.min(146, Math.round(ids.reduce((a, id) => a + INTS.find(i => i.id === id).n, 0) * .34)) : 0; }
+function renderInts(){
+  const tr = S.tracks.length ? S.tracks : ['genai'];
+  $('intChips').innerHTML = tr.map(t => `<div class="igroup">${TRACKS.find(x => x.id === t).t}</div><div class="chips">${INTS.filter(i => i.tr === t).map(i => {
+    const k = S.interests.indexOf(i.id);
+    return `<button class="chip ${k>=0?'sel':''}" onclick="toggleInt('${i.id}')">${i.t}${k===0?' <span class="star">Anchor</span>':''}</button>`;
+  }).join('')}</div>`).join('');
+  const sel = S.interests, total = overlapCount(sel), across = Math.round(total * (S.school === 'mit' ? .47 : .53));
+  $('overlap').innerHTML = sel.length < 2
+    ? `<div class="num" style="color:var(--ink-faint)">—</div><p>Pick two or more and I’ll show how many people share them.</p>`
+    : `<div class="num">${total}</div><div style="flex:1"><p><b>people share two or more of these.</b> ${across} of them are across the river at ${otherSchool()}.</p><div class="split-bar"><i style="width:${across/total*100}%;background:${S.school==='mit'?'var(--hbs)':'var(--mit)'}"></i><i style="width:${(1-across/total)*100}%;background:${S.school==='mit'?'var(--mit)':'var(--hbs)'}"></i></div></div>`;
+  const b = $('intNext'), n = sel.length;
+  b.disabled = n < 3; b.textContent = n < 3 ? `Pick ${3-n} more` : 'Continue';
+}
+function toggleInt(id){
+  const k = S.interests.indexOf(id);
+  if (k >= 0) S.interests.splice(k, 1);
+  else if (S.interests.length < 5) S.interests.push(id);
+  else { toast('Charlie', 'Five is the max. Narrow is good. It gives me something to seat you around.'); return; }
+  renderInts();
+}
+
+function renderLens(){
+  $('lensList').innerHTML = LENS.map(l => `<button class="opt ${S.lens===l.id?'sel':''}" onclick="pickLens('${l.id}')">${l.t}<small>${l.s}</small></button>`).join('');
+  $('beforeChips').innerHTML = BEFORE.map((b, i) => `<button class="chip ${S.before===b?'sel':''}" onclick="S.before=BEFORE[${i}];renderLens()">${b}</button>`).join('');
+  $('lensNext').disabled = !(S.lens && S.before);
+}
+function pickLens(id){ const first = S.lens !== id; S.lens = id; renderLens(); if (first) note('lensNote', LENS.find(l => l.id === id).note); }
+
+function renderTakes(){
+  $('takeList').innerHTML = takesList().map(t => `<div class="take"><p>${t.t}</p><div class="seg">${['disagree','depends','agree'].map(v => `<button class="${S.takes[t.id]===v?'sel':''}" onclick="pickTake('${t.id}','${v}')">${STANCE[v]}</button>`).join('')}</div></div>`).join('');
+  $('takeNext').disabled = Object.keys(S.takes).length < 3;
+}
+function pickTake(id, v){
+  S.takes[id] = v; renderTakes();
+  if (Object.keys(S.takes).length === 3) note('takeNote', 'Good. I’ll make sure someone at your table disagrees with you. Politely. Now, part two: the people.');
+}
+
+/* ---------------- Part two: How you connect ---------------- */
+function renderRead(){
+  const a = ax();
+  $('readPanel').innerHTML = `<div class="axhint"><span class="orb sm"></span>Charlie is reading you</div>` + AXES.map(x => {
+    const v = a[x.k];
+    return `<div class="ax"><span class="axl ${v<50?'lead':''}">${x.lo}</span><div class="axtrack"><span class="axthumb" style="left:${v}%"></span></div><span class="axr ${v>50?'lead':''}">${x.hi}</span></div>`;
+  }).join('');
+}
+function renderQ(){
+  const q = QS[S.qi];
+  $('qk').textContent = `Part two · How you connect · ${S.qi + 1} of 4`;
+  $('qsub').style.display = S.qi === 0 ? '' : 'none';
+  $('qq').textContent = q.q;
+  const chosen = S.answers[S.qi];
+  $('qopts').className = 'opts';
+  $('qopts').innerHTML = q.o.map((o, i) => `<button class="opt ${chosen===i?'sel':''}" onclick="answer(${i})">${o.t}</button>`).join('');
+  $('qnote').innerHTML = '';
+  renderRead(); setStep('q');
+}
+function answer(i){
+  if ($('qopts').classList.contains('locked')) return;
+  S.answers[S.qi] = i;
+  $('qopts').classList.add('locked');
+  [...$('qopts').children].forEach((b, k) => b.classList.toggle('sel', k === i));
+  renderRead();
+  note('qnote', QS[S.qi].o[i].note);
+  setTimeout(() => { if (cur !== 'q') return; if (S.qi < 3) { S.qi++; renderQ(); } else go('life'); }, 1700);
+}
+function renderLife(){
+  $('rhythmSeg').innerHTML = RHYTHM.map(([v, l], i) => `<button class="${S.rhythm===v?'sel':''}" onclick="S.rhythm=RHYTHM[${i}][0];renderLife()">${l}</button>`).join('');
+  $('lifeChips').innerHTML = LIFE.map((l, i) => `<button class="chip ${S.life.has(l)?'sel':''}" onclick="toggleSet('life',${i})">${l}</button>`).join('');
+  $('actChips').innerHTML = ACTS.map((l, i) => `<button class="chip ${S.acts.has(l)?'sel':''}" onclick="toggleSet('acts',${i})">${l}</button>`).join('');
+  $('lookList').innerHTML = LOOK.map(o => `<button class="opt ${S.look===o.id?'sel':''}" onclick="pickLook('${o.id}')">${o.t}</button>`).join('');
+  $('lifeNext').disabled = !(S.rhythm && S.look);
+}
+function toggleSet(k, i){ const v = (k === 'life' ? LIFE : ACTS)[i]; S[k].has(v) ? S[k].delete(v) : S[k].add(v); renderLife(); }
+function pickLook(id){ const first = S.look !== id; S.look = id; renderLife(); if (first) note('lookNote', LOOK.find(o => o.id === id).note); }
+
+function renderResult(){
+  const c = codeOf(ax());
+  $('resK').textContent = `${meName()}’s Friend Persona`;
+  $('pName').innerHTML = personaHTML(c);
+  $('pCode').textContent = pretty(c);
+  $('pTag').textContent = PERSONAS[c][2];
+  $('pTraits').innerHTML = c.split('').map(l => `<div class="trait"><i>${l}</i><div>${TRAITS[l]}</div></div>`).join('');
+  const best = (c[0] === 'S' ? 'L' : 'S') + c[1] + (c[2] === 'H' ? 'G' : 'H') + c[3];
+  $('pBest').innerHTML = `<div class="ctitle">Best seated with</div><div style="font-size:20px;font-weight:600;letter-spacing:-.015em">${personaHTML(best)}</div><div class="sub2" style="margin-top:6px;line-height:1.5">You’re both ${c[1]==='D' ? 'happiest when the talk goes deep' : 'happiest when it stays playful'}, and you both love ${c[3]==='A' ? 'trying something new' : 'a good ritual'}. ${c[2]==='H' ? 'You make the plans; they always show up.' : 'They make the plans; you always show up.'}</div>`;
+  const topicN = Math.round(overlapCount(tableInts().length >= 2 ? tableInts() : DEFAULT_INTS[trk().id]) * (S.school === 'mit' ? .47 : .53));
+  const kinN = Math.min(41, 17 + S.acts.size * 3 + (S.look ? 4 : 0));
+  $('pTables').innerHTML = `<div class="ctitle">Two kinds of tables for you</div>
+    <div class="trow"><span class="ti">${ICON[trk().id]}</span><div class="grow"><b>Topic table · ${trk().t}</b><small><b style="display:inline;color:var(--ink)">${topicN}</b> people at ${otherSchool()} share your interests. Wednesdays.</small></div></div>
+    <div class="trow"><span class="ti">${ICON.kin}</span><div class="grow"><b>Kindred table</b><small><b style="display:inline;color:var(--ink)">${kinN}</b> people at ${otherSchool()} you’d likely click with, whatever their topic. Fridays.</small></div></div>`;
+}
+
+/* ---------------- Seat ---------------- */
+const DIETS = ['Vegetarian','Vegan','Halal','Kosher','Gluten-free','Alcohol-free table'];
+function renderSeat(){
+  $('seatConfirm').classList.remove('on');
+  if (!S.date || isKin() !== S.date.startsWith('Fri')) S.date = isKin() ? 'Fri, Oct 16' : 'Wed, Oct 14';
+  $('typeCards').innerHTML = [
+    ['topic', `Topic table · ${trk().t}`, 'Same obsession, different takes, seated with people you’d get along with.', 'Wednesdays · 7:30 PM', 'Best first table', ICON[trk().id]],
+    ['kindred', 'Kindred table', 'People you’d actually be friends with. The topic is just how the night starts.', 'Fridays · 7:30 PM', 'Most social', ICON.kin]
+  ].map(([id, t, d, when, tag, ic]) => `<button class="track ${S.tableType===id?'sel':''}" onclick="S.tableType='${id}';S.date=null;renderSeat()"><span class="ti">${ic}</span><div class="grow"><b>${t}<span class="tag">${tag}</span></b><small>${d}</small><div class="tn" style="color:var(--ink-soft)">${when}</div></div><span class="tick">${ICON.check}</span></button>`).join('');
+  $('dateLabel').textContent = `Which ${T().day}?`;
+  const dates = isKin() ? ['Fri, Oct 16','Fri, Oct 23','Fri, Oct 30'] : ['Wed, Oct 14','Wed, Oct 21','Wed, Oct 28'];
+  $('dateChips').innerHTML = dates.map(d => `<button class="chip ${S.date===d?'sel':''}" onclick="S.date='${d}';renderSeat()">${d}</button>`).join('');
+  $('sizeSeg').innerHTML = ['Six','Four','Either'].map(v => `<button class="${S.size===v?'sel':''}" onclick="S.size='${v}';renderSeat()">${v}</button>`).join('');
+  $('dietChips').innerHTML = DIETS.map((v, i) => `<button class="chip ${S.diet.has(v)?'sel':''}" onclick="S.diet.has(DIETS[${i}])?S.diet.delete(DIETS[${i}]):S.diet.add(DIETS[${i}]);renderSeat()">${v}</button>`).join('');
+}
+function holdSeat(){
+  S.seatSaved = true; S.tableSet = false; S.dinnerDone = false; S.picks = new Set(); S.mutual = [];
+  $('seatConfirmP').textContent = `${T().label}, ${T().long}, 7:30 PM. I set the table ${T().set} at noon and open your group chat then. Until then, nothing to do.`;
+  $('seatConfirm').classList.add('on');
+}
+
+/* ---------------- Home ---------------- */
+function renderHome(){
+  const t = T();
+  $('homeDate').textContent = t.long;
+  $('homeSub').textContent = `${t.label} · 7:30 PM · Central Square`;
+  let main;
+  if (!S.seatSaved) {
+    main = `<div class="cardg"><div class="ctitle">No seat yet</div><div style="font-size:15px;line-height:1.5;margin-bottom:14px">Seats close two days before each table.</div><button class="btn" onclick="go('seat')">Save me a seat</button></div>`;
+  } else if (!S.tableSet) {
+    main = `<div class="cardg"><div class="ctitle" style="margin-bottom:4px">Your seat is saved</div><div style="font-size:15px;line-height:1.5">I’m setting your table. You’ll see it ${t.set} at noon.</div><div style="height:14px"></div><button class="btn ghost" style="margin-top:0" onclick="revealTable()">Demo: skip to ${t.set}, 12:00 PM</button></div>`;
+  } else {
+    main = `<div class="cardg"><div class="ctitle">Your table is set</div><div class="row" style="margin-bottom:14px"><div class="avs">${everyone().map(id => av(id,'s')).join('')}</div><div class="sub2">${isKin() ? 'Three from each side · picked for fit' : `Three from each side · anchored on ${tagName(anchor()[0][0])}`}</div></div><div class="row" style="gap:8px"><button class="btn sm" style="flex:1" onclick="go('table')">See the table</button><button class="btn sm ghost" style="flex:1;margin-top:0" onclick="go('chat')">Group chat</button></div>${S.dinnerDone ? '' : `<button class="link" onclick="go('dinner')">Demo: skip to ${t.day}, 7:30 PM</button>`}</div>`;
+  }
+  $('homeMain').innerHTML = main;
+  const steps = [
+    ['Seat saved', 'Seats close two days before', S.seatSaved],
+    [`Table set · ${t.set} 12:00 PM`, 'Your five, and why. Group chat opens.', S.tableSet],
+    [`Spot revealed · ${t.day} 12:00 PM`, 'A restaurant in Central Square', S.tableSet && S.dinnerDone],
+    [`Dinner · ${t.day} 7:30 PM`, 'Three rounds, phones down', S.dinnerDone],
+    [`See again? · ${t.next} 10:00 AM`, 'Only mutual picks connect', S.dinnerDone]
+  ];
+  const nowIdx = steps.findIndex(s => !s[2]);
+  $('timeline').innerHTML = steps.map((s, i) => `<li class="${s[2]?'done':(i===nowIdx?'now':'')}"><span class="d">${s[2]?ICON.check:''}</span><div><b>${s[0]}</b><small>${s[1]}</small></div></li>`).join('');
+  $('weekK').textContent = isKin() ? 'Tonight’s seed' : `This week in ${trk().t}`;
+  $('weekQ').textContent = isKin() ? 'What does a good friend do that nobody thanks them for?' : trk().q;
+  $('weekS').textContent = isKin() ? 'Every Kindred table starts here. Where it goes is up to you.' : 'Every table in this track gets this question. Yours gets it with a twist.';
+}
+function revealTable(){
+  S.tableSet = true;
+  toast(`Charlie · ${T().set} 12:00 PM`, isKin() ? 'Your Kindred table is set. Five people I think you’ll actually like.' : 'Your table is set. Five people, and one argument waiting to happen.');
+  setTimeout(() => go('table'), 900);
+}
+
+/* ---------------- Table ---------------- */
+function anchor(){
+  const c = {}; everyone().forEach(id => tags(id).forEach(i => c[i] = (c[i] || 0) + 1));
+  return Object.entries(c).sort((a, b) => b[1] - a[1]);
+}
+function seats(){
+  const top = [], bottom = [];
+  members().forEach(id => (PEOPLE[id].sc === 'mit' ? top : bottom).push(id));
+  (S.school === 'mit' ? top : bottom).splice(1, 0, 'me');
+  const xs = [19, 50, 81];
+  return [...top.map((id, i) => ({id, x:xs[i], y:19.4, up:true})), ...bottom.map((id, i) => ({id, x:xs[i], y:80.6}))];
+}
+let tvSel = null;
+function renderTable(){
+  const t = T();
+  $('tKick').textContent = `${t.label} · ${t.date} · 7:30 PM`;
+  $('tTitle').innerHTML = isKin() ? 'Your people are <span class="it">here</span>.' : 'Your table is <span class="it">set</span>.';
+  $('tSub').textContent = `${isKin() ? 'No topic, just good company' : trk().t} · Central Square · the exact spot is revealed ${t.day} at noon`;
+  $('tvLabel').textContent = isKin() ? 'Tap one to see who shares it' : 'Tap an interest to see who shares it';
+  const st = seats();
+  $('tv').innerHTML = `<div class="tbl"><svg viewBox="0 0 240 108" preserveAspectRatio="none"><path d="M10 54 C 60 40, 100 68, 140 52 S 210 40, 232 54" fill="none" stroke="#C3D2DF" stroke-opacity=".7" stroke-width="18" stroke-linecap="round"/></svg><div class="bank t">Kendall</div><div class="bank b">Allston</div></div><svg class="lines" id="tvLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>` +
+    st.map((s, i) => { const p = getP(s.id); return `<button class="seat ${p.me?'me':''} ${s.up?'up':''}" data-id="${s.id}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i*.08}s" onclick="${p.me ? '' : `openPerson('${s.id}')`}">${av(s.id)}<div class="nm">${p.me ? 'You' : p.n}</div><div class="sc">${SCHOOLNAME[p.sc]}</div></button>`; }).join('');
+  const an = anchor(), mine = tags('me');
+  $('tvChips').innerHTML = an.filter(([, n]) => n >= 2).map(([id, n]) => `<button class="chip ${mine.includes(id)?'mine':''}" data-i="${id}" onclick="hiInt(this.dataset.i)">${tagName(id)} <span style="opacity:.55">${n}</span></button>`).join('');
+  $('why').innerHTML = whyLines().map(l => `<p>${l}</p>`).join('');
+  $('plist').innerHTML = members().map(id => {
+    const p = getP(id), tg = isKin() ? p.acts : p.ints;
+    return `<button class="prow" onclick="openPerson('${id}')">${av(id)}<div class="grow" style="flex:1;text-align:left"><div class="nm">${p.n} ${p.l}. <span class="badge ${p.sc}">${SCHOOLNAME[p.sc]}</span></div><div class="meta">${isKin() ? personaText(p.code) + ' · ' + p.before : p.yr + ' · ' + p.before}</div><div class="ask">“Ask me about ${lc1(p.ask)}.”</div><div class="chips">${tg.map(i => `<span class="chip mini ${mine.includes(i)?'mine':''}">${tagName(i)}</span>`).join('')}</div></div></button>`;
+  }).join('');
+  tvSel = null;
+  setTimeout(() => { if (cur === 'table') hiInt(an[0][0]); }, 700);
+}
+function hiInt(id){
+  tvSel = tvSel === id ? null : id;
+  document.querySelectorAll('#tvChips .chip').forEach(c => c.classList.toggle('sel', c.dataset.i === tvSel));
+  const st = seats(), on = tvSel ? st.filter(s => tags(s.id).includes(tvSel)) : [];
+  document.querySelectorAll('#tv .seat').forEach(el => {
+    const has = on.some(s => s.id === el.dataset.id);
+    el.classList.toggle('hi', !!tvSel && has); el.classList.toggle('dim', !!tvSel && !has);
+  });
+  // Draw only the bridges: each Kendall-side seat to each Allston-side seat that shares it.
+  let lines = '', k = 0;
+  on.filter(s => s.up).forEach(a => on.filter(s => !s.up).forEach(b => {
+    const cx = (a.x + b.x) / 2 * .7 + 50 * .3;
+    lines += `<path d="M${a.x} ${a.y + 9.4} Q ${cx} 50 ${b.x} ${b.y - 9.4}" vector-effect="non-scaling-stroke" style="animation-delay:${k++ * .05}s"/>`;
+  }));
+  $('tvLines').innerHTML = lines;
+  if (!tvSel) { $('tvCap').textContent = 'Tap one above.'; return; }
+  const meHas = tags('me').includes(tvSel), n = on.length;
+  const verb = INTNAME[tvSel] ? `picked ${INTNAME[tvSel]}` : ACTV[tvSel] ? `want to ${ACTV[tvSel]}` : LIFEV[tvSel];
+  $('tvCap').innerHTML = `<b>${countWord(n)} of you</b> ${verb}${meHas ? ', you included' : ''}.`;
+}
+const lowWord = n => n === 6 ? 'all six' : NUMW[n];
+function depthLine(){ const d = everyone().filter(id => getP(id).code[1] === 'D').length; return d >= 4 ? `${lowWord(d)} of you would rather go deep than keep it light` : d <= 2 ? `${lowWord(6 - d)} of you like to keep it playful` : 'three of you go deep, three keep it light'; }
+function hostLine(){ const h = everyone().filter(id => getP(id).code[2] === 'H').length; return `${NUMW[h]} of you ${h > 1 ? 'are hosts' : 'is a host'}, so “let’s do this again” will actually happen`; }
+function whyLines(){
+  const ids = everyone(), faces = 'Three from Allston, three from Kendall, and nobody shares a section or a cohort. Every face is new.';
+  if (isKin()) {
+    const actC = {}, lifeC = {};
+    ids.forEach(id => { const p = getP(id); p.acts.forEach(a => actC[a] = (actC[a] || 0) + 1); p.life.forEach(l => lifeC[l] = (lifeC[l] || 0) + 1); });
+    const topAct = Object.entries(actC).sort((a, b) => b[1] - a[1])[0], topLife = Object.entries(lifeC).sort((a, b) => b[1] - a[1])[0];
+    const out = [cap(depthLine()) + '.', cap(hostLine()) + '.'];
+    if (topAct) out.push(`<b>${countWord(topAct[1])} of you</b> want to ${ACTV[topAct[0]]}. A Saturday is already half-planned.`);
+    if (topLife && topLife[1] >= 2) out.push(`${countWord(topLife[1])} of you ${LIFEV[topLife[0]]}.`);
+    out.push(faces);
+    return out;
+  }
+  const an = anchor()[0];
+  const l1 = `${countWord(an[1])} of you picked <b>${INTNAME[an[0]]}</b>.`;
+  const lc = {}; ids.forEach(id => { const l = getP(id).lens; lc[l] = (lc[l] || 0) + 1; });
+  const V = {build:['builds','build'], fund:['funds','fund'], run:['runs','run'], study:['studies','study']};
+  const parts = ['build','fund','run','study','pivot'].filter(l => lc[l]).map((l, i) => {
+    const n = lc[l], w = i === 0 ? `${cap(NUMW[n])}${n > 1 ? ' of you' : ''}` : NUMW[n];
+    if (l === 'pivot') return `${w} ${n > 1 ? 'are' : 'is'} new to it`;
+    return `${w} ${n > 1 ? V[l][1] : V[l][0]} it`;
+  });
+  const l2 = parts.length > 1 ? parts.slice(0, -1).join(', ') + ', and ' + parts[parts.length - 1] + '.' : parts[0] + '.';
+  const sp = bestSplit();
+  const l3 = `You split <b>${sp.a}–${sp.d}</b> on “${sp.t}.”${sp.dep ? ` ${cap(NUMW[sp.dep])} of you said it depends.` : ''} Good.`;
+  const l4 = `Beyond ${trk().t}: ${depthLine()}, and ${hostLine()}.`;
+  return [l1, l2, l3, l4, faces];
+}
+function bestSplit(){
+  let best = null;
+  takesList().forEach(t => {
+    let a = 0, d = 0, dep = 0;
+    everyone().forEach(id => { const v = (getP(id).takes || {})[t.id] || 'depends'; v === 'agree' ? a++ : v === 'disagree' ? d++ : dep++; });
+    const score = (a && d) ? Math.abs(a - d) - (a + d) * .01 : 99;
+    if (!best || score < best.score) best = {id:t.id, t:t.t.replace(/\.$/, ''), a, d, dep, score};
+  });
+  return best;
+}
+function openPerson(id){
+  const p = getP(id), me = getP('me'), lens = LENS.find(l => l.id === p.lens);
+  const sharedInts = p.ints.filter(i => me.ints.includes(i)), sharedActs = p.acts.filter(a => me.acts.includes(a));
+  const diff = takesList().find(t => p.takes[t.id] !== (S.takes[t.id] || 'depends')) || takesList()[0];
+  const chips = (arr, all) => all.map(i => `<span class="chip mini ${arr.includes(i)?'mine':''}">${tagName(i)}</span>`).join('');
+  $('sheet').innerHTML = `<div class="grab"></div>
+    <div class="row">${av(id,'l')}<div class="grow"><div style="font-size:22px;font-weight:600;letter-spacing:-.02em">${p.n} ${p.l}.</div><div class="sub2"><span class="badge ${p.sc}">${SCHOOLNAME[p.sc]}</span> ${p.yr}</div></div></div>
+    <div class="cnote" style="display:block"><span style="font-family:var(--italic);font-style:italic;font-size:19px;line-height:1.35">“Ask me about ${lc1(p.ask)}.”</span></div>
+    <div style="height:8px"></div>
+    <div class="kv"><span>Before</span><div>${p.before}</div></div>
+    <div class="kv"><span>Friend Persona</span><div>${personaHTML(p.code)}</div></div>
+    ${isKin() ? '' : `<div class="kv"><span>Angle</span><div>${lens.t}</div></div><div class="kv"><span>Into</span><div class="chips" style="gap:5px">${chips(sharedInts, p.ints)}</div></div>`}
+    <div class="kv"><span>Outside dinner</span><div class="chips" style="gap:5px">${chips(sharedActs, p.acts)}</div></div>
+    <div class="kv"><span>Right now</span><div>${p.life.join(' · ')}</div></div>
+    ${isKin() ? '' : `<div class="kv"><span>Where you differ</span><div>“${diff.t}”<br><span class="stance">${p.n}: ${STANCE[p.takes[diff.id]]}</span> <span class="stance">You: ${STANCE[S.takes[diff.id] || 'depends']}</span></div></div>`}
+    <div style="height:16px"></div><button class="btn ghost" style="margin-top:0" onclick="closeSheet()">Close</button>`;
+  $('sheetBg').classList.add('on'); $('sheet').classList.add('on');
+}
+function closeSheet(){ $('sheetBg').classList.remove('on'); $('sheet').classList.remove('on'); }
+
+/* ---------------- Chat ---------------- */
+function bubble(id, text){
+  if (id === 'me') return `<div class="m me"><div class="bub">${text}</div></div>`;
+  const p = PEOPLE[id];
+  return `<div class="m">${av(id,'s')}<div><div class="who">${p.n} · ${SCHOOLNAME[p.sc]}</div><div class="bub">${text}</div></div></div>`;
+}
+function renderChat(){
+  const t = T();
+  $('chatTitle').textContent = `Table ${t.no}`;
+  $('chatSub').textContent = `${t.label} · ${t.date.split(', ')[0]} 7:30 PM · Central Square`;
+  $('chatStack').innerHTML = everyone().map(id => av(id,'s')).join('');
+  const key = S.tableType + trk().id + S.school;
+  if (S.chatKey !== key) {
+    S.chatKey = key; S.chatCount = 0;
+    const w = whyLines(), host = (h, body) => `<div class="host"><div class="hh"><span class="orb sm"></span>${h}</div>${body}</div>`;
+    $('msgs').innerHTML = `<div class="day">${t.set} 12:00 PM</div>` + (isKin()
+      ? host('Charlie · your host', `<p>Welcome, table ${t.no}. No topic tonight, just good company. Here’s why you six.</p><p>${w[0]} ${w[2] || ''}</p>`) +
+        host(`Warm-up before ${t.day}`, `<p class="wq">What’s something you’re weirdly good at?</p>`) +
+        bubble('dev', 'Parallel parking in the North End. Undefeated.') +
+        bubble('priya', 'Finding the one quiet table in any bar. It’s a gift.') +
+        bubble('tomas', 'Cooking for twelve with one pan. Bring an appetite.') +
+        bubble('sam', 'Getting a two-year-old to sleep in under ten minutes. I’ll be the tired one.')
+      : host('Charlie · your host', `<p>Welcome, table ${t.no}. Here’s why you six.</p><p>${w[0]} ${w[1]}</p><p>Priya and Dev disagree on “${TRACK_TAKE[trk().id].replace(/\.$/, '')}.” I sat them across from each other on purpose.</p>`) +
+        host(`Warm-up before ${t.day}`, `<p class="wq">What’s the most useful thing an AI did for you this week? Embarrassing answers count double.</p>`) +
+        bubble('dev', 'Mine rewrote my cold email to a founder. She replied in four minutes. I have never felt so replaceable.') +
+        bubble('priya', 'Mine wrote a unit test that tested nothing, very confidently. Ask me on Wednesday why that’s the whole problem.') +
+        bubble('tomas', 'Asked one to plan a grid upgrade. It suggested we “simply add more power.” Inspiring.') +
+        bubble('sam', 'Priya, please say that again across the table. Slowly. Dev needs to hear it.'));
+  }
+  const warm = isKin() ? 'Remembering everyone’s coffee order after hearing it once.' : 'Honestly? It summarized a case for me and I didn’t check it. The cold call went… fine.';
+  $('qr').innerHTML = `<button class="chip" id="qrWarm">Answer the warm-up</button><button class="chip" onclick="sendChat('Hi all! Can’t wait.')">Say hi</button><button class="chip" onclick="toast('Charlie','Your seat goes to the waitlist. The table won’t be told why.')">I can’t make it</button>`;
+  $('qrWarm').onclick = () => { $('chatIn').value = warm; $('chatIn').focus(); };
+  setTimeout(() => $('msgs').scrollTop = $('msgs').scrollHeight, 50);
+}
+function sendChat(text){
+  const v = (text || $('chatIn').value).trim(); if (!v) return;
+  $('chatIn').value = '';
+  const box = $('msgs');
+  box.insertAdjacentHTML('beforeend', bubble('me', v.replace(/</g, '&lt;')));
+  const replies = [['priya', 'Ha. Okay, I need to hear more about this.'], ['dev', 'This table is going to be good.'], ['tomas', 'Bringing this up at dinner. You’ve been warned.'], ['sam', 'Love it. See you all soon.']];
+  const r = replies[S.chatCount++ % replies.length];
+  box.insertAdjacentHTML('beforeend', `<div class="m" id="typing">${av(r[0],'s')}<div class="bub typing"><i></i><i></i><i></i></div></div>`);
+  box.scrollTop = box.scrollHeight;
+  setTimeout(() => {
+    const ty = $('typing'); if (ty) ty.remove();
+    box.insertAdjacentHTML('beforeend', bubble(r[0], r[1]));
+    if (S.chatCount === 1) box.insertAdjacentHTML('beforeend', `<div class="host"><div class="hh"><span class="orb sm"></span>Charlie</div><p>Noted. I’m saving that for round two.</p></div>`);
+    box.scrollTop = box.scrollHeight;
+  }, 1300);
+}
+
+/* ---------------- Dinner ---------------- */
+function renderDinner(){
+  const t = T();
+  $('dinTitle').textContent = `${t.day} · 7:30 PM`;
+  $('deckSub').textContent = isKin() ? 'Three rounds, each a little deeper. I keep time, you keep talking.' : 'Three rounds. I keep time, you keep talking.';
+  $('skipAfter').textContent = `Demo: skip to ${t.next} morning`;
+  const sp = bestSplit();
+  const cards = isKin() ? [
+    ['Round 1', '10 min', 'Origins', 'Where’s home, and what do you miss about it?', 'Go around once. Everyone answers, nobody follows up yet.'],
+    ['Round 2', '20 min', 'Go deeper', 'What’s something you’re proud of that nobody here would guess?', 'Go around. The person on your left asks one follow-up before you pass it on.'],
+    ['Round 3', '20 min', 'Plan the next one', 'Pick one thing you’ll do together in the next three weeks.', 'A run, a show, dinner at someone’s place. Name a host and a date before the check comes. I’ll send the reminder.'],
+    ['Last', '1 min', 'Before you go', 'Who do you want to see again?', 'Don’t say it out loud. Tell me tomorrow at 10. Only mutual picks are shared.']
+  ] : [
+    ['Round 1', '10 min', 'Origins', 'What did you almost do instead of business school?', 'Go around once. Everyone answers, nobody follows up yet.'],
+    ['Round 2', '20 min', 'The split', `You split ${sp.a}–${sp.d} on “${sp.t}”`, 'Switch sides. Argue the position you disagree with, then vote again. Changing your mind counts as winning.'],
+    ['Round 3', '25 min', 'Napkin startup', `Build one ${trk().t} company together before dessert.`, 'MIT side: what it does and how it works. HBS side: who pays and how much. Pitch it in one sentence when the check comes.'],
+    ['Last', '1 min', 'Before you go', 'Who do you want to see again?', 'Don’t say it out loud. Tell me tomorrow at 10. Only mutual picks are shared.']
+  ];
+  $('deck').innerHTML = cards.map(c => `<div class="dcard"><div class="dk"><span>${c[0]}</span><span>${c[1]}</span></div><h3>${c[2]}</h3><p class="dq">${c[3]}</p><div class="dh">${c[4]}</div></div>`).join('');
+  $('deckDots').innerHTML = cards.map((_, i) => `<i class="${i===0?'on':''}"></i>`).join('');
+  $('deck').scrollLeft = 0;
+  $('deck').onscroll = () => {
+    const d = $('deck'), w = d.firstElementChild.offsetWidth + 12, i = Math.round(d.scrollLeft / w);
+    [...$('deckDots').children].forEach((el, k) => el.classList.toggle('on', k === i));
+  };
+}
+function phonesDown(on){ $('pd').classList.toggle('on', on); }
+
+/* ---------------- After ---------------- */
+function renderAfter(){
+  $('afterTitle').textContent = `${T().next} · 10:00 AM`;
+  const labels = ['Flat','Fine','Good','Great','Electric'];
+  $('rate').innerHTML = labels.map((l, i) => `<button class="${S.rating===i+1?'sel':''}" onclick="S.rating=${i+1};renderAfterRate()"><i></i>${l}</button>`).join('');
+  $('picks').innerHTML = members().map(id => { const p = PEOPLE[id]; return `<button class="pick ${S.picks.has(id)?'sel':''}" onclick="togglePick('${id}')">${av(id)}<div class="grow"><b>${p.n} ${p.l}.</b><small>${SCHOOLNAME[p.sc]} · ${personaText(p.code)}</small></div><span class="box">${ICON.check}</span></button>`; }).join('');
+  $('afterRes').innerHTML = S.dinnerDone ? afterResult() : '';
+  $('afterBtn').classList.toggle('hide', S.dinnerDone);
+}
+function renderAfterRate(){ [...$('rate').children].forEach((b, i) => b.classList.toggle('sel', S.rating === i + 1)); }
+function togglePick(id){ if (S.dinnerDone) return; S.picks.has(id) ? S.picks.delete(id) : S.picks.add(id); renderAfter(); }
+function sendAfter(){
+  S.dinnerDone = true;
+  S.mutual = [...S.picks].filter(id => LIKES_YOU.includes(id));
+  renderAfter();
+  setTimeout(() => { const sc = $('s-after').querySelector('.scroll'); sc.scrollTo({top:sc.scrollHeight, behavior:'smooth'}); }, 80);
+}
+const nameList = ids => { const n = ids.map(id => PEOPLE[id].n); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0]; };
+function afterResult(){
+  const stand = $('standTog').classList.contains('on');
+  let h;
+  if (S.mutual.length) {
+    const cross = S.mutual.some(id => PEOPLE[id].sc !== (S.school || 'hbs'));
+    h = `<div class="cnote"><span class="orb"></span><p><b>It’s mutual</b>With ${nameList(S.mutual)}. ${cross ? 'That’s a new bridge across the river.' : ''}</p></div>`;
+    if (S.mutual.length >= 2) h += `<div class="cardg" style="margin-top:12px"><div class="ctitle">Reunion table</div><div style="font-size:14.5px;line-height:1.55">I’m seating you, ${nameList(S.mutual)} together again on <b>${shiftDate(21)}</b>, with two new faces. Friendships take more than one dinner.</div></div>`;
+    h += `<div class="cardg" style="margin-top:12px;padding-top:4px;padding-bottom:4px">${S.mutual.map(id => `<div class="prow" style="align-items:center">${av(id)}<div style="flex:1"><div class="nm">${PEOPLE[id].n} ${PEOPLE[id].l}.</div><div class="meta">Picked you too</div></div><button class="btn sm" onclick="toast('${PEOPLE[id].n}','Coffee chat open. Charlie suggests somewhere halfway, like Central Square.')">Coffee?</button></div>`).join('')}</div>`;
+  } else if (S.picks.size) h = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>Nothing mutual yet. Your picks stay private, and nobody learns about them.</p></div>`;
+  else h = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>No picks this time. That’s fine. I still learned what made the table work.</p></div>`;
+  if (stand) h += `<div class="cardg" style="margin-top:12px"><div class="ctitle">Standing table</div><div style="font-size:14.5px;line-height:1.5">Four of six want to do this again. I’m holding <b>${shiftDate(28)}</b> for table ${T().no}.</div></div>`;
+  h += `<div style="height:14px"></div><button class="btn" onclick="go('bridge')">See your bridge</button>`;
+  return h;
+}
+
+/* ---------------- Bridge ---------------- */
+function renderBridge(){
+  const mine = S.school || 'hbs', meY = mine === 'mit' ? 64 : 236;
+  const met = S.dinnerDone ? members() : [];
+  const sideSlots = {mit:[[70,72],[290,72],[180,50]], hbs:[[70,228],[290,228],[180,250]]};
+  const used = {mit:0, hbs:0}, pos = {};
+  met.forEach(id => { const sc = PEOPLE[id].sc; let slots = sideSlots[sc]; if (sc === mine) slots = slots.slice(0, 2); pos[id] = slots[used[sc]++]; });
+  let svg = `<defs><linearGradient id="rv" x1="0" x2="1"><stop offset="0" stop-color="#AFC2D3" stop-opacity=".35"/><stop offset=".5" stop-color="#B9CADA" stop-opacity=".8"/><stop offset="1" stop-color="#AFC2D3" stop-opacity=".35"/></linearGradient></defs>
+    <rect x="0" y="0" width="360" height="300" rx="18" fill="#F7F8F8"/>
+    <rect x="0" y="0" width="360" height="128" rx="18" fill="#EEF2F5"/>
+    <rect x="0" y="172" width="360" height="128" rx="18" fill="#F7EEEE"/>
+    <path d="M0 132 C 60 118, 120 146, 180 132 S 300 118, 360 132 L 360 170 C 300 184, 240 156, 180 170 S 60 184, 0 170 Z" fill="url(#rv)"/>
+    <path class="flow" d="M0 151 C 60 137, 120 165, 180 151 S 300 137, 360 151" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.3"/>
+    <text x="16" y="22" fill="#3F5B74">KENDALL · MIT</text>
+    <text x="16" y="288" fill="#9F4D5A">ALLSTON · HBS</text>`;
+  met.forEach((id, k) => {
+    const [x, y] = pos[id], cross = PEOPLE[id].sc !== mine, mu = S.mutual.includes(id);
+    const cx = cross ? (180 + x) / 2 + (x === 180 ? 46 : (x - 180) * .45) : (180 + x) / 2, cy = cross ? 150 : (meY + y) / 2 + (mine === 'mit' ? 22 : -22);
+    svg += `<path class="barc" style="animation-delay:${.15 + k * .12}s" d="M180 ${meY} Q ${cx} ${cy} ${x} ${y}" fill="none" stroke="${mu ? '#1C2024' : '#A9B2BA'}" stroke-width="${mu ? 2.4 : 1.3}" ${mu ? '' : 'stroke-dasharray="3 4"'} stroke-linecap="round"/>`;
+  });
+  met.forEach(id => {
+    const [x, y] = pos[id], p = PEOPLE[id];
+    svg += `<circle cx="${x}" cy="${y}" r="15" fill="${p.sc==='mit' ? '#8DA3B8' : '#C7848C'}" stroke="#fff" stroke-width="2.5"/><text x="${x}" y="${y+4}" text-anchor="middle" fill="#fff" style="font-size:11px;letter-spacing:0">${p.n[0]}</text><text class="nm" x="${x}" y="${y + (p.sc==='mit' ? -21 : 31)}" text-anchor="middle">${p.n}</text>`;
+  });
+  svg += `<circle cx="180" cy="${meY}" r="18" fill="${mine==='mit' ? '#8DA3B8' : '#C7848C'}" stroke="#1C2024" stroke-width="2.5"/><text x="180" y="${meY+4}" text-anchor="middle" fill="#fff" style="font-size:12px;letter-spacing:0">${initials(getP('me'))}</text><text class="nm" x="180" y="${meY + (mine==='mit' ? -25 : 34)}" text-anchor="middle">You</text>`;
+  if (!S.dinnerDone) svg += `<text x="180" y="154" text-anchor="middle" fill="#3F5B74" style="font-size:11px;letter-spacing:.04em;font-weight:600">Your first bridge goes up after your first table</text>`;
+  $('bridgeSvg').innerHTML = svg;
+  const across = met.filter(id => PEOPLE[id].sc !== mine).length;
+  $('bridgeSub').textContent = S.dinnerDone ? `One dinner, ${across} new people from ${mine==='mit' ? 'Allston' : 'Kendall'}. Bold lines are people who picked you back.` : 'Every person you meet from the other side of the river becomes a bridge.';
+  $('bstats').innerHTML = [[S.dinnerDone ? 1 : 0, 'tables'], [met.length, 'people met'], [across, 'across the river']].map(([n, l]) => `<div class="stat"><b>${n}</b><small>${l}</small></div>`).join('');
+  const reunion = S.dinnerDone && S.mutual.length >= 2;
+  const ladder = `<div class="ctitle" style="margin-top:${S.dinnerDone ? 18 : 0}px">Friendship ladder</div>
+    <div class="ladder"><span class="${S.dinnerDone ? 'done' : 'now'}">Met once</span><span class="${reunion ? 'now' : ''}">Reunion${reunion ? ' · ' + shiftDate(21).split(', ')[1] : ''}</span><span>Regulars</span></div>
+    <p class="sub2" style="margin:10px 0 0;line-height:1.5">Casual friendship takes about 50 hours together. A table is three. That’s why I keep seating you together.</p>`;
+  $('blist').innerHTML = (S.dinnerDone
+    ? `<div class="ctitle">Your tables</div><div class="row"><div class="avs">${everyone().map(id => av(id,'s')).join('')}</div><div class="grow"><b style="font-size:14.5px">Table ${T().no} · ${T().date.split(', ')[1]}</b><div class="sub2">${isKin() ? 'Kindred' : trk().t} · ${S.mutual.length} mutual${$('standTog').classList.contains('on') ? ' · standing' : ''}</div></div></div>`
+    : '') + ladder;
+}
+
+/* ---------------- Me ---------------- */
+function renderMe(){
+  const sc = S.school || 'hbs', c = codeOf(ax());
+  $('meHead').innerHTML = `${av('me','l')}<div class="grow"><div style="font-size:22px;font-weight:600;letter-spacing:-.02em">${meName()}</div><div class="sub2">${SCHOOLNAME[sc]} · ${S.year || YEARS[sc][0]}</div><span class="pill" style="margin-top:6px">${ICON.check} Verified · ${sc==='mit' ? 'mit.edu' : 'hbs.edu'}</span></div>`;
+  $('mePersona').innerHTML = `<span class="orb md"></span><div class="grow"><div class="ctitle" style="margin-bottom:2px">Friend Persona · ${pretty(c)}</div><div style="font-size:18px;font-weight:600">${personaHTML(c)}</div></div>${ICON.chev}`;
+  const tr = S.tracks.length ? S.tracks : ['genai'];
+  const ints = S.interests.length ? S.interests : DEFAULT_INTS[tr[0]];
+  $('meInts').innerHTML = tr.map(t => `<span class="chip sel">${TRACKS.find(x => x.id === t).t}</span>`).join('') + ints.map((i, k) => `<span class="chip">${INTNAME[i]}${k===0 ? ' <span class="star">Anchor</span>' : ''}</span>`).join('');
+  const look = LOOK.find(o => o.id === S.look);
+  $('meConnect').innerHTML = [S.rhythm, look && look.t, ...S.acts, ...S.life].filter(Boolean).map(v => `<span class="chip">${v}</span>`).join('') || `<span class="sub2">Take the Friend test to fill this in.</span>`;
+  $('meRooms').innerHTML = S.waitRooms.size ? [...S.waitRooms].map(id => { const r = ROOMS.find(x => x.id === id); return `<span class="chip">${r.t} · ${r.w + 1}/24</span>`; }).join('') : `<span class="sub2">None yet. <button class="link" style="display:inline;margin:0" onclick="go('tracks')">Browse rooms</button></span>`;
+}
+
+/* ---------------- Init ---------------- */
+document.querySelectorAll('.scr[data-step]').forEach(s => {
+  s.insertAdjacentHTML('afterbegin', `<div class="topbar"><button class="back" onclick="back()" aria-label="Back">${ICON.back}</button><div class="tb-title"><span class="orb sm"></span>Sixtop</div><div class="tb-step"></div></div><div class="pbar"><div class="pfill"></div></div>`);
+});
+$('glist').innerHTML = SCREENS.map((s, i) => `<li><button data-id="${s.id}" onclick="jump('${s.id}')"><span class="g-n">${i+1}</span><span><div class="g-t">${s.t}</div><div class="g-d">${s.d}</div></span></button></li>`).join('');
+go('start', {noHist:true});
+</script>
+</body>
+</html>

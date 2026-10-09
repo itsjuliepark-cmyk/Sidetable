@@ -1,0 +1,19 @@
+{
+  "name": "sixtop-beta",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Sixtop closed beta: small interest-matched dinners for HBS and MIT",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node scripts/dev.js",
+    "seed": "node scripts/seed.js --reset",
+    "icons": "node scripts/make-icons.js",
+    "test": "node --test test/tables.test.js test/server.test.js",
+    "demo": "node scripts/build-demo.js",
+    "art": "node art/make-art.js && powershell -NoProfile -ExecutionPolicy Bypass -File art/render.ps1",
+    "film": "node art/make-film.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

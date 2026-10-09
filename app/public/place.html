@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sidetable for restaurants</title>
+<style>
+  :root{--paper:#F6F6F4;--ink:#1C2024;--ink-2:#343A41;--soft:#5B626B;--faint:#8A9097;--line:rgba(28,32,36,.1);--ok:#2F6B4A;--okbg:#E3F0E7;--wait:#8A5A1F;--waitbg:#F8ECD9;--no:#8E3B3B;--nobg:#F6E3E3}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  main{max-width:640px;margin:0 auto;padding:28px 16px 48px}
+  .brand{font-size:13px;font-weight:650;color:var(--soft)}
+  h1{font-size:26px;line-height:1.2;margin:4px 0 6px;letter-spacing:-.015em}
+  .lead{color:var(--soft);margin:0 0 18px}
+  .ev{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 12px;box-shadow:0 10px 24px -20px rgba(18,28,38,.35)}
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .top b{font-size:16px}
+  .chip{font-size:12px;font-weight:650;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .held,.confirmed{color:var(--ok);background:var(--okbg)}
+  .asked{color:var(--wait);background:var(--waitbg)}
+  .declined,.released{color:var(--no);background:var(--nobg)}
+  ul{margin:10px 0 0;padding:0;list-style:none}
+  li{padding:7px 0;border-top:1px solid var(--line);color:var(--ink-2)}
+  li:first-child{border-top:0}
+  .small{font-size:13px;color:var(--faint)}
+  .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  button{font:inherit;font-weight:650;border-radius:12px;padding:10px 16px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button.yes{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button.no{color:var(--no)}
+  button:disabled{opacity:.5}
+  .terms{margin-top:22px;font-size:13px;color:var(--soft);white-space:pre-wrap}
+  .err{color:var(--no)}
+</style>
+</head>
+<body>
+<main id="app"><p class="small">Loading…</p></main>
+<script>
+(function () {
+  var K = new URLSearchParams(location.search).get('k') || '';
+  var LABEL = { held: 'Held for Sidetable', asked: 'Waiting for your yes', confirmed: 'Confirmed', declined: 'You can’t host', released: 'Not needed after all' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function diets(d) { return Object.keys(d || {}).map(function (k) { return d[k] + ' ' + k.toLowerCase(); }).join(', '); }
+  function draw(v) {
+    var hold = v.mode !== 'ask';
+    document.getElementById('app').innerHTML = '<div class="brand">Sidetable</div><h1>' + esc(v.name) + '</h1>'
+      + '<p class="lead">' + (hold ? 'These evenings are held for Sidetable (' + esc(v.nights) + ', up to ' + v.holds + ' tables of ' + v.seats + '). Nothing to do unless one can’t work.' : 'Please confirm each evening below, or tell us you can’t host it.') + ' The final count comes at noon the day before. Everyone pays their own check.</p>'
+      + (v.evenings.length ? v.evenings.map(function (e) {
+        var acts = '';
+        if (e.started) acts = '';
+        else if (e.state === 'asked') acts = '<button class="yes" data-d="' + e.date + '" data-ok="1">Confirm</button><button class="no" data-d="' + e.date + '" data-ok="0">We can’t host</button>';
+        else if (e.state === 'held' || e.state === 'confirmed') acts = '<button class="no" data-d="' + e.date + '" data-ok="0">We can’t host this one</button>';
+        return '<div class="ev"><div class="top"><b>' + esc(e.label) + '</b><span class="chip ' + e.state + '">' + (e.more && e.state === 'asked' ? 'One more table: your yes?' : LABEL[e.state]) + '</span></div>'
+          + (e.tables.length ? '<ul>' + e.tables.map(function (t, i) { return '<li>Table ' + (i + 1) + ': <b>' + t.size + ' people</b> at ' + esc(t.time) + (diets(t.diets) ? ' <span class="small">(' + esc(diets(t.diets)) + ')</span>' : '') + (t.captain ? ' <span class="small">ask for ' + esc(t.captain) + '</span>' : '') + '</li>'; }).join('') + '</ul><div class="small" style="margin-top:6px">' + e.covers + ' people in all' + (e.final ? ', final count' : ', may still change until noon the day before') + (e.state === 'asked' && e.by ? '. Please answer by ' + esc(e.by) : '') + '</div>' : '')
+          + (acts ? '<div class="row">' + acts + '</div>' : '') + '</div>';
+      }).join('') : '<p class="small">Nothing on the books for the next three weeks yet.</p>')
+      + (v.terms ? '<div class="terms"><b>Our agreement</b>\n' + esc(v.terms) + '</div>' : '')
+      + '<p class="small" style="margin-top:22px">Questions, or a change on the day? Reply to any Sidetable email. This page is private to ' + esc(v.name) + '.</p>';
+  }
+  function load() { fetch('/api/place?k=' + encodeURIComponent(K)).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'not found'); return j; }); }).then(draw).catch(function (e) { document.getElementById('app').innerHTML = '<div class="brand">Sidetable</div><h1>This link isn’t active</h1><p class="err">' + esc(e.message) + '. Ask Sidetable for a new one.</p>'; }); }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-d]'); if (!b) return;
+    var ok = b.dataset.ok === '1';
+    if (!ok && !b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again: we can’t host'; return; }
+    b.disabled = true;
+    fetch('/api/place', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: K, date: b.dataset.d, ok: ok }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'error'); return j; }); }).then(draw).catch(function (e) { b.disabled = false; alert(e.message); });
+  });
+  load();
+})();
+</script>
+</body>
+</html>
