@@ -1,6 +1,7 @@
-# Sidetable 앱
+# Sidetable 웹앱
 
-- Harvard, MIT 파일럿에서 실제로 쓰는 앱
+- Harvard, MIT 파일럿에서 실제로 쓰는 웹앱
+- 앱스토어 설치 없이 브라우저 링크로 접속, 홈 화면에 추가하면 앱처럼 사용 가능
 - 외부 패키지 없는 Node 서버 파일 하나와 JSON 데이터 파일 하나로 동작 (Amie 베타와 같은 구조)
 - 화면 이름은 Sidetable, 코드 폴더(sixtop/)와 환경 변수(SIXTOP_*)는 예전 이름 그대로
 - Harvard는 HBS뿐 아니라 College, Kennedy School, Law, Medical, SEAS 등 모든 학교 가입 가능
@@ -23,7 +24,7 @@ npm run dev
   - 다음 주: 34명이 가능한 저녁을 이미 고른 상태라 관리자 화면에서 바로 테이블 구성 가능
   - 그 밖에 Hang 6개, Board 글, Long table 신청 15명, 가상의 제휴 식당 4곳
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
-- 앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
+- 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
 
 ## 실제 파일럿 실행
@@ -90,7 +91,7 @@ npm run film
 - 원본 클립 번호와 색 보정은 `art/make-film.js`, 결과물은 `public/video/film.mp4`
 - 컷을 바꾸면 `index.html`의 `FILM_T`도 `film.json`에 맞춰 수정
 
-### 앱 화면
+### 회원 화면
 
 - Amie와 같은 부드러운 라이트 톤, Harvard는 로즈, MIT는 미스트 블루
 - 배경은 색 안개가 천천히 흐르는 Amie의 "방", 탭마다 다른 색
@@ -170,8 +171,8 @@ npm run film
 
 ### 식당 예약 방식
 
-- OpenTable, Resy 등은 외부 앱용 공개 예약 API가 없어 앱에서 직접 예약 불가
-- 대신 제휴 식당이 정해진 저녁에 테이블 몇 개를 Sidetable용으로 확보, 앱은 자리를 채우고 연락만 담당
+- OpenTable, Resy 등은 외부 서비스용 공개 예약 API가 없어 Sidetable에서 직접 예약 불가
+- 대신 제휴 식당이 정해진 저녁에 테이블 몇 개를 Sidetable용으로 확보, Sidetable은 자리를 채우고 연락만 담당
 - Timeleft와 같은 방식
 
 ### 식당
@@ -226,7 +227,7 @@ npm install -g @railway/cli
 - 이 폴더에서 `railway login`, `railway init`, `railway up`, `railway domain` 순서로 실행
 - Railway 대시보드에서 Volume을 `/data`에 연결
 - 환경 변수 `SIXTOP_ADMIN_KEY`, `SIXTOP_DATA_DIR=/data`, `SIXTOP_PUBLIC_URL` 입력
-- 푸시 알림은 HTTPS에서만 동작, 아이폰은 홈 화면에 추가해야 알림 사용 가능
+- 푸시 알림은 HTTPS에서만 동작, 아이폰은 홈 화면에 추가해야 알림 사용 가능 (iOS 16.4 이상)
 
 ## 데이터와 개인정보
 
@@ -254,11 +255,12 @@ npm install -g @railway/cli
 server/server.js   API, 관리자 API, 저장, 알림, 정적 파일
 server/tables.js   테이블 구성 (점수, 규칙, Charlie의 "왜 이 사람들")
 server/push.js     웹 푸시
-public/index.html  회원 앱
+public/index.html  회원 화면
 public/admin.html  관리자 페이지
 public/place.html  제휴 식당 전용 페이지
-public/shared.js   앱과 서버가 함께 쓰는 질문, 트랙, 페르소나, 질문 카드
+public/shared.js   화면과 서버가 함께 쓰는 질문, 트랙, 페르소나, 질문 카드
 public/app.css     디자인, 첫 화면 영상, 배경
+public/manifest.webmanifest, public/sw.js  홈 화면 추가와 푸시 알림
 public/video/      첫 화면 영상
 art/make-film.js   첫 화면 영상 제작
 scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)

@@ -3,7 +3,7 @@
 - 초기 컨셉 문서, 현재 동작은 [app/README.md](app/README.md) 기준
 - 사업 검토는 [BUSINESS.md](BUSINESS.md), 초기 프로토타입은 [sixtop.html](sixtop.html)
 
-지금 앱과 달라진 점
+현재 버전과 달라진 점
 
 - 테이블 이름: Topic, Kindred → 테크, 소셜
 - 트랙: 4개 → 14개
@@ -11,10 +11,11 @@
 - 성향 축: Host↔Guest → Easygoing↔Planner
 - 노쇼 대책: 보증금 대신 늦은 변경 점수제
 - 캡틴: 클럽 리더 대신 회원이 돌아가며 담당
+- 형태: 앱스토어 앱이 아닌 웹앱
 
 ## 한 줄 정의
 
-- 큰 모임에 지친 사람에게, 관심사가 같고 잘 맞을 사람끼리 4~6인 디너 테이블을 만들어주는 앱
+- 큰 모임에 지친 사람에게, 관심사가 같고 잘 맞을 사람끼리 4~6인 디너 테이블을 만들어주는 웹앱
 - 이름 Sidetable: 큰 행사 옆의 작은 테이블, 사이드 프로젝트, 본론보다 깊어지는 옆자리 대화
 - 슬로건: Six seats. Both sides of the Charles.
 - 찰스강은 HBS와 MIT, Boston과 Cambridge 사이를 모두 흐르는 강이라 퍼블릭 런칭 후에도 사용 가능
@@ -30,7 +31,7 @@
 | 첫 주제 | Generative AI, Healthcare AI, Entrepreneurship, Climate 4개 트랙 |
 | 매칭 | 관심사와 함께 사람끼리 잘 맞는지까지 고려 |
 
-## 누구를 위한 앱인가
+## 누구를 위한 서비스인가
 
 | 이런 사람 | 지금의 문제 |
 |---|---|
@@ -209,7 +210,7 @@
 | 1 (10분) | Origins: "What did you almost do instead of business school?" | Origins: "Where’s home, and what do you miss about it?" |
 | 2 (20분) | The split: 의견이 갈린 핫테이크로 반대편 변호하기 | Go deeper: "What’s something you’re proud of that nobody here would guess?" |
 | 3 (20분) | Napkin startup: Sloan은 무엇을 만들지, HBS는 누가 돈을 낼지 | Plan the next one: 3주 안에 같이 할 일 하나, 그 자리에서 날짜 정하기 |
-| 마지막 | 다시 보고 싶은 사람 선택 (다음 날 앱에서, 비공개) | 동일 |
+| 마지막 | 다시 보고 싶은 사람 선택 (다음 날 웹앱에서, 비공개) | 동일 |
 
 - Kindred table의 3라운드가 재회로 이어지는 연결 고리
 
