@@ -33,4 +33,5 @@ npm run seed
 npm run dev
 ```
 
-Node 18 이상. 자세한 내용은 [app/README.md](app/README.md)
+- Node 18 이상 필요
+- 자세한 내용은 [app/README.md](app/README.md)
