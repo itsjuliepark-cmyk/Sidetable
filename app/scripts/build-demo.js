@@ -1,4 +1,4 @@
-// Builds dist/sixtop-demo.html (and dist/video/film.mp4 beside it): the real member app plus the real server code running inside the page (see
+// Builds dist/sixtop-demo.html (and dist/video/film.mp4 beside it), plus a copy in ../demo for the repo: the real member app plus the real server code running inside the page (see
 // scripts/demo/runtime.js), so the whole app works on a phone from one file with no server. Run: npm run demo
 'use strict';
 const fs = require('fs');
@@ -64,4 +64,9 @@ fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'dist', 'sixtop-demo.html'), out);
 fs.mkdirSync(path.join(root, 'dist', 'video'), { recursive: true });
 fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(root, 'dist', 'video', 'film.mp4'));
+// the same demo as a standalone page in the repo (demo/), so anyone with access to the repo can download it and open it in a browser
+const repoDemo = path.join(root, '..', 'demo');
+fs.mkdirSync(path.join(repoDemo, 'video'), { recursive: true });
+fs.writeFileSync(path.join(repoDemo, 'sidetable-demo.html'), '<!doctype html>\n<html lang="en">\n' + out + '</html>\n');
+fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(repoDemo, 'video', 'film.mp4'));
 console.log('dist/sixtop-demo.html', Math.round(out.length / 1024) + ' KB', '+ dist/video/film.mp4', (fs.statSync(path.join(root, 'dist', 'video', 'film.mp4')).size / 1048576).toFixed(1) + ' MB');

@@ -26,6 +26,7 @@ npm run dev
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
+- `npm run demo`를 실행하면 저장소의 `demo/sidetable-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
 
 ## 실제 파일럿 실행
 
@@ -265,6 +266,6 @@ public/video/      첫 화면 영상
 art/make-film.js   첫 화면 영상 제작
 scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)
 scripts/dev.js     로컬 개발용 실행
-scripts/build-demo.js  폰 데모 한 파일 생성
+scripts/build-demo.js  폰 데모 생성 (dist/와 저장소의 demo/)
 test/              npm test (테이블 구성 8개, 서버 32개)
 ```

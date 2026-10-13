@@ -26,6 +26,12 @@ MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 - 동문, VC, 테크 기업 실무자로 참여 대상 확대
 - 제휴 식당 네트워크와 멤버십 기반 수익 구조
 
+## 데모
+
+- 폰 데모 링크: https://claude.ai/artifact/P8rAwZFR773s1wuQcWjDqd (공유가 켜진 경우에만 열림)
+- 설치 없이 보기: 저장소를 내려받아(Code → Download ZIP) [demo/sidetable-demo.html](demo/sidetable-demo.html)을 브라우저로 열기
+- Join → Try it as Jordan으로 샘플 회원 40명이 있는 상태에서 시작, 입력한 내용은 내 브라우저에만 저장
+
 ## 실행
 
 ```
