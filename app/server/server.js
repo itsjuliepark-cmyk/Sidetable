@@ -16,7 +16,7 @@ const T = require('./tables.js');
 const PORT = +process.env.PORT || 8800;
 const ROOT = path.join(__dirname, '..');
 const PUB = path.join(ROOT, 'public');
-const DATA = path.resolve(process.env.SIXTOP_DATA_DIR || path.join(ROOT, 'data'));
+const DATA = path.resolve(process.env.SIXTOP_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT, 'data'));
 const PUBLIC_URL = (process.env.SIXTOP_PUBLIC_URL || '').replace(/\/$/, '');
 const TZ = process.env.SIXTOP_TZ || 'America/New_York';
 const AREA = process.env.SIXTOP_AREA || 'Central Square';
@@ -36,7 +36,12 @@ const DBF = path.join(DATA, 'db.json');
 const fresh = () => ({ v: 1, members: {}, clubs: {}, events: {}, seats: {}, tables: {}, chats: {}, dms: {}, feedback: {}, reports: [], log: [],
   jobs: {}, saves: {}, intros: [], posts: [], waves: {}, links: {}, pops: {}, weeks: {}, verify: {}, long: {}, places: {}, longSpot: {}, bookings: {}, ops: {}, alerts: [], longWait: {} });
 let db = fresh();
-try { db = Object.assign(fresh(), JSON.parse(fs.readFileSync(DBF, 'utf8'))); } catch (e) {}
+try { db = Object.assign(fresh(), JSON.parse(fs.readFileSync(DBF, 'utf8'))); } catch (e) {
+  // a missing file is a first run; a file that won't parse (cut off, hand-edited) is never quietly replaced by an empty one
+  if (e.code !== 'ENOENT') throw new Error('db.json could not be read (' + e.message + '). Nothing was changed. Restore the newest file from ' + path.join(DATA, 'backups') + ' as db.json and start again.');
+  let photos = []; try { photos = fs.readdirSync ? fs.readdirSync(path.join(DATA, 'photos')) : []; } catch (e2) {}
+  if (photos.length) throw new Error('db.json is missing but ' + path.join(DATA, 'photos') + ' has photos, so this looks like lost data, not a first run. Restore db.json from ' + path.join(DATA, 'backups') + '.');
+}
 // the pilot started as HBS × MIT; members from then become Harvard, with their program and class split out
 function migrateDb() {
   Object.values(db.members).forEach((m) => {
@@ -49,9 +54,16 @@ function migrateDb() {
   Object.values(db.places || {}).forEach((v) => { if (!v.key) v.key = crypto.randomBytes(12).toString('hex'); if (!v.mode) v.mode = 'hold'; });
 }
 migrateDb();
-let saveTimer = null;
+let saveTimer = null, lazyTimer = null, lastBackup = '';
+function backup() {
+  const day = ymdTz(Date.now()); if (lastBackup === day || !fs.copyFileSync || !fs.existsSync(DBF)) return;
+  const dir = path.join(DATA, 'backups'), to = path.join(dir, 'db-' + day + '.json');
+  try { fs.mkdirSync(dir, { recursive: true }); if (!fs.existsSync(to)) fs.copyFileSync(DBF, to); fs.readdirSync(dir).filter((x) => /^db-\d{4}-\d{2}-\d{2}\.json$/.test(x)).sort().slice(0, -14).forEach((x) => fs.unlinkSync(path.join(dir, x))); lastBackup = day; } catch (e) { console.error('backup failed', e.message); }
+}
+// read marks and other small changes from GETs: written within a few seconds, not on every poll
+function saveSoon() { if (!lazyTimer) { lazyTimer = setTimeout(() => { lazyTimer = null; save(); }, 5000); if (lazyTimer.unref) lazyTimer.unref(); } }
 function save(now) {
-  const write = () => { saveTimer = null; const tmp = DBF + '.tmp'; try { fs.writeFileSync(tmp, JSON.stringify(db)); fs.renameSync(tmp, DBF); } catch (e) { console.error('save failed, retrying', e.message); if (!saveTimer) saveTimer = setTimeout(write, 1000); } };
+  const write = () => { saveTimer = null; backup(); const tmp = DBF + '.tmp'; try { fs.writeFileSync(tmp, JSON.stringify(db)); fs.renameSync(tmp, DBF); } catch (e) { console.error('save failed, retrying', e.message); if (!saveTimer) saveTimer = setTimeout(write, 1000); } };
   if (now) { if (saveTimer) clearTimeout(saveTimer); return write(); }
   if (!saveTimer) saveTimer = setTimeout(write, 200);
 }
@@ -63,8 +75,9 @@ const pk = T.pk;
 function fail(msg) { const e = new Error(msg); e.user = true; throw e; }
 
 /* ---------- time, in the club's time zone ---------- */
+const ZF = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 function zoned(ms) {
-  const o = {}; new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)).forEach((p) => { o[p.type] = p.value; });
+  const o = {}; ZF.formatToParts(new Date(ms)).forEach((p) => { o[p.type] = p.value; });
   return { y: +o.year, mo: +o.month, d: +o.day, h: +o.hour, mi: +o.minute };
 }
 function tzMs(date, time) {
@@ -72,7 +85,8 @@ function tzMs(date, time) {
   let t = want; for (let i = 0; i < 3; i++) { const z = zoned(t); t += want - Date.UTC(z.y, z.mo - 1, z.d, z.h, z.mi); }
   return t;
 }
-const fmt = (ms, o) => new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: TZ }, o)).format(new Date(ms));
+const FMTS = new Map();
+const fmt = (ms, o) => { const k = JSON.stringify(o); let F = FMTS.get(k); if (!F) FMTS.set(k, (F = new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: TZ }, o)))); return F.format(new Date(ms)); };
 const dayLabel = (ms) => fmt(ms, { weekday: 'long', month: 'short', day: 'numeric' });
 const shortLabel = (ms) => fmt(ms, { weekday: 'short', month: 'short', day: 'numeric' });
 const timeLabel = (ms) => fmt(ms, { hour: 'numeric', minute: '2-digit' });
@@ -85,11 +99,12 @@ const firstOf = (m) => (m && (m.first || String(m.name || '').split(' ')[0])) ||
 const lastInitial = (m) => { const w = String(m.name || '').trim().split(/\s+/); return w.length > 1 ? w[w.length - 1][0].toUpperCase() + '.' : ''; };
 const done = (m) => !!(m && m.profile && m.profile.done);
 function newMember(name, email, school, via) {
-  const nm = clip(name, 80).trim(); if (nm.length < 2) fail('name required');
-  const id = 'm' + rid(4), m = { id, token: rid(16), name: nm, first: nm.split(/\s+/)[0], email: clip(email, 120).toLowerCase().trim(), school: SX.SCHOOLS[school] ? school : '', program: '', year: '', via, createdAt: new Date().toISOString(), never: {}, read: {}, prio: 0 };
+  const nm = oneLine(clip(name, 80)); if (nm.length < 2) fail('name required');
+  const id = 'm' + rid(4), m = { id, token: rid(16), name: nm, first: nm.split(' ')[0], email: clip(email, 120).toLowerCase().trim(), school: SX.SCHOOLS[school] ? school : '', program: '', year: '', via, createdAt: new Date().toISOString(), never: {}, read: {}, prio: 0 };
   db.members[id] = m; return m;
 }
 const inviteLink = (m) => PUBLIC_URL + '/?invite=' + m.token;
+const oneLine = (v) => String(v || '').replace(/\s+/g, ' ').trim();
 /* ---------- school email: every member proves a Harvard or MIT address with a 6-digit code ---------- */
 function schoolOfEmail(email) {
   const e = String(email || '').toLowerCase().trim(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(e)) return null;
@@ -100,8 +115,7 @@ async function sendCode(email, code) {
   if (MAIL_MODE === 'show') return { show: code };
   if (!process.env.RESEND_API_KEY || !MAIL_FROM) fail('email isn’t set up yet, so ask the organizer');
   const text = 'Your Sidetable code is ' + code + '\n\nIt works for 15 minutes. If you didn’t ask for it, you can ignore this email.';
-  const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: MAIL_FROM, to: [email], subject: code + ' is your Sidetable code', text }) });
+  const r = await resend(email, code + ' is your Sidetable code', text).catch((e) => { console.error('code mail failed', e.message); return { ok: false }; });
   if (!r.ok) fail('the email didn’t go out, so try again in a minute');
   return {};
 }
@@ -115,25 +129,27 @@ async function startVerify(me, b) {
   else if (owner) who = { kind: 'signin', id: owner.id };
   else {
     const c = own(db.clubs, clip(b.code, 20)); if (!c || c.off) fail('Sidetable is invite-only for now, so open the link from your club');
-    const name = clip(b.name, 80).trim(); if (name.split(/\s+/).length < 2) fail('your full name, please');
+    const name = oneLine(clip(b.name, 80)); if (name.split(' ').length < 2) fail('your full name, please');
     who = { kind: 'join', club: c.code, name };
   }
-  const prev = db.verify[email]; if (prev && Date.now() - prev.sentAt < 30000) fail('a code is on its way, so wait 30 seconds before asking again');
+  const prev = db.verify[email], now = Date.now(); if (prev && now - prev.sentAt < 30000) fail('a code is on its way, so wait 30 seconds before asking again');
+  const fresh = !prev || now - (prev.firstAt || prev.sentAt) >= HOUR, sends = fresh ? 1 : (prev.sends || 1) + 1; if (sends > 6) fail('that’s a lot of codes, so try again in an hour');
   const code = String(100000 + (parseInt(crypto.randomBytes(4).toString('hex'), 16) % 900000));
-  db.verify[email] = Object.assign({ code, exp: Date.now() + 15 * 60000, tries: 0, sentAt: Date.now(), school }, who);
-  const r = await sendCode(email, code);
+  db.verify[email] = Object.assign({ code, exp: now + 15 * 60000, tries: fresh ? 0 : prev.tries || 0, sentAt: now, firstAt: fresh ? now : prev.firstAt || prev.sentAt, sends, school }, who);
+  let r; try { r = await sendCode(email, code); } catch (e) { delete db.verify[email]; throw e; }
   return Object.assign({ ok: true, email, school }, r.show ? { devCode: r.show } : {});
 }
 function finishVerify(me, b) {
   const email = clip(b && b.email, 120).toLowerCase().trim(), v = db.verify[email], code = String((b && b.code) || '').replace(/\D/g, '');
   if (!v || Date.now() > v.exp) fail('that code expired, so ask for a new one');
-  if (v.tries >= 5) fail('too many tries, so ask for a new code');
+  if (v.tries >= 5) fail('too many tries, so try again in an hour');
   if (code.length !== 6 || !crypto.timingSafeEqual(Buffer.from(code), Buffer.from(v.code))) { v.tries++; fail('that code doesn’t match'); }
   delete db.verify[email];
   let m;
   if (v.kind === 'join') { m = newMember(v.name, email, v.school, 'club:' + v.club); const c = db.clubs[v.club]; if (c) c.uses = (c.uses || 0) + 1; log('join', m.id, c ? c.name : ''); }
   else { m = db.members[v.id]; if (!m || m.deleted || (v.kind === 'member' && (!me || me.id !== m.id))) fail('open your link again'); }
   if (m.school !== v.school) { m.school = v.school; m.program = ''; }
+  if (v.kind === 'member' && !m.verified) m.token = rid(16);
   m.email = email; m.verified = true; m.verifiedAt = new Date().toISOString();
   if (v.kind === 'signin') log('signin', m.id);
   return { token: m.token };
@@ -170,12 +186,15 @@ function saveProfile(me, b) {
   if (b.school && SX.SCHOOLS[b.school] && !me.verified) me.school = b.school; // once verified, the school follows the email
   if (b.program != null) me.program = inList(b.program, me.school ? SX.SCHOOLS[me.school].programs : []) || me.program || '';
   if (b.year != null) me.year = inList(b.year, SX.YEARS) || me.year || '';
-  if (b.first) me.first = clip(b.first, 30).trim() || me.first;
+  if (b.first) me.first = oneLine(clip(b.first, 30)) || me.first;
   me.profile = cleanProfile(b.profile);
   if (b.photo === null) { me.photo = false; try { fs.unlinkSync(path.join(PHOTOS, me.id + '.img')); } catch (e) {} }
   else if (typeof b.photo === 'string' && b.photo.indexOf('data:') === 0) {
     const mm = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(b.photo); if (!mm) fail('photo not recognized');
     const buf = Buffer.from(mm[2], 'base64'); if (buf.length > 1.5 * 1024 * 1024) fail('photo too large');
+    const hx = Buffer.from(mm[2].slice(0, 16), 'base64').toString('hex'); // the first twelve bytes
+    const magic = { jpeg: hx.indexOf('ffd8') === 0, png: hx.indexOf('89504e47') === 0, webp: hx.indexOf('52494646') === 0 && hx.slice(16, 24) === '57454250' };
+    if (!magic[mm[1]]) fail('photo not recognized');
     fs.writeFileSync(path.join(PHOTOS, me.id + '.img'), buf); me.photo = true; me.photoType = mm[1];
   }
   if (me.profile.done && !me.joinedAt) { me.joinedAt = new Date().toISOString(); log('profile', me.id); }
@@ -185,7 +204,12 @@ function personaOf(m) { return SX.persona(SX.codeOf(SX.axes(m.profile && m.profi
 
 /* ---------- events and seats ---------- */
 function addDays(date, n) { const [y, m, d] = date.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
+const ETIMES = new Map();
 function eventTimes(e) {
+  const k = e.date + '|' + e.time + '|' + (e.closesAt || '') + '|' + (e.meal || ''); if (ETIMES.has(k)) return ETIMES.get(k);
+  const v = eventTimes1(e); if (ETIMES.size > 20000) ETIMES.clear(); ETIMES.set(k, v); return v;
+}
+function eventTimes1(e) {
   const start = tzMs(e.date, e.time);
   // seats close three nights before (club time), tables go out the next day, the spot at noon on the day
   return { start, closes: e.closesAt || tzMs(addDays(e.date, -3), '23:59'), reveal: e.meal === 'lunch' ? tzMs(addDays(e.date, -1), '18:00') : tzMs(e.date, '12:00'), feedback: start + 2 * HOUR, pushFeedback: tzMs(addDays(e.date, 1), '10:00') };
@@ -200,10 +224,11 @@ function dowOf(date) { const [y, m, d] = date.split('-').map(Number); return new
 function targetWeek(nowMs) { const today = ymdTz(nowMs || Date.now()); return addDays(today, ((8 - dowOf(today)) % 7) || 7); }
 const weekCloses = (week) => tzMs(addDays(week, -1), '18:00'); // Sunday 6 PM
 function weekSlots(week) { const out = []; for (let d = 0; d < 5; d++) out.push(addDays(week, d) + '|dinner'); return out; }
-function setAvail(me, b) {
+function setAvail(me, b, force) {
   if (!done(me)) fail('finish your profile first');
   const week = targetWeek(), ok = weekSlots(week);
   if ((db.weeks[week] || {}).published) fail('tables for that week are already set');
+  if (!force && process.env.SIXTOP_DEMO !== '1' && (Date.now() >= weekCloses(week) || db.weeks[week])) fail('plans for next week closed Sunday at 6 PM, so this one is set. Next week’s opens Monday');
   me.avail = { week, slots: arr(b.slots).filter((s, i, a) => ok.indexOf(s) >= 0 && a.indexOf(s) === i), max: Math.max(1, Math.min(5, Math.round(+b.max) || (me.profile && me.profile.perWeek) || 1)), at: new Date().toISOString() };
   return { ok: true };
 }
@@ -226,10 +251,12 @@ function availView(me) {
 }
 // Build next week's tables. Biggest evenings first; each person gets at most the number of dinners they asked for, never two
 // the same night, and Charlie alternates tech tables (their corner of tech) with social tables (people they'd click with).
+const pendingWeek = () => Object.keys(db.weeks).filter((k) => db.weeks[k] && !db.weeks[k].published && k >= mondayOf(ymdTz(Date.now()))).sort()[0];
 function matchWeek(b) {
   b = b || {};
-  const week = b.week || targetWeek(), prev = db.weeks[week];
+  const week = b.week || pendingWeek() || targetWeek(), prev = db.weeks[week];
   if (prev && prev.published) fail('this week is already published');
+  if ((prev ? prev.events : []).some((eid) => (db.events[eid] || {}).status === 'published')) fail('some of this week’s tables already went out to members, so the week can’t be rebuilt. Move people by hand instead');
   (prev ? prev.events : []).forEach((eid) => { tablesOf(eid).forEach((t) => { delete db.tables[t.id]; }); delete db.events[eid]; delete db.seats[eid]; });
   const L = live().filter((m) => done(m) && !m.paused && !cooling(m) && m.avail && m.avail.week === week && m.avail.slots.length);
   const cap = {}, want = {}, usedDay = {}, pools = {}, had = {};
@@ -281,18 +308,18 @@ function matchWeek(b) {
       created.push(e.id); tables += tablesOf(e.id).length; seatedN += seated.length;
     });
   });
-  const unmatched = L.filter((m) => cap[m.id] === want[m.id]).map((m) => m.id);
+  const unmatched = L.filter((m) => want[m.id] > 0 && cap[m.id] === want[m.id]).map((m) => m.id);
   db.weeks[week] = { matchedAt: new Date().toISOString(), published: false, events: created, unmatched };
   log('match-week', week, tables + ' tables');
   return { week, slots: created.length, tables, seated: seatedN, people: L.length, unmatched: unmatched.length };
 }
 function publishWeek(b) {
-  const week = (b && b.week) || targetWeek(), w = db.weeks[week]; if (!w) fail('build the week first');
+  const week = (b && b.week) || pendingWeek() || targetWeek(), w = db.weeks[week]; if (!w) fail('build the week first');
   if (w.published) fail('already published');
   w.events.forEach((eid) => { const e = db.events[eid]; if (e && e.status === 'draft') publish({ event: eid }, true); });
-  w.published = true; w.publishedAt = new Date().toISOString();
+  w.published = true; w.publishedAt = new Date().toISOString(); resolveAlerts('week:' + week); resolveAlerts('autoweek:' + week);
   fillRounds(week);
-  w.unmatched.forEach((id) => notify(id, 'unmatched'));
+  w.unmatched.forEach((id) => { const m = db.members[id]; if (m && !Object.values(db.tables).some((t) => t.published && seatedIds(t).indexOf(id) >= 0 && (db.events[t.eventId] || {}).week === week)) { m.prio = (m.prio || 0) + 1; notify(id, 'unmatched'); } });
   return { ok: true, week };
 }
 
@@ -389,11 +416,11 @@ function cancelSeat(me, b) {
   if (!s || s.status !== 'held') fail('no such seat');
   const t = eventTimes(e); if (Date.now() >= t.start) fail('this dinner already started');
   const tb = tableOf(e.id, me.id), seated = !!(tb && tb.published && !tb.closed && !(tb.out && tb.out[me.id]));
-  s.status = 'cancelled'; s.cancelledAt = new Date().toISOString(); s.late = seated && Date.now() > freeFor(e, me);
+  s.status = 'cancelled'; s.cancelledAt = new Date().toISOString(); s.late = seated && Date.now() > freeFor(e, me) && !seatedIds(tb).some((x) => x !== me.id && apart(me.id, x));
   if (tb && tb.published && !tb.closed) {
     tb.out = tb.out || {}; tb.out[me.id] = true;
     if (!fillChair(tb, e)) { if (seatedIds(tb).length < 3) shrink(tb, e); else charlie(tb.id, 'Plans changed for one of you, so the table is a seat smaller. Everything else stays the same.'); }
-    if (!tb.closed) { if (tb.captain === me.id) pickCaptain(tb, me.id); if (tb.venue && tb.venue.id) syncBooking(tb.venue.id, e.date); }
+    if (!tb.closed) { if (tb.captain === me.id) { pickCaptain(tb, me.id); captainChanged(tb, e); } if (tb.venue && tb.venue.id) syncBooking(tb.venue.id, e.date); }
   }
   else if (tb) { tb.ids = tb.ids.filter((x) => x !== me.id); refreshTable(tb); }
   e.wait = (e.wait || []).filter((x) => x !== me.id);
@@ -540,8 +567,11 @@ function setVenue(b) {
   const t = db.tables[b.table]; if (!t) fail('no such table');
   const was = t.venue, e = db.events[t.eventId];
   t.venue = { name: clip(b.name, 80).trim(), address: clip(b.address, 120).trim(), note: clip(b.note, 160).trim() };
-  if (was && was.id && was.name === t.venue.name) t.venue.id = was.id; // the same partner, just a different note or address
+  const named = Object.values(db.places || {}).find((v) => !v.gone && v.name.toLowerCase() === t.venue.name.toLowerCase());
+  if (named) t.venue.id = named.id;
+  else if (was && was.id && (was.name === t.venue.name || was.address === t.venue.address)) t.venue.id = was.id; // the same partner, the name or note retyped
   if (!t.venue.name) t.venue = null;
+  if (t.venue && t.venue.id && e && !(was && was.id === t.venue.id)) syncBooking(t.venue.id, e.date);
   if (was && was.id && e && !(t.venue && t.venue.id === was.id)) syncBooking(was.id, e.date);
   if (t.venue) resolveAlerts('noplace:' + t.id);
   if (t.venue && t.revealWait) revealNow(t);
@@ -558,7 +588,7 @@ const placeLoad = (v, date, not) => Object.values(db.tables).filter((x) => x.id 
 const placeUses = (v) => Object.values(db.tables).filter((x) => x.published && x.venue && x.venue.id === v.id).length;
 function placeFits(v, t, e) {
   return !!v && !v.off && !v.gone && arr(v.nights).indexOf(dowOf(e.date)) >= 0 && arr(v.closedOn).indexOf(e.date) < 0 && ((db.bookings || {})[bkey(v.id, e.date)] || {}).state !== 'declined'
-    && (v.seats || 6) >= seatedIds(t).length && placeLoad(v, e.date, t.id) < (v.tables || 1);
+    && (v.seats || 6) >= seatedIds(t).length && placeLoad(v, e.date, t.id) < Math.min(v.tables || 1, ((db.bookings || {})[bkey(v.id, e.date)] || {}).cap || 99);
 }
 function placeTable(t, prefer) {
   const e = db.events[t.eventId]; if (!e || t.closed || (t.venue && t.venue.name)) return t.venue || null;
@@ -574,15 +604,15 @@ function placeTable(t, prefer) {
 const ymdOk = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 function savePlace(b) {
   const name = clip(b.name, 80).trim(), address = clip(b.address, 120).trim(); if (name.length < 2 || address.length < 4) fail('name and address required');
+  const nights = arr(b.nights).map(Number).filter((d, i, a) => d >= 0 && d <= 6 && a.indexOf(d) === i).sort(); if (!nights.length) fail('pick at least one evening');
   const v = (b.id && own(db.places || {}, b.id)) || { id: 'v' + rid(4), createdAt: isoNow() };
-  Object.assign(v, { name, address, area: clip(b.area, 60).trim() || AREA, nights: arr(b.nights).map(Number).filter((d, i, a) => d >= 0 && d <= 6 && a.indexOf(d) === i).sort(),
+  Object.assign(v, { name, address, area: clip(b.area, 60).trim() || AREA, nights,
     tables: Math.max(1, Math.min(12, Math.round(+b.tables) || 2)), seats: Math.max(4, Math.min(8, Math.round(+b.seats) || 6)),
     email: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(b.email || '').trim()) ? String(b.email).trim().slice(0, 120) : '', contact: clip(b.contact, 80).trim(), phone: clip(b.phone, 30).trim(),
     note: clip(b.note, 160).trim(), terms: clip(b.terms, 400).trim(), closedOn: arr(b.closedOn).map(String).filter(ymdOk).slice(0, 60), off: b.off === undefined ? !!v.off : !!b.off,
     mode: b.mode === 'ask' ? 'ask' : 'hold', backup: !!b.backup });
   // 10. now a standing hold: evenings waiting for a yes are simply held
   if (v.mode === 'hold') Object.values(db.bookings || {}).forEach((x) => { if (x.vid === v.id && x.state === 'asked' && x.date >= ymdTz(Date.now())) { x.state = 'held'; delete x.more; resolveAlerts('unconfirmed:' + bkey(v.id, x.date)); tablesAt(v, x.date).forEach((t) => revealNow(t)); } });
-  if (!v.nights.length) fail('pick at least one evening');
   if (!v.key) v.key = rid(12);
   (db.places = db.places || {})[v.id] = v;
   replaceAt(v);
@@ -605,11 +635,17 @@ function placeNight(v, date) {
   }).filter((r) => r.size);
   return { covers: rows.reduce((n, r) => n + r.size, 0), tables: rows };
 }
+// Resend takes about two requests a second: mails go out one at a time, each with a ten-second timeout
+let mailChain = Promise.resolve();
+function resend(to, subject, text) {
+  const go = () => fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, text }), signal: AbortSignal.timeout(10000) })
+    .then(async (r) => { if (!r.ok) console.error('mail not sent (' + r.status + '): ' + subject + ' | ' + (await r.text().catch(() => '')).slice(0, 300)); return { ok: r.ok, status: r.status }; });
+  const p = mailChain.then(go, go); mailChain = p.catch(() => {}).then(() => new Promise((r) => { const t = setTimeout(r, 550); if (t.unref) t.unref(); })); return p;
+}
 async function sendMail(to, subject, text) {
   if (MAIL_MODE === 'show') { console.log('[mail to ' + to + '] ' + subject + '\n' + text); return { show: true }; }
   if (!process.env.RESEND_API_KEY || !MAIL_FROM) return { off: true };
-  const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, text }) });
-  return { ok: r.ok };
+  return resend(to, subject, text);
 }
 // the admin's view: partners with their next three weeks evening by evening, and what needs a person
 function placesAdmin() {
@@ -623,14 +659,16 @@ function placesAdmin() {
       flakes: arr(v.flakes).filter((d) => d >= addDays(today, -90)).length,
       evenings: B.filter((b) => b.vid === v.id && b.date >= today && b.date <= last && (b.state !== 'released' || b.told)).sort((a, b) => (a.date < b.date ? -1 : 1)).map((b) => ({ date: b.date, label: shortLabel(tzMs(b.date, '12:00')), state: b.state, started: tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= now), tables: b.tables || 0, covers: b.covers || 0, of: v.tables, due: b.state === 'asked' ? shortLabel(confirmBy(b)) + ' ' + timeLabel(confirmBy(b)) : '' })) })),
     needs: needs.sort((a, b) => (a.at < b.at ? -1 : 1)),
-    long: { month: monthNow(), date: dayLabel(tzMs(longDate(monthNow()), LONG_TIME)), spot: ((db.longSpot || {})[monthNow()] || {}).name ? db.longSpot[monthNow()] : null, going: Object.keys(db.long[monthNow()] || {}).length, wait: arr((db.longWait || {})[monthNow()]).length, cap: longCap(monthNow()), closes: dayLabel(longCloses(monthNow())) }
+    long: { month: monthNow(), day: longDate(monthNow()), date: dayLabel(tzMs(longDate(monthNow()), LONG_TIME)), spot: ((db.longSpot || {})[monthNow()] || {}).name ? db.longSpot[monthNow()] : null, going: Object.keys(db.long[monthNow()] || {}).length, wait: arr((db.longWait || {})[monthNow()]).length, cap: longCap(monthNow()), closes: dayLabel(longCloses(monthNow())) }
   };
 }
 function setLongSpot(b) {
   const mo = monthNow(), name = clip(b.name, 80).trim();
   db.longSpot = db.longSpot || {};
   const cap = Math.max(8, Math.min(200, Math.round(+b.cap) || longCap(mo)));
-  db.longSpot[mo] = name ? { name, address: clip(b.address, 120).trim(), note: clip(b.note, 160).trim(), pay: clip(b.pay, 80).trim(), cap } : { cap };
+  const was = db.longSpot[mo] || {}, date = /^\d{4}-\d{2}-\d{2}$/.test(String(b.date || '')) && String(b.date).slice(0, 7) === mo ? String(b.date) : b.date === '' ? '' : was.date || '';
+  if (date && date !== was.date && tzMs(date, LONG_TIME) < Date.now()) fail('that date has passed');
+  db.longSpot[mo] = Object.assign(name ? { name, address: clip(b.address, 120).trim(), note: clip(b.note, 160).trim(), pay: clip(b.pay, 80).trim(), cap } : { cap }, date ? { date } : {});
   promoteLong(mo);
   return placesAdmin();
 }
@@ -645,7 +683,7 @@ const bkey = (vid, date) => vid + '|' + date;
 const isoNow = () => new Date().toISOString();
 const bookingOf = (t) => { const e = t && db.events[t.eventId]; return t && t.venue && t.venue.id && e ? (db.bookings || {})[bkey(t.venue.id, e.date)] || null : null; };
 // a table's spot is set when it was typed in by hand, or its partner holds it (or said yes) that evening
-const spotSet = (t) => !!(t && t.venue && t.venue.name && (!t.venue.id || ['held', 'confirmed'].indexOf((bookingOf(t) || {}).state) >= 0));
+const spotSet = (t) => { if (!(t && t.venue && t.venue.name)) return false; if (!t.venue.id) return true; const b = bookingOf(t) || {}; return ['held', 'confirmed'].indexOf(b.state) >= 0 || (!!b.more && arr(b.okIds).indexOf(t.id) >= 0); };
 const tablesAt = (v, date) => Object.values(db.tables).filter((x) => x.published && !x.closed && x.venue && x.venue.id === v.id && (db.events[x.eventId] || {}).date === date && db.events[x.eventId].status !== 'cancelled');
 function syncBooking(vid, date) {
   const v = own(db.places || {}, vid); if (!v || !date) return null;
@@ -659,14 +697,15 @@ function syncBooking(vid, date) {
   if (!b) b = B[k] = { vid, date, state: fresh, askedAt: isoNow() };
   else if (b.state === 'released') { b.state = fresh; b.askedAt = isoNow(); ['askMail', 'remindAt', 'releaseMail', 'told', 'finalAt', 'final'].forEach((k) => { delete b[k]; }); }
   else if (b.state === 'confirmed' && v.mode === 'ask' && n.tables.length > (b.okTables || 0)) { b.more = true; b.state = 'asked'; b.askedAt = isoNow(); ['askMail', 'remindAt', 'told'].forEach((k) => { delete b[k]; }); }
+  else if (b.state === 'asked' && b.more && n.tables.length <= (b.okTables || 0)) { b.state = 'confirmed'; delete b.more; resolveAlerts('unconfirmed:' + k); }
   b.tables = n.tables.length; b.covers = n.covers;
   return b;
 }
 // when a partner that confirms each evening has to answer by: noon two days before; for something set later, ten the
 // morning before; at the very last minute, three hours
 function confirmBy(b) {
-  const asked = Date.parse(b.askedAt), two = tzMs(addDays(b.date, -2), '12:00'), one = tzMs(addDays(b.date, -1), '10:00');
-  return asked + 12 * HOUR <= two ? two : asked + 6 * HOUR <= one ? one : Math.min(tzMs(b.date, '17:00'), asked + 3 * HOUR);
+  const asked = Date.parse(b.askMail || b.askedAt), two = tzMs(addDays(b.date, -2), '12:00'), one = tzMs(addDays(b.date, -1), '10:00');
+  return asked + 12 * HOUR <= two ? two : asked + 6 * HOUR <= one ? one : Math.min(tzMs(b.date, '17:00'), Math.max(asked + 3 * HOUR, tzMs(b.date, '10:00')));
 }
 // the restaurant (or whoever is on duty, after a phone call) says yes or no for one evening
 function placeAnswer(v, date, ok, by) {
@@ -674,9 +713,15 @@ function placeAnswer(v, date, ok, by) {
   if (tzMs(date, '23:59') < Date.now() || tablesAt(v, date).some((t) => eventTimes(db.events[t.eventId]).start <= Date.now())) fail('that dinner has already started');
   syncBooking(v.id, date);
   if (ok) {
-    Object.assign(b, { state: 'confirmed', confirmedAt: isoNow(), okTables: b.tables, okCovers: b.covers, by }); delete b.more;
+    Object.assign(b, { state: 'confirmed', confirmedAt: isoNow(), okTables: b.tables, okCovers: b.covers, okIds: tablesAt(v, date).map((t) => t.id), by }); delete b.more;
     tablesAt(v, date).forEach((t) => revealNow(t)); // an address that was waiting goes out
     resolveAlerts('unconfirmed:' + bkey(v.id, date)); tablesAt(v, date).forEach((t) => resolveAlerts('reveal:' + t.id)); log('place-ok', v.id, date);
+    return b;
+  }
+  if (b.more) { // they can't take the extra table: only that one moves, and what they confirmed stays
+    const keep = arr(b.okIds); b.cap = keep.length; b.state = 'confirmed'; delete b.more; log('place-no-more', v.id, date);
+    tablesAt(v, date).filter((t) => keep.indexOf(t.id) < 0).forEach((t) => { const was = t.venue; t.venue = null; placeTable(t); spotMoved(t, was); if (!t.venue) alertOps('noplace:' + t.id, 'place', `${v.name} can’t take a second table on ${dayLabel(tzMs(date, '12:00'))}, and table ${t.no} (${seatedIds(t).length} people) has no other partner with room. Find a spot or call it off.`); });
+    syncBooking(v.id, date); resolveAlerts('unconfirmed:' + bkey(v.id, date));
     return b;
   }
   const had = b.state === 'held' || b.state === 'confirmed';
@@ -684,7 +729,7 @@ function placeAnswer(v, date, ok, by) {
   // saying no to an evening they'd agreed to, within two days of it: twice in ninety days and it's time to talk
   if (had && tzMs(date, '19:00') - Date.now() < 2 * DAY) {
     v.flakes = arr(v.flakes).concat([date]);
-    if (arr(v.flakes).filter((d) => d >= addDays(ymdTz(Date.now()), -90)).length >= 2) alertOps('flaky:' + v.id, 'place', `${v.name} has cancelled on us twice in ninety days, both within two days of the dinner. Time to talk to ${v.contact || 'them'}, or lean on another partner.`);
+    if (arr(v.flakes).filter((d) => d >= addDays(ymdTz(Date.now()), -90)).length >= 2) alertOps('flaky:' + v.id, 'flaky', `${v.name} has cancelled on us twice in ninety days, both within two days of the dinner. Time to talk to ${v.contact || 'them'}, or lean on another partner.`);
   }
   const stuck = [];
   tablesAt(v, date).forEach((t) => { const was = t.venue; t.venue = null; placeTable(t); if (!t.venue) stuck.push(t); spotMoved(t, was); });
@@ -716,12 +761,17 @@ function placeView(v) {
   const evenings = Object.values(db.bookings || {}).filter((b) => b.vid === v.id && b.date >= today && b.date <= addDays(today, 21) && (b.state !== 'released' || b.told)).sort((a, b) => (a.date < b.date ? -1 : 1)).map((b) => {
     const n = placeNight(v, b.date);
     return { date: b.date, label: dayLabel(tzMs(b.date, '12:00')), state: b.state, more: !!b.more, by: b.state === 'asked' ? dayLabel(confirmBy(b)) + ' at ' + timeLabel(confirmBy(b)) : '',
-      final: tzMs(addDays(b.date, -1), '12:00') <= Date.now(), started: tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= Date.now()), tables: n.tables.map((r) => ({ size: r.size, time: r.time, diets: r.diets, captain: r.captain })), covers: n.covers };
+      final: finalTime(v, b.date) <= Date.now() && b.state !== 'asked', started: tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= Date.now()), tables: n.tables.map((r) => ({ size: r.size, time: r.time, diets: r.diets, captain: r.captain })), covers: n.covers };
   });
   return { name: v.name, address: v.address, contact: v.contact, mode: v.mode || 'hold', nights: arr(v.nights).slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DOW[d]).join(', '), holds: v.tables, seats: v.seats, terms: v.terms || '', evenings };
 }
 const placeByKey = (k) => (/^[a-f0-9]{24}$/.test(String(k || '')) ? Object.values(db.places || {}).find((v) => v.key === k && !v.gone) : null);
-function mailPlace(v, subject, text) { log('place-mail', v.id, subject); if (v.email) sendMail(v.email, subject, text).catch((e) => console.error('place mail failed', e.message)); }
+function mailPlace(v, subject, text, undo) {
+  log('place-mail', v.id, subject);
+  const failed = (why) => { if (undo) undo(); log('place-mail-failed', v.id, subject); alertOps('mail:' + v.id, 'mail', `An email to ${v.name} didn’t go out (${why}): “${subject}”. It tries again every few minutes. If it keeps failing, call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''}.`); save(); };
+  if (!v.email) { if (/^Sidetable (tonight|tomorrow)/.test(subject)) alertOps('call:' + v.id + '|' + subject, 'mail', `${v.name} has no email on file, so call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''} with the final count: ${subject}. The tables are on the Places tab.`); return; }
+  sendMail(v.email, subject, text).then((r) => { if (r.ok || r.show) resolveAlerts('mail:' + v.id); else failed(r.off ? 'email isn’t set up' : 'the mail service turned it down'); }).catch((e) => failed(e.message));
+}
 const snapOf = (n) => n.tables.map((r) => r.size + '@' + r.time + '@' + r.captain).sort().join(',');
 const dietLine = (d) => Object.keys(d).map((k) => d[k] + ' ' + k.toLowerCase()).join(', ');
 const tableLines = (n) => n.tables.map((r, i) => `Table ${i + 1}: ${r.size} people at ${r.time}${Object.keys(r.diets).length ? ' (' + dietLine(r.diets) + ')' : ''}${r.captain ? `, ask for ${r.captain}` : ''}`).join('\n');
@@ -747,7 +797,7 @@ function placeMail(now) {
     const needed = nights.some((d) => placeNight(v, d).tables.length);
     if (v.backup && !needed) return;
     const ask = v.mode === 'ask' && needed;
-    mailPlace(v, `Sidetable this week${needed ? '' : ': nothing needed'}`, `Hi ${v.contact || v.name},\n\nHere’s Sidetable for the week of ${dayLabel(tzMs(wk, '12:00'))}:\n\n${lines.join('\n')}\n\n${ask ? 'Please confirm each evening on your page' : 'Nothing to do unless something can’t work. If it can’t, tell us on your page'}: ${placeLink(v)}\nThe final count for each evening comes at noon the day before. Everyone pays their own check.\n\nThanks,\nSidetable`);
+    mailPlace(v, `Sidetable this week${needed ? '' : ': nothing needed'}`, `Hi ${v.contact || v.name},\n\nHere’s Sidetable for the week of ${dayLabel(tzMs(wk, '12:00'))}:\n\n${lines.join('\n')}\n\n${ask ? 'Please confirm each evening on your page' : 'Nothing to do unless something can’t work. If it can’t, tell us on your page'}: ${placeLink(v)}\nThe final count for each evening comes at noon the day before. Everyone pays their own check.\n\nThanks,\nSidetable`, () => { delete db.planSent[pk2]; nights.forEach((d) => { const b = (db.bookings || {})[bkey(v.id, d)]; if (b && b.told === iso) delete b.told; if (b && b.askMail === iso) delete b.askMail; }); });
     nights.forEach((d) => { const b = (db.bookings || {})[bkey(v.id, d)]; if (b && b.state === 'asked') b.askMail = iso; });
   }));
   Object.values(db.bookings || {}).forEach((b) => {
@@ -756,24 +806,25 @@ function placeMail(now) {
     const planned = !!db.planSent[v.id + '|' + mondayOf(b.date)];
     if ((b.state === 'asked' ? !b.askMail : b.state === 'held' && !b.told) && planned && n.tables.length) {
       b.told = iso; if (b.state === 'asked') b.askMail = iso;
-      mailPlace(v, `Sidetable on ${day}${b.state === 'asked' ? ': can you confirm?' : ''}`, `${hi}Sidetable needs ${n.tables.length > 1 ? NUMW(n.tables.length) + ' tables' : 'a table'} on ${day}${b.more ? ' (one more than you confirmed)' : ''}:\n\n${tableLines(n)}\n\n${b.state === 'asked' ? `Please confirm, or tell us you can’t, by ${dayLabel(confirmBy(b))} at ${timeLabel(confirmBy(b))}` : 'It’s within your usual hold, so nothing to do unless it can’t work'}: ${link}\n\nThanks,\nSidetable`);
+      mailPlace(v, `Sidetable on ${day}${b.state === 'asked' ? ': can you confirm?' : ''}`, `${hi}Sidetable needs ${n.tables.length > 1 ? NUMW(n.tables.length) + ' tables' : 'a table'} on ${day}${b.more ? ' (one more than you confirmed)' : ''}:\n\n${tableLines(n)}\n\n${b.state === 'asked' ? `Please confirm, or tell us you can’t, by ${dayLabel(confirmBy(b))} at ${timeLabel(confirmBy(b))}` : 'It’s within your usual hold, so nothing to do unless it can’t work'}: ${link}\n\nThanks,\nSidetable`, () => { if (b.told === iso) delete b.told; if (b.askMail === iso) delete b.askMail; });
     }
     if (b.state === 'asked' && b.askMail && !b.remindAt && now >= confirmBy(b)) {
       b.remindAt = iso;
-      mailPlace(v, `Reminder: Sidetable on ${day}`, `${hi}We still need a yes or no for ${day} (${n.covers} people). One tap: ${link}\n\nThanks,\nSidetable`);
+      mailPlace(v, `Reminder: Sidetable on ${day}`, `${hi}We still need a yes or no for ${day} (${n.covers} people). One tap: ${link}\n\nThanks,\nSidetable`, () => { delete b.remindAt; });
       alertOps('unconfirmed:' + bkey(v.id, b.date), 'unconfirmed', `${v.name} hasn’t confirmed ${day} (${n.tables.length} ${n.tables.length > 1 ? 'tables' : 'table'}, ${n.covers} people). Call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''}, then mark it on the Places tab.`);
     }
-    if ((b.state === 'held' || b.state === 'confirmed') && !b.finalAt && now >= tzMs(addDays(b.date, -1), '12:00') && n.tables.length) {
+    const counted = b.state === 'held' || b.state === 'confirmed' || (b.state === 'asked' && b.more), started = tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= now);
+    if (counted && !b.finalAt && now >= finalTime(v, b.date) && n.tables.length && !started) {
       b.finalAt = iso; b.final = snapOf(n); b.told = b.told || iso;
       const when = b.date === today ? 'tonight' : 'tomorrow';
-      mailPlace(v, `Sidetable ${when}: ${n.covers} people`, `${hi}Final count for ${when}, ${day}:\n\n${tableLines(n)}\n\nEach table asks for Sidetable and gives the captain’s first name. Separate checks, please. If anything changes on our side, you’ll hear from us by 5 PM ${when === 'tonight' ? 'today' : 'tomorrow'}.\n\nThanks,\nSidetable`);
-    } else if ((b.state === 'held' || b.state === 'confirmed') && b.finalAt && n.tables.length && b.final !== snapOf(n) && now < tzMs(b.date, '18:00')) {
-      b.final = snapOf(n); b.updates = (b.updates || 0) + 1;
-      mailPlace(v, `Update for Sidetable on ${day}`, `${hi}A change for ${day}. It’s now:\n\n${tableLines(n)}\n\n${n.covers} people in all.\n\nSidetable`);
+      mailPlace(v, `Sidetable ${when}: ${n.covers} people`, `${hi}Final count for ${when}, ${day}:\n\n${tableLines(n)}\n\nEach table asks for Sidetable and gives the captain’s first name. Separate checks, please.${b.more ? ' One table is new since you confirmed, so please confirm it on your page: ' + link + '.' : ''} If anything changes on our side, you’ll hear from us right away.\n\nThanks,\nSidetable`, () => { delete b.finalAt; delete b.final; });
+    } else if (counted && b.finalAt && n.tables.length && b.final !== snapOf(n) && !started) {
+      const was = b.final; b.final = snapOf(n); b.updates = (b.updates || 0) + 1;
+      mailPlace(v, `Update for Sidetable on ${day}`, `${hi}A change for ${day}. It’s now:\n\n${tableLines(n)}\n\n${n.covers} people in all.\n\nSidetable`, () => { b.final = was; });
     }
     if (b.state === 'released' && b.told && !b.releaseMail) {
       b.releaseMail = iso;
-      mailPlace(v, `No Sidetable tables on ${day} after all`, `${hi}Plans changed and we won’t need a table on ${day} after all. Please release it, and thank you for holding it.\n\nSidetable`);
+      mailPlace(v, `No Sidetable tables on ${day} after all`, `${hi}Plans changed and we won’t need a table on ${day} after all. Please release it, and thank you for holding it.\n\nSidetable`, () => { delete b.releaseMail; });
     }
   });
 }
@@ -789,7 +840,8 @@ function alertOps(key, kind, text) {
   if (db.alerts.some((a) => a.key === key && !a.done)) return;
   const a = { id: 'a' + rid(4), key, kind, text: clip(text, 400), at: isoNow(), done: false };
   db.alerts.push(a); db.alerts = db.alerts.slice(-200);
-  const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Sidetable: ' + (kind === 'unconfirmed' ? 'a restaurant hasn’t answered' : kind === 'place' ? 'a table needs a place' : kind === 'table' ? 'a table changed today' : 'needs a look'), text + '\n\n' + PUBLIC_URL + '/admin').catch(() => {});
+  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables', long: 'the long table count' }[kind] || 'needs a look';
+  const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Sidetable: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
   log('alert', kind, key);
 }
 function resolveAlerts(key) { arr(db.alerts).forEach((a) => { if (a.key === key && !a.done) { a.done = true; a.doneAt = isoNow(); } }); }
@@ -809,7 +861,15 @@ function opsAdmin() {
    makes the table a seat smaller (someone on standby may take it). A table below three isn't a table any more: two at
    dinner reads like a date, and one is dinner alone. The people left join another table that evening if one has room (same
    restaurant first), and otherwise the table is off: they go first next week and can ask for another evening now. */
-const freeUntil = (e) => tzMs(addDays(e.date, -1), '12:00');
+// the cutoff: noon the day before; tables that only went out after that noon (Monday's, published Sunday evening) stay
+// free until ten that morning
+function freeUntil(e) {
+  const noon = tzMs(addDays(e.date, -1), '12:00'), pub = Date.parse(e.publishedAt || 0) || 0;
+  return pub > noon && ymdTz(pub) === addDays(e.date, -1) ? tzMs(e.date, '10:00') : noon;
+}
+// when a restaurant gets its final count for an evening: the latest free-change cutoff among its tables that night
+function finalTime(v, date) { const ts = tablesAt(v, date); return ts.length ? Math.max.apply(null, ts.map((t) => freeUntil(db.events[t.eventId]))) : tzMs(addDays(date, -1), '12:00'); }
+const byLabel = (ms, now) => timeLabel(ms) + (ymdTz(ms) === ymdTz(now) ? ' today' : ymdTz(ms) === addDays(ymdTz(now), 1) ? ' tomorrow' : ' ' + weekday(ms));
 // someone seated after that (a chair that opened late) can still hand it back for three hours
 function freeFor(e, m) { const cut = freeUntil(e), s = ((db.seats[e.id] || {})[m.id]) || {}, at = Date.parse(s.at || 0); return at > cut ? Math.min(eventTimes(e).start, at + 3 * HOUR) : cut; }
 function shrink(t, e) {
@@ -818,12 +878,12 @@ function shrink(t, e) {
     .sort((a, b) => (((b.venue || {}).id === (t.venue || {}).id) - ((a.venue || {}).id === (t.venue || {}).id)) || seatedIds(a).length - seatedIds(b).length)[0];
   const day = weekday(eventTimes(e).start);
   if (into) {
-    left.forEach((id) => { t.out[id] = true; if (into.ids.indexOf(id) < 0) into.ids.push(id); if (into.out) delete into.out[id]; notify(id, 'merged', { day, no: into.no }); });
+    left.forEach((id) => { t.out[id] = true; if (into.ids.indexOf(id) < 0) into.ids.push(id); if (into.out) delete into.out[id]; const st = (db.seats[e.id] || {})[id]; if (st) st.at = isoNow(); notify(id, 'merged', { day, no: into.no }); });
     charlie(into.id, `${listNames(left)} ${left.length > 1 ? 'are' : 'is'} joining you from another table, so you’re ${NUMW(seatedIds(into).length)} now. Say hi.`);
     charlie(t.id, `Plans changed and this table got too small, so I moved ${left.length > 1 ? 'you both' : 'you'} to table ${into.no}, same evening. It’s on Tables.`);
     closeTable(t, e, 'merged');
     if (into.venue && into.venue.id) syncBooking(into.venue.id, e.date);
-    if (!into.captain || seatedIds(into).indexOf(into.captain) < 0) pickCaptain(into);
+    if (!into.captain || seatedIds(into).indexOf(into.captain) < 0) { pickCaptain(into); captainChanged(into, e); }
     if (Date.now() > freeUntil(e)) alertOps('merge:' + t.id, 'table', `On ${day}, table ${t.no} got too small and joined table ${into.no}${into.venue ? ' at ' + into.venue.name : ''}. The restaurant gets an updated count automatically.`);
     return into;
   }
@@ -835,7 +895,8 @@ function closeTable(t, e, why) {
   const left = seatedIds(t), day = weekday(eventTimes(e).start);
   t.closed = why; t.closedAt = isoNow(); t.out = t.out || {};
   if (why !== 'merged') {
-    const line = why === 'place' ? `This table is off. The restaurant couldn’t host and I couldn’t find another spot in time. I’m sorry. You’re first in line next week, and you can ask for another evening on Tables.`
+    const line = why === 'admin' ? `This evening is off: something came up on our side and we had to cancel it. I’m sorry. You’re first in line next week, and you can ask for another evening on Tables.`
+      : why === 'place' ? `This table is off. The restaurant couldn’t host and I couldn’t find another spot in time. I’m sorry. You’re first in line next week, and you can ask for another evening on Tables.`
       : t.round > 1 ? `Round ${NUMW(t.round)} on ${day} is off. Plans changed and only ${NUMW(left.length)} of you could still make it, and a table needs three. Pick each other and mark the same evening, and I’ll seat you together.`
       : `This table is off. Plans changed and only ${NUMW(left.length)} of you could still make it, and a table needs three. I’m sorry. You’re first in line next week, and you can ask for another evening on Tables.`;
     left.forEach((id) => {
@@ -852,6 +913,17 @@ function closeTable(t, e, why) {
   }
   if (t.venue && t.venue.id) syncBooking(t.venue.id, e.date);
 }
+// the admin cancels a whole night: every table closes with a note, the people go first next week, restaurants are released
+function cancelEvent(b) {
+  const e = db.events[b.id]; if (!e) fail('no such event'); if (e.status === 'cancelled') return { ok: true };
+  const ahead = eventTimes(e).start > Date.now();
+  if (ahead) tablesOf(e.id).filter((t) => t.published && !t.closed).forEach((t) => closeTable(t, e, 'admin'));
+  Object.keys(db.seats[e.id] || {}).forEach((id) => { const st = db.seats[e.id][id]; if (st.status === 'held') { st.status = 'cancelled'; st.cancelledAt = isoNow(); st.byCharlie = true; } });
+  e.status = 'cancelled'; e.cancelledAt = isoNow();
+  tablesOf(e.id).forEach((t) => { if (t.venue && t.venue.id) syncBooking(t.venue.id, e.date); });
+  log('event-cancel', e.id, ahead ? 'ahead' : 'past');
+  return { ok: true };
+}
 function callOff(b) {
   const t = own(db.tables, b.table), e = t && db.events[t.eventId]; if (!t || !e || !t.published) fail('no such table');
   if (t.closed) fail('this table is already closed'); if (eventTimes(e).start < Date.now()) fail('this dinner already started');
@@ -862,21 +934,21 @@ function callOff(b) {
 /* ---------- late changes ----------
    Changing plans before noon the day before is free. After that the restaurant has the count, so a cancel is a late change
    (one point), and not showing up, as the organizer marks it, is two. Three points in sixty days pause invitations for two
-   weeks. Telling Charlie the next morning that you couldn't go never counts: honesty shouldn't cost anything. (Later, with a
+   weeks. Telling Charlie the next morning that you couldn't go counts nothing on its own, and halves a no-show the organizer marks. (Later, with a
    card on file, a late change can carry a small fee instead, the way restaurants charge for empty chairs.) */
 const COOL_DAYS = 14;
 function lateChanges(m) {
   const since = Math.max(Date.now() - 60 * DAY, m.coolUntil ? Date.parse(m.coolUntil) : 0); let n = 0;
   Object.keys(db.seats).forEach((eid) => { const s = (db.seats[eid] || {})[m.id]; if (s && s.late && !s.byCharlie && Date.parse(s.cancelledAt || 0) > since) n += 1; });
-  Object.values(db.tables).forEach((t) => { const e = db.events[t.eventId]; if ((t.attended || {})[m.id] === false && e && eventTimes(e).start > since) n += (((db.feedback[t.id] || {})[m.id] || {}).attended === false ? 1 : 2); });
+  Object.values(db.tables).forEach((t) => { const e = db.events[t.eventId]; if ((t.attended || {})[m.id] === false && !(t.out || {})[m.id] && e && eventTimes(e).start > since) n += (((db.feedback[t.id] || {})[m.id] || {}).attended === false ? 1 : 2); });
   return n;
 }
 const cooling = (m) => !!(m && m.coolUntil && Date.parse(m.coolUntil) > Date.now());
 function coolCheck(m) {
   if (!m) return;
-  if (cooling(m) && m.coolFrom) { const keep = m.coolUntil; m.coolUntil = m.coolFrom; const n = lateChanges(m); m.coolUntil = keep; if (n < 3) { delete m.coolUntil; delete m.coolFrom; log('cool-lifted', m.id, ''); } return; }
+  if (cooling(m) && m.coolFrom) { const keep = m.coolUntil; m.coolUntil = m.coolPrev || ''; const n = lateChanges(m); m.coolUntil = keep; if (n < 3) { delete m.coolUntil; delete m.coolFrom; log('cool-lifted', m.id, ''); } return; }
   if (cooling(m) || lateChanges(m) < 3) return;
-  m.coolFrom = isoNow();
+  m.coolFrom = isoNow(); m.coolPrev = m.coolUntil || '';
   m.coolUntil = new Date(Date.now() + COOL_DAYS * DAY).toISOString(); m.coolCount = (m.coolCount || 0) + 1;
   notify(m.id, 'cool', { until: dayLabel(Date.parse(m.coolUntil)) }); log('cool', m.id, m.coolUntil);
 }
@@ -911,6 +983,8 @@ function captainMove(me, b) {
   if (t.venue && t.venue.id) syncBooking(t.venue.id, e.date);
   return { ok: true };
 }
+// a new captain after the noon note: the table and the new captain both hear
+function captainChanged(t, e) { if (!t.captainNoted || !t.captain) return; charlie(t.id, `Plans changed, so ${firstOf(db.members[t.captain])} is captain tonight: first one there, gives the name at the door (Sidetable, party of ${NUMW(seatedIds(t).length)}).`); notify(t.captain, 'captain', { day: weekday(eventTimes(e).start) }); }
 // on the day, at noon: who the captain is, in the chat
 function captainNote(t) {
   if (!t.published || t.closed || t.captainNoted) return;
@@ -931,19 +1005,25 @@ const longCloses = (mo) => tzMs(addDays(longDate(mo), -5), '12:00');
 function publish(b, quiet) {
   const e = db.events[b.event]; if (!e) fail('no such event');
   if (e.status !== 'draft') fail('draft the tables first');
-  const ts = tablesOf(e.id); if (!ts.length) fail('no tables to publish');
+  // a table that shrank under three while it was a draft doesn't go out: its people wait, first in line
+  tablesOf(e.id).filter((t) => seatedIds(t).length < 3).forEach((t) => { e.wait = arr(e.wait).concat(seatedIds(t)); delete db.tables[t.id]; });
+  const ts = tablesOf(e.id); if (!ts.length) { if (!quiet) fail('no tables to publish'); arr(e.wait).forEach((id) => { const m = db.members[id]; if (m) m.prio = (m.prio || 0) + 1; }); e.status = 'cancelled'; return { ok: true }; }
   const when = eventTimes(e);
   ts.forEach((t) => {
-    t.published = true; t.publishedAt = new Date().toISOString(); placeTable(t); pickCaptain(t);
+    t.published = true; t.publishedAt = new Date().toISOString(); placeTable(t); pickCaptain(t); noPlace(t, when.start);
     charlie(t.id, `Welcome, table ${t.no}. Why you ${NUMW(seatedIds(t).length)}:\n${(t.why || []).join('\n')}`, 'why');
     if (when.start > Date.now()) startGame(t); // the menu for tonight's question
     t.ids.forEach((id) => { const m = db.members[id]; if (db.standby) delete db.standby[id]; if (m) { m.prio = 0; notify(id, 'table', { n: t.ids.length - 1, day: weekday(when.start) }); } });
   });
   (e.wait || []).forEach((id) => { const m = db.members[id]; if (m) { m.prio = (m.prio || 0) + 1; notify(id, 'wait', {}); } });
   e.status = 'published'; e.publishedAt = new Date().toISOString();
+  // open chairs go to whoever is waiting for that kind of table that evening
+  if (when.start > Date.now()) ts.forEach((t) => { for (let i = 0; i < 6 && seatedIds(t).length < tableCap(t) && fillChair(t, e); i++); });
   log('publish', e.id, ts.length + ' tables');
   return quiet ? { ok: true } : adminEvent(e.id);
 }
+// a table that went out with no partner able to take it: whoever is on duty hears now, not at noon on the day
+function noPlace(t, start) { if (!t.venue && Object.keys(db.places || {}).length) alertOps('noplace:' + t.id, 'place', `Table ${t.no} on ${dayLabel(start)} went out, and no partner has room for it that evening. Find a spot or call it off.`); }
 function NUMW(n) { return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'][n] || String(n); }
 
 /* ---------- chats ---------- */
@@ -1118,11 +1198,13 @@ function mutualPairs(t) {
 function isMutual(a, b) { return Object.values(db.tables).some((t) => t.published && t.ids.indexOf(a) >= 0 && t.ids.indexOf(b) >= 0 && mutualPairs(t).some((p) => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))); }
 function feedback(me, b) {
   const t = db.tables[b.table]; if (!canSeeTable(me, t)) fail('no such table');
+  if (t.out && t.out[me.id]) fail('you left this table before the dinner');
   const e = db.events[t.eventId]; if (Date.now() < eventTimes(e).start) fail('the dinner has not happened yet');
   const others = seatedIds(t).filter((x) => x !== me.id);
   const before = new Set(mutualPairs(t).map((p) => pk(p[0], p[1])));
   const f = (db.feedback[t.id] = db.feedback[t.id] || {}), went = b.attended !== false;
-  f[me.id] = { attended: went, rating: Math.max(0, Math.min(5, Math.round(+b.rating || 0))), picks: went ? arr(b.picks).filter((x) => others.indexOf(x) >= 0) : [],
+  const prev = f[me.id];
+  f[me.id] = { attended: went, rating: Math.max(0, Math.min(5, Math.round(+b.rating || 0))), picks: !went ? [] : b.picks === undefined && prev ? arr(prev.picks) : arr(b.picks).filter((x) => others.indexOf(x) >= 0),
     again: went && !!b.again, at: new Date().toISOString() };
   if (went) setLoose(me, t, b);
   const now = mutualPairs(t).filter((p) => !before.has(pk(p[0], p[1])));
@@ -1177,14 +1259,14 @@ function roundTwo(t) {
   const date = addDays(e.date, 14); if (tzMs(date, e.time) < Date.now() + ROUND_AHEAD) return null; // too late to book two weeks on
   const yes = againIds(t); if (yes.length < againNeed(seatedIds(t).length)) { againNudge(t, yes.length); return null; }
   const ids = keepApart(yes.filter((id) => !db.members[id].paused && !cooling(db.members[id]) && !busyOn(id, date))), round = (t.round || 1) + 1;
-  if (ids.length < 3) { t.next = 'busy'; charlie(t.id, `Most of you want round ${NUMW(round)}, but most of you already have a dinner ${weekday(tzMs(date, '12:00'))} two weeks from now. Pick each other and mark the same evening, and I’ll seat you together.`); return null; }
+  if (ids.length < 3) { if (t.busyNoted) return null; t.busyNoted = true; charlie(t.id, `Most of you want round ${NUMW(round)}, but most of you already have a dinner ${weekday(tzMs(date, '12:00'))} two weeks from now. Pick each other and mark the same evening, and I’ll seat you together.`); return null; }
   const now = new Date().toISOString();
   const ne = { id: 'e' + rid(4), type: e.type, date, time: e.time, meal: e.meal || 'dinner', week: mondayOf(date), generated: true, round, area: e.area, status: 'published', createdAt: now, publishedAt: now, notified: {}, wait: [] };
   db.events[ne.id] = ne; db.seats[ne.id] = {};
   ids.forEach((id) => { db.seats[ne.id][id] = { at: now, size: 'either', diet: ((db.members[id].profile || {}).diet) || [], status: 'held' }; });
   const nt = { id: 't' + rid(5), eventId: ne.id, no: 1, track: t.track, ids: ids.slice(), round, root: t.root || t.id, prev: t.id, venue: t.venue && !t.venue.id ? Object.assign({}, t.venue) : null,
     published: true, publishedAt: now, attended: {}, createdAt: now, score: t.score, flags: [], split: t.split || null };
-  db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
+  db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); noPlace(nt, tzMs(date, e.time)); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
   const when = eventTimes(ne).start, open = Math.min(tableCap(nt), ids.length + 2) - ids.length, spot = nt.same ? 'same spot' : nt.venue ? 'a new spot this time' : 'the spot comes on the day';
   charlie(nt.id, `Round ${NUMW(round)}, ${spot}. Why you’re back:\n${nt.why.join('\n')}`, 'why');
   charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}.${open > 0 ? ` I’m keeping ${NUMW(open)} ${open > 1 ? 'chairs' : 'chair'} open for someone new.` : ''} It’s on Tables.`);
@@ -1214,7 +1296,7 @@ function againView(t, me) {
   const n = seatedIds(t).length, nt = t.next && db.tables[t.next], ne = nt && db.events[nt.eventId], e = db.events[t.eventId], at = e ? tzMs(addDays(e.date, 14), e.time) : 0;
   return { when: e ? dayLabel(at) : '', open: !!e && e.status !== 'cancelled' && at >= Date.now() + ROUND_AHEAD, yes: againIds(t).length, need: againNeed(n), round: (t.round || 1) + 1,
     mine: !!(((db.feedback[t.id] || {})[me.id]) || {}).again, booked: nt && ne && ne.status !== 'cancelled' && !nt.closed ? { id: nt.id, label: dayLabel(eventTimes(ne).start), in: seatedIds(nt).indexOf(me.id) >= 0, same: !!nt.same } : null,
-    busy: t.next === 'busy', off: t.next === 'off' || !!(ne && ne.status === 'cancelled') || !!(nt && nt.closed) };
+    busy: !!t.busyNoted && !nt, off: t.next === 'off' || !!(ne && ne.status === 'cancelled') || !!(nt && nt.closed) };
 }
 // round-two tables that week: their open chairs go to new people who marked that evening and still have room for a dinner
 // (never someone from the table before: a yes is already seated, and a no meant no)
@@ -1281,7 +1363,7 @@ function looseAt(t, me) {
    month's, so the dinners in the last days of a month count toward the next one. */
 const LONG_TIME = process.env.SIXTOP_LONG_TIME || '19:00';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-function longDate(mo) { const [y, m] = mo.split('-').map(Number), last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); return addDays(last, -((dowOf(last) + 3) % 7)); }
+function longDate(mo) { const o = (((db.longSpot || {})[mo]) || {}).date; if (o && /^\d{4}-\d{2}-\d{2}$/.test(o) && o.slice(0, 7) === mo) return o; const [y, m] = mo.split('-').map(Number), last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); return addDays(last, -((dowOf(last) + 3) % 7)); }
 function nextMonth(mo) { const [y, m] = mo.split('-').map(Number); return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0'); }
 function prevMonth(mo) { const [y, m] = mo.split('-').map(Number); return m === 1 ? (y - 1) + '-12' : y + '-' + String(m - 1).padStart(2, '0'); }
 function monthSpan(mo) { return { from: addDays(longDate(prevMonth(mo)), 1), to: longDate(mo) }; }
@@ -1359,8 +1441,9 @@ function ageLabel(iso) {
 }
 
 /* ---------- what a member sees ---------- */
-function photoUrl(owner, viewerToken) { const o = db.members[owner]; return o && o.photo ? '/api/photo?id=' + owner + '&t=' + viewerToken + '&v=' + encodeURIComponent(o.updatedAt || '') : null; }
-function mini(m, me) { return { id: m.id, first: firstOf(m), last: lastInitial(m), school: m.school, photo: photoUrl(m.id, me.token), headline: (m.profile || {}).headline || '' }; }
+const photoKey = (m) => m.pt || (m.pt = rid(16));
+function photoUrl(owner, viewer) { const o = db.members[owner]; return o && o.photo ? '/api/photo?id=' + owner + '&t=' + photoKey(viewer) + '&v=' + encodeURIComponent(o.updatedAt || '') : null; }
+function mini(m, me) { return { id: m.id, first: firstOf(m), last: lastInitial(m), school: m.school, photo: photoUrl(m.id, me), headline: (m.profile || {}).headline || '' }; }
 function card(m, me) {
   const p = m.profile || {}, pe = personaOf(m);
   return Object.assign(mini(m, me), { program: m.program || '', year: m.year, before: p.before || '', lens: p.lens, code: pe.code, persona: pe.name, askWork: p.askWork || '', askLife: p.askLife || '',
@@ -1381,7 +1464,8 @@ function tableSummary(t, me, tog) {
     unread: unread(me, 't:' + t.id, db.chats[t.id]), start: new Date(tm.start).toISOString(), size: seatedIds(t).length, meal: e.meal || '', mealName: e.meal ? MEALS[e.meal].t : 'Dinner', generated: !!e.generated,
     opened: !!me.read['inv:' + t.id], theme: e.type === 'kindred' ? themeOf(t) : null, faces: seatedIds(t).filter((x) => x !== me.id).slice(0, 5).map((x) => mini(db.members[x], me)), why: (t.why || []).slice(0, 2), sides: sidesOf(t),
     game: g ? gameSum(t, me) : null, round: t.round || 1, same: !!t.same, closed: t.closed && t.closed !== 'merged' && arr(t.closedFor).indexOf(me.id) >= 0 ? t.closed : null, offSeen: !!me.read['off:' + t.id], freeUntil: new Date(freeFor(e, me)).toISOString(), freeLabel: freeFor(e, me) === freeUntil(e) ? weekday(freeUntil(e)) + ' at noon' : (ymdTz(freeFor(e, me)) === ymdTz(Date.now()) ? 'today' : weekday(freeFor(e, me))) + ' at ' + timeLabel(freeFor(e, me)),
-    captain: t.captain && seatedIds(t).indexOf(t.captain) >= 0 && db.members[t.captain] ? { id: t.captain, first: firstOf(db.members[t.captain]), me: t.captain === me.id } : null, known: knownAt(t, me, tog, tm.start) };
+    captain: t.captain && seatedIds(t).indexOf(t.captain) >= 0 && db.members[t.captain] ? { id: t.captain, first: firstOf(db.members[t.captain]), me: t.captain === me.id } : null, known: knownAt(t, me, tog, tm.start),
+    spotIn: Date.now() >= tm.reveal && spotSet(t) && !(t.out && t.out[me.id]) };
 }
 // people at this table you've already shared a table or a hang with, and how many times
 function knownAt(t, me, tog, start) {
@@ -1604,7 +1688,7 @@ function view(me) {
   const p = me.profile || {}, pe = personaOf(me), ok = done(me), th = ok ? threads(me) : [], tog = ok ? together(me) : {};
   const tables = Object.values(db.tables).filter((t) => canSeeTable(me, t) && (db.events[t.eventId] || {}).status !== 'cancelled').map((t) => tableSummary(t, me, tog)).sort((a, b) => (a.start < b.start ? 1 : -1));
   return { standby: standbyView(me), days: [1, 2, 3, 4, 5, 6, 7].map((i) => { const d = addDays(ymdTz(Date.now()), i); return { date: d, dow: fmt(tzMs(d, '12:00'), { weekday: 'short' }), day: +d.slice(8) }; }),
-    me: { id: me.id, first: firstOf(me), name: me.name, email: me.email, verified: !!me.verified, school: me.school, program: me.program || '', year: me.year, profile: p, done: ok, persona: pe, photo: photoUrl(me.id, me.token),
+    me: { id: me.id, first: firstOf(me), name: me.name, email: me.email, verified: !!me.verified, school: me.school, program: me.program || '', year: me.year, profile: p, done: ok, persona: pe, photo: photoUrl(me.id, me),
       paused: !!me.paused, cool: cooling(me) ? dayLabel(Date.parse(me.coolUntil)) : '', late: ok ? lateChanges(me) : 0, captain: me.captain || 'maybe', push: !!(me.push && me.push.length), never: Object.keys(me.never || {}), tableSize: me.tableSize || 'either' },
     events, tables, connections: ok ? connections(me) : [], threads: th, campus: campusStats(), pushKey: PUSH.publicKey, area: AREA,
     counts: ok ? { board: Object.values(db.jobs).filter((j) => !j.closed && j.at > (me.read.board || '')).length, pulse: db.posts.filter((x) => postVisible(x, me) && x.by !== me.id && x.at > (me.read.pulse || '')).length,
@@ -1638,23 +1722,26 @@ const PUSH_TEXT = {
   wave: (o) => ({ body: `You and ${o.other || 'someone'} waved at each other. Say hi.`, url: './#messages' }),
   reply: (o) => ({ body: `${o.other || 'Someone'} replied to your post.`, url: './#board' }),
   roundoff: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} on ${o.day} is off, since only two of you could still make it. Your other tables stay the same.`, url: './#home' }),
-  lastcall: (o) => ({ body: `Dinner ${o.day} at ${o.time}. Can’t make it? Tell me by noon today and it’s free.`, url: './#home' }),
+  lastcall: (o) => ({ body: `Dinner ${o.day} at ${o.time}. Can’t make it? Tell me by ${o.by || 'noon today'} and it’s free.`, url: './#home' }),
   spot: (o) => ({ body: `Change of plans for ${o.day}: your table has a new spot. Tap for the address.`, url: './#table' }),
   merged: (o) => ({ body: `Plans changed for ${o.day}: you’re joining table ${o.no} instead, same evening.`, url: './#home' }),
-  tableoff: (o) => ({ body: `Your ${o.day} table is off: ${o.why === 'place' ? 'the restaurant couldn’t host and no other spot was free' : 'too many people had to cancel'}. You’re first in line next week, and you can find another evening now.`, url: './#home' }),
+  tableoff: (o) => ({ body: `Your ${o.day} table is off: ${o.why === 'admin' ? 'we had to cancel that evening' : o.why === 'place' ? 'the restaurant couldn’t host and no other spot was free' : 'too many people had to cancel'}. You’re first in line next week, and you can find another evening now.`, url: './#home' }),
   cool: (o) => ({ body: `A few late changes lately, so I’m pausing your invitations until ${o.until}. Hangs are open as always.`, url: './#home' }),
+  captain: (o) => ({ body: `You’re the captain for ${o.day}: get there five minutes early and give the name at the door.`, url: './#home' }),
   longin: (o) => ({ body: `A seat opened at the long table on ${o.day}, and it’s yours.`, url: './#home' }),
   again: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} is booked: your table again, ${o.day} two weeks from now.`, url: './#home' }),
-  unmatched: () => ({ body: 'No table fit your evenings this week. Mark a few more next week, or join a hang.', url: './#home' }),
+  unmatched: () => ({ body: 'No table fit your evenings this week, so you’re first in line next week. Hangs are open any day.', url: './#home' }),
   popjoin: (o) => ({ body: `${o.other || 'Someone'} is in for your hang: ${o.title || ''}`, url: './#hangs' }),
   popcancel: (o) => ({ body: `${o.other || 'The host'} called off “${o.title || 'the hang'}”.`, url: './#hangs' })
 };
+// about tonight: these always go out, whatever else someone got today
+const URGENT = ['reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'longin', 'table'];
 function notify(id, kind, o) {
   const m = db.members[id]; if (!m || m.deleted || !(m.push && m.push.length) || !PUSH_TEXT[kind]) return Promise.resolve(0);
   if (m.paused && kind === 'event') return Promise.resolve(0);
-  const day = new Date().toISOString().slice(0, 10);
+  const day = ymdTz(Date.now()), urgent = URGENT.indexOf(kind) >= 0;
   m.pushLog = (m.pushLog || []).filter((x) => x.day === day);
-  if (m.pushLog.length >= PUSH_DAY) return Promise.resolve(0);
+  if (!urgent && m.pushLog.filter((x) => URGENT.indexOf(x.kind) < 0).length >= PUSH_DAY) return Promise.resolve(0);
   m.pushLog.push({ day, kind });
   const t = PUSH_TEXT[kind](o || {});
   return Promise.all(m.push.map((sub) => PUSH.send(sub, { title: 'Sidetable', body: t.body, url: t.url, tag: kind }, { topic: kind })
@@ -1662,10 +1749,10 @@ function notify(id, kind, o) {
     .then((a) => { save(); return a.reduce((x, y) => x + y, 0); });
 }
 function setPush(me, b) {
-  if (b.off) { me.push = []; return { ok: true, push: false }; }
+  if (b.off) { me.push = b.endpoint ? (me.push || []).filter((x) => x.endpoint !== String(b.endpoint)) : []; return { ok: true, push: !!me.push.length }; }
   const sub = b.sub || {}, k = sub.keys || {};
   let u; try { u = new URL(String(sub.endpoint || '')); } catch (e) { fail('subscription required'); }
-  if (u.protocol !== 'https:' && process.env.SIXTOP_PUSH_HTTP !== '1') fail('subscription not allowed');
+  if (process.env.SIXTOP_PUSH_HTTP !== '1' && (u.protocol !== 'https:' || !/(\.googleapis\.com|\.mozilla\.com|\.push\.apple\.com|\.notify\.windows\.com)$/.test(u.hostname))) fail('subscription not allowed');
   if (String(sub.endpoint).length > 1000 || !/^[A-Za-z0-9_-]{80,100}$/.test(k.p256dh || '') || !/^[A-Za-z0-9_-]{16,30}$/.test(k.auth || '')) fail('subscription not recognized');
   me.push = (me.push || []).filter((x) => x.endpoint !== sub.endpoint).concat([{ endpoint: String(sub.endpoint), keys: { p256dh: k.p256dh, auth: k.auth }, at: new Date().toISOString() }]).slice(-3);
   return { ok: true, push: true };
@@ -1673,9 +1760,17 @@ function setPush(me, b) {
 // the venue at noon on the day, and the next-morning question, each once per event
 function tick(nowMs) {
   const now = nowMs || Date.now();
-  if (process.env.SIXTOP_AUTO_WEEK === '1') { const wk = targetWeek(now); if (!db.weeks[wk] && now >= weekCloses(wk) + 2 * HOUR) { try { matchWeek({ week: wk }); publishWeek({ week: wk }); } catch (e) { console.error(e); } } }
+  const today = ymdTz(now), wk = targetWeek(now), old = addDays(today, -8);
+  if (process.env.SIXTOP_AUTO_WEEK === '1') {
+    const cur = mondayOf(today), todo = !db.weeks[wk] && now >= weekCloses(wk) + 2 * HOUR ? wk : dowOf(today) === 1 && now < tzMs(today, '09:00') && !db.weeks[cur] ? cur : null;
+    if (todo) { try { matchWeek({ week: todo }); publishWeek({ week: todo }); } catch (e) { console.error(e); alertOps('autoweek:' + todo, 'week', `Building or publishing the week of ${dayLabel(tzMs(todo, '12:00'))} didn’t work (${e.message}). Build and publish it on the Tables tab.`); } }
+  }
+  if (dowOf(today) === 0 && now >= tzMs(today, '21:00')) {
+    const w = db.weeks[wk], marked = live().some((m) => m.avail && m.avail.week === wk && m.avail.slots.length);
+    if (marked && !(w && w.published)) alertOps('week:' + wk, 'week', w ? 'Next week’s tables are built but not published, and members are waiting for Sunday-night invitations. Publish them on the Tables tab.' : 'Next week’s tables aren’t built yet, and members are waiting for Sunday-night invitations. Build and publish them on the Tables tab.');
+  }
   Object.values(db.events).forEach((e) => {
-    if (e.status !== 'published') return;
+    if (e.status !== 'published' || e.date < old) return;
     const tm = eventTimes(e); e.notified = e.notified || {};
     const people = [].concat.apply([], tablesOf(e.id).map((t) => seatedIds(t)));
     if (!e.notified.reveal && now >= tm.reveal && now < tm.start + 3 * HOUR) {
@@ -1687,11 +1782,19 @@ function tick(nowMs) {
       });
     }
     tablesOf(e.id).forEach((t) => advanceGame(t, now));
-    if (!e.notified.lastcall && now >= tzMs(addDays(e.date, -1), '09:00') && now < freeUntil(e)) { e.notified.lastcall = 1; people.forEach((id) => notify(id, 'lastcall', { day: weekday(tm.start), time: timeLabel(tm.start) })); }
+    const cut = freeUntil(e);
+    if (!e.notified.lastcall && now >= Math.max(tzMs(addDays(e.date, -1), '09:00'), (Date.parse(e.publishedAt || 0) || 0) + HOUR) && now < cut - 30 * 60000) { e.notified.lastcall = 1; people.forEach((id) => notify(id, 'lastcall', { day: weekday(tm.start), time: timeLabel(tm.start), by: byLabel(cut, now) })); }
     if (!e.notified.feedback && now >= tm.pushFeedback && now < tm.start + 6 * DAY) { e.notified.feedback = 1; people.filter((id) => !tablesOf(e.id).some((t) => (db.feedback[t.id] || {})[id])).forEach((id) => notify(id, 'feedback')); }
   });
   Object.values(db.pops).forEach((u) => { if (u.game && !u.cancelled && popTimes(u).end + DAY > now) advanceGame(u, now); });
   Object.values(db.tables).forEach((t) => { const e = db.events[t.eventId]; if (t.published && !t.closed && !t.venue && e && e.status === 'published' && eventTimes(e).start > now) placeTable(t); if (t.revealWait && !t.closed) revealNow(t, now); });
+  const mo = monthNow(), going = Object.keys(db.long[mo] || {}).length;
+  if (going && now >= longCloses(mo) && now < tzMs(longDate(mo), LONG_TIME) && !(db.longCount || {})[mo]) {
+    (db.longCount = db.longCount || {})[mo] = isoNow(); const sp = (db.longSpot || {})[mo] || {};
+    alertOps('longcount:' + mo, 'long', `Long table RSVPs just closed: ${going} going${arr((db.longWait || {})[mo]).length ? ', ' + arr(db.longWait[mo]).length + ' waiting' : ''}. Send the count to ${sp.name || 'the venue'}${sp.name ? '' : ' (no venue entered yet)'}.`);
+  }
+  // sign-ups that never finished: their name and email don't stay around
+  Object.keys(db.verify).forEach((em) => { if ((db.verify[em].exp || 0) + DAY < now) delete db.verify[em]; });
   placeMail(now);
   save();
 }
@@ -1703,6 +1806,8 @@ function report(me, b) {
   me.never = me.never || {}; me.never[o.id] = 1;
   db.reports.push({ by: me.id, who: o.id, reason: clip(b.reason, 60), text: clip(b.text, 600), at: new Date().toISOString(), open: true });
   log('report', me.id, o.id);
+  const shared = Object.values(db.tables).some((t) => t.published && !t.closed && seatedIds(t).indexOf(me.id) >= 0 && seatedIds(t).indexOf(o.id) >= 0 && (db.events[t.eventId] || {}).date >= ymdTz(Date.now()));
+  alertOps('report:' + o.id + ':' + me.id, 'report', `${me.name} reported ${o.name || 'a member'}${b.reason ? ' (' + clip(b.reason, 60) + ')' : ''}. Read it on the People tab within a day.${shared ? ' They share an upcoming table, and the reporter can step out of it at no cost.' : ''}`);
   return { ok: true };
 }
 function erase(me) {
@@ -1712,7 +1817,14 @@ function erase(me) {
   if (db.standby) delete db.standby[me.id];
   Object.keys(db.long || {}).forEach((mo) => { if (db.long[mo][me.id]) { delete db.long[mo][me.id]; if (Date.now() < tzMs(longDate(mo), LONG_TIME) - 6 * HOUR) promoteLong(mo); } });
   Object.keys(db.longWait || {}).forEach((mo) => { db.longWait[mo] = arr(db.longWait[mo]).filter((x) => x !== me.id); });
-  db.members[me.id] = { id: me.id, deleted: true, deletedAt: new Date().toISOString() }; // the link stops working; nothing else is kept
+  Object.keys(db.chats).forEach((k) => { db.chats[k] = arr(db.chats[k]).filter((x) => x.from !== me.id); });
+  Object.keys(db.dms).forEach((k) => { if (k.split('|').indexOf(me.id) >= 0) delete db.dms[k]; });
+  db.posts.forEach((p) => { if (p.by === me.id) { p.removed = true; p.text = ''; } });
+  Object.values(db.jobs).forEach((j) => { if (j.by === me.id) j.closed = true; });
+  delete db.waves[me.id]; Object.keys(db.waves).forEach((a) => { if (db.waves[a]) delete db.waves[a][me.id]; });
+  Object.keys(db.verify).forEach((e) => { if (e === me.email || db.verify[e].id === me.id) delete db.verify[e]; });
+  Object.keys(db.feedback).forEach((t) => { if (db.feedback[t]) delete db.feedback[t][me.id]; });
+  db.members[me.id] = { id: me.id, deleted: true, deletedAt: new Date().toISOString() }; // the link stops working; their messages, posts, picks and waves go too
   return { ok: true };
 }
 function log(kind, a, b) { db.log.push({ kind, a: a || '', b: b || '', at: new Date().toISOString() }); db.log = db.log.slice(-500); }
@@ -1746,7 +1858,7 @@ function metrics() {
   Object.keys(db.seats).forEach((eid) => { const e = db.events[eid]; if (!e) return; Object.keys(db.seats[eid]).forEach((id) => { if (db.seats[eid][id].status === 'held') (e.type === 'kindred' ? kinIds : topicIds).add(id); }); });
   return {
     invited: L.length, joined: joined.length, harvard: joined.filter((m) => m.school === 'harvard').length, mit: joined.filter((m) => m.school === 'mit').length,
-    showUp: seated ? Math.round(100 * came / Math.max(1, came + absent)) + '%' : 'n/a', confirmed: came + ' of ' + seated, rating: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'n/a',
+    showUp: came + absent ? Math.round(100 * came / (came + absent)) + '%' : 'n/a', confirmed: came + ' of ' + seated, rating: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'n/a',
     rebook, mutual, dms: Object.keys(db.dms).length, met: cs.first, second: cs.second, third: cs.third, wantAgain: again, standing, longGoing: Object.keys(db.long[monthNow()] || {}).filter((id) => db.members[id] && !db.members[id].deleted).length,
     popsHosted: Object.keys(db.pops).length, popJoins: Object.values(db.pops).reduce((n, x) => n + x.joined.length, 0),
     roles: Object.values(db.jobs).filter((j) => !j.closed).length, introsAsked: db.intros.length, introsYes: db.intros.filter((x) => x.status === 'accepted').length,
@@ -1778,7 +1890,7 @@ function adminState() {
   };
 }
 function weekAdmin() {
-  const week = targetWeek(), w = db.weeks[week] || null, L = live().filter((m) => done(m) && m.avail && m.avail.week === week && m.avail.slots.length);
+  const week = pendingWeek() || targetWeek(), w = db.weeks[week] || null, L = live().filter((m) => done(m) && m.avail && m.avail.week === week && m.avail.slots.length);
   const slots = weekSlots(week).map((sid) => { const [date, meal] = sid.split('|'); const ms = L.filter((m) => m.avail.slots.indexOf(sid) >= 0); return { id: sid, label: DOW[dowOf(date)] + ' ' + date.slice(5) + ' ' + MEALS[meal].t, n: ms.length, harvard: ms.filter((m) => m.school === 'harvard').length, mit: ms.filter((m) => m.school === 'mit').length }; });
   return { week, closes: dayLabel(weekCloses(week)) + ' ' + timeLabel(weekCloses(week)), people: L.length, slots, matched: !!w, published: !!(w && w.published),
     events: w ? w.events.filter((eid) => db.events[eid]).map((eid) => ({ id: eid, label: dayLabel(eventTimes(db.events[eid]).start) + ', ' + (db.events[eid].type === 'kindred' ? 'Social' : 'Tech'), tables: tablesOf(eid).length })) : [], unmatched: w ? w.unmatched.length : 0 };
@@ -1809,49 +1921,65 @@ function adminEvent(id) {
 
 /* ---------- http ---------- */
 const hits = new Map();
-function limited(key, max) { const now = Date.now(), w = (hits.get(key) || []).filter((t) => now - t < 60000); w.push(now); hits.set(key, w); return w.length > max; }
+function limited(key, max) {
+  const now = Date.now(), w = (hits.get(key) || []).filter((t) => now - t < 60000); w.push(now); hits.set(key, w);
+  if (hits.size > 5000) hits.forEach((v, k) => { if (now - v[v.length - 1] > 60000) hits.delete(k); });
+  return w.length > max;
+}
+const recent = (key) => (hits.get(key) || []).filter((t) => Date.now() - t < 60000).length;
 function send(res, code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(obj)); }
 function readBody(req, max) {
   return new Promise((resolve, reject) => {
     let n = 0; const chunks = [];
-    req.on('data', (c) => { n += c.length; if (n > max) { reject(Object.assign(new Error('too large'), { user: true })); req.destroy(); } else chunks.push(c); });
+    req.on('data', (c) => { n += c.length; if (n > max) { if (!chunks.over) { chunks.over = true; chunks.length = 0; reject(Object.assign(new Error('that’s too big to send'), { user: true })); } } else if (!chunks.over) chunks.push(c); });
     req.on('end', () => { try { const v = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}; resolve(v && typeof v === 'object' && !Array.isArray(v) ? v : {}); } catch (e) { reject(Object.assign(new Error('bad json'), { user: true })); } });
     req.on('error', reject);
   });
 }
 const STATIC = { '/': 'index.html', '/index.html': 'index.html', '/admin': 'admin.html', '/place': 'place.html', '/shared.js': 'shared.js', '/app.css': 'app.css', '/sw.js': 'sw.js', '/manifest.webmanifest': 'manifest.webmanifest' };
 const TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8', webmanifest: 'application/manifest+json', png: 'image/png', jpg: 'image/jpeg', mp4: 'video/mp4' };
+const STATIC_CACHE = {};
+function staticBody(file) {
+  const st = fs.statSync(file), c = STATIC_CACHE[file]; if (c && c.mtime === st.mtimeMs && c.size === st.size) return c;
+  const raw = fs.readFileSync(file);
+  return (STATIC_CACHE[file] = { mtime: st.mtimeMs, size: st.size, raw, etag: '"' + crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16) + '"', gz: /\.(html|js|css|webmanifest)$/.test(file) ? require('zlib').gzipSync(raw) : null });
+}
 function serveStatic(p, res, req) {
   let f = STATIC[p]; if (!f && (/^\/icons\/icon-\d{2,4}\.png$/.test(p) || /^\/img\/[a-z]+\.jpg$/.test(p) || /^\/video\/[a-z]+\.mp4$/.test(p))) f = p.slice(1);
   if (!f) return false;
   const file = path.join(PUB, f); if (!fs.existsSync(file)) { send(res, 404, { error: 'not found' }); return true; }
   const ext = f.split('.').pop();
   if (ext === 'mp4') return serveVideo(file, req, res);
-  res.writeHead(200, { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === 'png' || ext === 'jpg' ? 'public, max-age=86400' : 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' });
-  res.end(fs.readFileSync(file));
+  const c = staticBody(file), head = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === 'png' || ext === 'jpg' ? 'public, max-age=86400' : 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Frame-Options': 'DENY', ETag: c.etag, Vary: 'Accept-Encoding' };
+  if (req && req.headers['if-none-match'] === c.etag) { res.writeHead(304, head); res.end(); return true; }
+  const gz = !!(c.gz && req && /\bgzip\b/.test(String(req.headers['accept-encoding'] || '')));
+  res.writeHead(200, gz ? Object.assign(head, { 'Content-Encoding': 'gzip' }) : head);
+  res.end(req && req.method === 'HEAD' ? undefined : gz ? c.gz : c.raw);
   return true;
 }
 // the opening film: Safari on iPhone only plays video from servers that answer byte ranges
 function serveVideo(file, req, res) {
   const size = fs.statSync(file).size, m = /^bytes=(\d*)-(\d*)$/.exec((req && req.headers.range) || '');
   const head = { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' };
-  if (!m) { res.writeHead(200, Object.assign(head, { 'Content-Length': size })); fs.createReadStream(file).pipe(res); return true; }
+  const stream = (o) => { const rs = fs.createReadStream(file, o); res.on('close', () => rs.destroy()); rs.on('error', () => res.destroy()); rs.pipe(res); };
+  if (!m) { res.writeHead(200, Object.assign(head, { 'Content-Length': size })); stream(); return true; }
   let a = m[1] === '' ? size - +m[2] : +m[1], b = m[1] !== '' && m[2] !== '' ? +m[2] : size - 1;
   a = Math.max(0, a); b = Math.min(b, size - 1);
   if (a > b || a >= size) { res.writeHead(416, { 'Content-Range': 'bytes */' + size }); res.end(); return true; }
   res.writeHead(206, Object.assign(head, { 'Content-Range': `bytes ${a}-${b}/${size}`, 'Content-Length': b - a + 1 }));
-  fs.createReadStream(file, { start: a, end: b }).pipe(res);
+  stream({ start: a, end: b });
   return true;
 }
 const server = http.createServer(async (req, res) => {
   let u; try { u = new URL(req.url, 'http://x'); } catch (e) { return send(res, 400, { error: 'bad request' }); }
-  const p = u.pathname, ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const p = u.pathname, ip = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim() || req.socket.remoteAddress || '', tk = String(req.headers['x-sixtop-token'] || '');
   try {
     if ((req.method === 'GET' || req.method === 'HEAD') && serveStatic(p, res, req)) return;
-    if (req.method === 'GET' && p === '/health') return send(res, 200, { ok: true, members: live().length });
-    if (limited(ip, +process.env.SIXTOP_RATE || 300)) return send(res, 429, { error: 'slow down' });
+    if (req.method === 'GET' && p === '/health') return send(res, 200, { ok: true });
+    if (limited(/^[a-f0-9]{32}$/.test(tk) && byToken(tk) ? 'm:' + tk : ip, +process.env.SIXTOP_RATE || 300)) return send(res, 429, { error: 'slow down' });
     if (p.indexOf('/api/admin/') === 0) {
-      if (!adminOK(req)) return send(res, 401, { error: 'admin key required' });
+      if (recent('adminfail:' + ip) >= 10) return send(res, 429, { error: 'slow down' });
+      if (!adminOK(req)) { limited('adminfail:' + ip, 10); return send(res, 401, { error: 'admin key required' }); }
       if (req.method === 'GET' && p === '/api/admin/state') return send(res, 200, adminState());
       if (req.method === 'GET' && p === '/api/admin/event') return send(res, 200, adminEvent(u.searchParams.get('id')));
       const b = req.method === 'POST' ? await readBody(req, 64 * 1024) : {};
@@ -1860,7 +1988,7 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/club') out = newClub(b);
       else if (p === '/api/admin/club-off') { const c = own(db.clubs, b.code); if (!c) fail('no such club'); c.off = !c.off; out = { ok: true }; }
       else if (p === '/api/admin/event') out = createEvent(b);
-      else if (p === '/api/admin/event-cancel') { const e = db.events[b.id]; if (!e) fail('no such event'); e.status = 'cancelled'; tablesOf(e.id).forEach((t) => { if (t.venue && t.venue.id) syncBooking(t.venue.id, e.date); }); out = { ok: true }; }
+      else if (p === '/api/admin/event-cancel') out = cancelEvent(b);
       else if (p === '/api/admin/draft') out = draft(b);
       else if (p === '/api/admin/move') out = move(b);
       else if (p === '/api/admin/venue') out = setVenue(b);
@@ -1874,12 +2002,12 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/table-off') out = callOff(b);
       else if (p === '/api/admin/alert-done') { const a = arr(db.alerts).find((x) => x.id === b.id); if (!a) fail('no such alert'); a.done = !a.done; a.doneAt = isoNow(); out = opsAdmin(); }
       else if (p === '/api/admin/publish') out = publish(b);
-      else if (p === '/api/admin/attend') { const t = db.tables[b.table]; if (!t) fail('no such table'); t.attended = t.attended || {}; if (b.attended == null) delete t.attended[b.member]; else t.attended[b.member] = !!b.attended; coolCheck(db.members[b.member]); out = adminEvent(t.eventId); }
+      else if (p === '/api/admin/attend') { const t = db.tables[b.table]; if (!t) fail('no such table'); if (b.attended === false && t.out && t.out[b.member]) fail('they cancelled before the dinner, and that already counts on its own'); t.attended = t.attended || {}; if (b.attended == null) delete t.attended[b.member]; else t.attended[b.member] = !!b.attended; coolCheck(db.members[b.member]); out = adminEvent(t.eventId); }
       else if (p === '/api/admin/announce') { const e = db.events[b.event]; if (!e) fail('no such event'); const text = clip(b.text, 600).trim(); if (!text) fail('message required'); tablesOf(e.id).filter((t) => t.published).forEach((t) => charlie(t.id, text)); out = { ok: true }; }
       else if (p === '/api/admin/remove') { const m = db.members[b.id]; if (!m) fail('no such member'); erase(m); out = { ok: true }; }
       else if (p === '/api/admin/match-week') out = matchWeek(b);
       else if (p === '/api/admin/publish-week') out = publishWeek(b);
-      else if (p === '/api/admin/pop-cancel') { const x = db.pops[b.id]; if (!x) fail('no such hang'); x.cancelled = true; out = { ok: true }; }
+      else if (p === '/api/admin/pop-cancel') { const x = db.pops[b.id]; if (!x) fail('no such hang'); if (!x.cancelled) { x.cancelled = true; if (popTimes(x).start > Date.now()) x.joined.concat([x.host]).forEach((id) => notify(id, 'popcancel', { title: x.title, other: 'Sidetable' })); } out = { ok: true }; }
       else if (p === '/api/admin/job') out = postJob(null, b);
       else if (p === '/api/admin/job-close') { const j = db.jobs[b.id]; if (!j) fail('no such role'); j.closed = !j.closed; out = { ok: true }; }
       else if (p === '/api/admin/post-remove') { const x = db.posts.find((q) => q.id === b.id); if (!x) fail('no such post'); x.removed = !x.removed; out = { ok: true }; }
@@ -1896,12 +2024,12 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/join' && req.method === 'GET') { const c = own(db.clubs, u.searchParams.get('code') || ''); return c && !c.off ? send(res, 200, { ok: true, club: c.name }) : send(res, 404, { error: 'this join link is not active' }); }
     if ((p === '/api/verify/start' || p === '/api/verify/finish') && req.method === 'POST') {
-      if (limited('verify:' + ip, 12)) return send(res, 429, { error: 'slow down' });
+      if (limited('verify:' + ip, 60)) return send(res, 429, { error: 'slow down' });
       const who = byToken(String(req.headers['x-sixtop-token'] || '')) || null, b = await readBody(req, 8 * 1024);
       const out = p === '/api/verify/start' ? await startVerify(who, b) : finishVerify(who, b); save(true); return send(res, 200, out);
     }
     if (p === '/api/photo' && req.method === 'GET') {
-      const me = byToken(u.searchParams.get('t')), id = u.searchParams.get('id') || '', o = db.members[id];
+      const pt = u.searchParams.get('t') || '', id = u.searchParams.get('id') || '', o = db.members[id], me = /^[a-f0-9]{32}$/.test(pt) ? live().find((m) => m.pt === pt) : null;
       const ok = me && o && o.photo && !o.deleted && (id === me.id || (me.verified && done(me) && !blockedEither(me.id, id)));
       const f = path.join(PHOTOS, id + '.img'); if (!ok || !/^m[a-f0-9]{8}$/.test(id) || !fs.existsSync(f)) return send(res, 404, { error: 'not found' });
       res.writeHead(200, { 'Content-Type': 'image/' + (o.photoType || 'jpeg'), 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
@@ -1914,13 +2042,13 @@ const server = http.createServer(async (req, res) => {
       me.seenAt = new Date().toISOString();
       if (req.method === 'GET') {
         if (p === '/api/me') return send(res, 200, view(me));
-        if (p === '/api/table') { const v = tableView(me, u.searchParams.get('id')); me.read['t:' + v.id] = new Date().toISOString(); save(); return send(res, 200, v); }
-        if (p === '/api/chat') { const t = own(db.tables, u.searchParams.get('table')); if (!canSeeTable(me, t)) fail('no such table'); if (t.out && t.out[me.id]) fail('you left this table'); advanceGame(t); me.read['t:' + t.id] = new Date().toISOString(); save(); return send(res, 200, { messages: chatOut(db.chats[t.id], u.searchParams.get('after') || ''), game: gameView(t, me) }); }
+        if (p === '/api/table') { const v = tableView(me, u.searchParams.get('id')); me.read['t:' + v.id] = new Date().toISOString(); saveSoon(); return send(res, 200, v); }
+        if (p === '/api/chat') { const t = own(db.tables, u.searchParams.get('table')); if (!canSeeTable(me, t)) fail('no such table'); if (t.out && t.out[me.id]) fail('you left this table'); advanceGame(t); me.read['t:' + t.id] = new Date().toISOString(); saveSoon(); return send(res, 200, { messages: chatOut(db.chats[t.id], u.searchParams.get('after') || ''), game: gameView(t, me) }); }
         if (p === '/api/pops') return send(res, 200, { pops: pops(me) });
-        if (p === '/api/pop') { const r = popView(me, u.searchParams.get('id')); save(); return send(res, 200, r); }
-        if (p === '/api/pchat') { const x = db.pops[u.searchParams.get('id')]; if (!x || (x.host !== me.id && x.joined.indexOf(me.id) < 0)) fail('no such hang'); ensurePopGame(x); advanceGame(x); me.read['p:' + x.id] = new Date().toISOString(); save(); return send(res, 200, { messages: chatOut(db.chats['p:' + x.id], u.searchParams.get('after') || ''), game: gameView(x, me) }); }
-        if (p === '/api/board') { const r = board(me); save(); return send(res, 200, r); }
-        if (p === '/api/pulse') { const r = pulse(me); save(); return send(res, 200, r); }
+        if (p === '/api/pop') { const r = popView(me, u.searchParams.get('id')); saveSoon(); return send(res, 200, r); }
+        if (p === '/api/pchat') { const x = db.pops[u.searchParams.get('id')]; if (!x || (x.host !== me.id && x.joined.indexOf(me.id) < 0)) fail('no such hang'); ensurePopGame(x); advanceGame(x); me.read['p:' + x.id] = new Date().toISOString(); saveSoon(); return send(res, 200, { messages: chatOut(db.chats['p:' + x.id], u.searchParams.get('after') || ''), game: gameView(x, me) }); }
+        if (p === '/api/board') { const r = board(me); saveSoon(); return send(res, 200, r); }
+        if (p === '/api/pulse') { const r = pulse(me); saveSoon(); return send(res, 200, r); }
         if (p === '/api/post') { const x = postBy(u.searchParams.get('id')); if (!x || !postVisible(x, me)) fail('no such post'); return send(res, 200, postOut(x, me, true)); }
         if (p === '/api/people') return send(res, 200, { people: people(me, u.searchParams.get('q'), u.searchParams.get('track')) });
         if (p === '/api/person') return send(res, 200, personView(me, u.searchParams.get('id')));
@@ -1929,6 +2057,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === 'DELETE' && p === '/api/me') { erase(me); save(true); return send(res, 200, { ok: true }); }
       const b = req.method === 'POST' ? await readBody(req, p === '/api/profile' ? 2.5 * 1024 * 1024 : 32 * 1024) : {};
+      if (db.members[me.id] !== me || me.deleted) return send(res, 401, { error: 'this link is not active' });
       let out;
       if (p === '/api/profile') { saveProfile(me, b); out = { ok: true }; }
       else if (p === '/api/seat') out = bookSeat(me, b);
@@ -1970,12 +2099,25 @@ const server = http.createServer(async (req, res) => {
     }
     return send(res, 404, { error: 'not found' });
   } catch (e) {
-    if (!e.user) console.error(e);
+    if (!e.user && e.code !== 'ECONNRESET' && e.message !== 'aborted') console.error(e);
+    if (res.headersSent || res.destroyed) return;
     return send(res, e.user ? 400 : 500, { error: e.user ? e.message : 'something went wrong' });
   }
 });
 
 function start(port) {
+  if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) { // on Railway the container's own disk is wiped on every deploy
+    const vol = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+    if (!vol) throw new Error('Attach a Railway volume (mounted at /data) before starting, or every deploy starts with no members.');
+    if (path.relative(path.resolve(vol), DATA).indexOf('..') === 0) throw new Error('SIXTOP_DATA_DIR (' + DATA + ') has to be inside the volume at ' + vol + '.');
+  }
+  process.on('unhandledRejection', (e) => console.error('unhandled', (e && e.stack) || e));
+  if (/^https:\/\//.test(PUBLIC_URL)) {
+    if (MAIL_MODE === 'show') throw new Error('SIXTOP_MAIL=show puts sign-in codes on screen, so anyone could sign in as anyone. Remove it on a real deployment.');
+    if (String(process.env.SIXTOP_ADMIN_KEY || '').length < 16) throw new Error('Set SIXTOP_ADMIN_KEY to a long random secret (16+ characters) on a real deployment.');
+  }
+  if (MAIL_MODE !== 'show' && (!process.env.RESEND_API_KEY || !MAIL_FROM)) console.warn('RESEND_API_KEY or SIXTOP_MAIL_FROM is not set: nobody can get a sign-in code, so nobody can join.');
+  if (!PUBLIC_URL) console.warn('SIXTOP_PUBLIC_URL is not set: invite, club and restaurant links will be missing the site address.');
   const t = setInterval(() => { try { tick(); } catch (e) { console.error(e); } }, 5 * 60 * 1000); if (t.unref) t.unref();
   process.on('SIGINT', () => { save(true); process.exit(0); });
   process.on('SIGTERM', () => { save(true); process.exit(0); });
@@ -1983,4 +2125,4 @@ function start(port) {
 }
 if (require.main === module) start();
 module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, setLongSpot, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, promoteLong, setVenue, fillRounds, monthView, setLong, longDate, monthNow,
-  isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };
+  isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };

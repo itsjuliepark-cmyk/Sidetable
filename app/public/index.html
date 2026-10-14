@@ -282,7 +282,7 @@
       </div>
       <button class="gpin" id="gpanel" hidden onclick="openGame()"></button>
       <div class="msgs" id="msgs"></div>
-      <div class="composer"><input id="chatIn" maxlength="800" placeholder="Message the table" onkeydown="if(event.key==='Enter')sendChat()" /><button onclick="sendChat()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+      <div class="composer"><input id="chatIn" maxlength="800" placeholder="Message the table" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendChat()" /><button onclick="sendChat()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
     </section>
 
     <!-- At the table -->
@@ -325,7 +325,7 @@
         <div id="dmHead"></div>
       </div>
       <div class="msgs" id="dmMsgs"></div>
-      <div class="composer"><input id="dmIn" maxlength="800" placeholder="Say hi" onkeydown="if(event.key==='Enter')sendDm()" /><button onclick="sendDm()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+      <div class="composer"><input id="dmIn" maxlength="800" placeholder="Say hi" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendDm()" /><button onclick="sendDm()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
     </section>
 
     <nav class="tabbar" id="tabbar">
@@ -394,7 +394,7 @@ const A = { token: '', view: null, P: null, qi: 0, table: null, chat: null, dm: 
   pop: null, inv: null, popSeg: 'all', host: null, people: null, pseg: 'people', pq: '', ptrack: '', board: null, bf: 'for', bseg: 'all', btrack: '', posts: null, cp: null, openPost: null };
 function api(method, url, body) {
   return fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-sixtop-token': A.token }, body: body ? JSON.stringify(body) : undefined })
-    .then((r) => r.json().catch(() => ({})).then((j) => { if (!r.ok) { const e = new Error(j.error || ('error ' + r.status)); e.status = r.status; throw e; } if (j.view) A.view = j.view; return j; }));
+    .then((r) => r.json().catch(() => ({})).then((j) => { if (!r.ok) { const e = new Error(j.error || ('error ' + r.status)); e.status = r.status; throw e; } if (j.view) { if (availTimer && A.view && A.view.avail) j.view.avail = A.view.avail; A.view = j.view; } return j; }));
 }
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
 function note(slot, text) { $(slot).innerHTML = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>${esc(text)}</p></div>`; }
@@ -417,7 +417,7 @@ function go(id, opts) {
   if (A.poll && id !== cur) { clearInterval(A.poll); A.poll = null; }
   const prev = cur ? $('s-' + cur) : null;
   if (prev && prev.id !== 's-' + id) { prev.classList.remove('on'); prev.classList.add('out'); setTimeout(() => prev.classList.remove('out'), 450); }
-  if (cur && cur !== id && !opts.noHist) hist.push(cur);
+  if (cur && cur !== id && !opts.noHist) { hist.push(cur); try { history.pushState({ sx: hist.length }, ''); } catch (e) {} }
   const was = cur; cur = id;
   if ((was === 'chat' || was === 'dm') && id !== was) setTimeout(refresh, 300);
   $('phone').dataset.scene = SCENE[id] || 'join'; document.body.classList.toggle('on-film', id === 'start');
@@ -429,7 +429,10 @@ function go(id, opts) {
   document.querySelectorAll('.tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.t === id));
   setStep(id); closeSheet(); badges();
 }
-function back() {
+let popSkip = 0;
+window.addEventListener('popstate', () => { if (popSkip) { popSkip--; return; } if (hist.length || (cur === 'q' && A.qi > 0)) back(true); });
+function back(fromPop) {
+  if (fromPop !== true && hist.length && history.state && history.state.sx) { popSkip++; try { history.back(); } catch (e) { popSkip--; } }
   if (cur === 'q' && A.qi > 0) { A.qi--; renderQ(); return; }
   const p = hist.pop(); if (p) go(p, { noHist: true }); else if (A.view && A.view.me.done) tab('home');
   if (p === 'table' && A.table) api('GET', '/api/table?id=' + encodeURIComponent(A.table.id)).then((t) => { A.table = t; if (cur === 'table') drawTable(); }).catch(() => {});
@@ -844,7 +847,7 @@ function renderHome() {
     });
   }
   const cs = v.campus;
-  if (cs.first) out.push(`<div class="sp"></div><div class="cardg row"><div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles so far</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">${cs.first}</b> first meetings and <b style="color:var(--ink)">${cs.third}</b> third ones</div></div></div>`);
+  if (cs.first) out.push(`<div class="sp"></div><div class="cardg row"><div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles so far</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">${cs.first}</b> first meetings${cs.third ? ` and <b style="color:var(--ink)">${cs.third}</b> third ones` : ''}</div></div></div>`);
   $('homeBody').innerHTML = out.join('');
 }
 /* your month: every table is a bead on one thread (tap one to open it), round two wears a small 2, and the month ends with a
@@ -885,7 +888,7 @@ function availHTML() {
   const cool = (A.view.me || {}).cool, locked = !a.open || !!cool, n = a.max, short = a.count && a.count < n, mix = (A.view.me.profile || {}).mix || 'both';
   const career = Math.ceil(n / 2), social = n - career, pals = [], has = a.days.filter((d) => d.has);
   a.days.forEach((d) => (d.pals || []).forEach((p) => { if (pals.indexOf(p.first) < 0) pals.push(p.first); }));
-  const status = cool ? `Your invitations are paused until ${cool}, after a few late changes. Hangs are open as always.` : a.set ? 'Your invitations for that week are out. They’re above, under Your tables.' : !a.open ? 'Charlie is writing that week’s invitations now.'
+  const status = A.view.me.paused ? 'You’re taking a break, so no invitations for now. Turn it off in Me when you’re back.' : cool ? `Your invitations are paused until ${cool}, after a few late changes. Hangs are open as always.` : a.set ? 'Your invitations for that week are out. They’re above, under Your tables.' : !a.open ? 'Charlie is writing that week’s invitations now.'
     : !a.count ? 'Tap the evenings that work. Charlie sends invitations Sunday night.'
     : short ? `Mark at least ${nw(n)} evenings so Charlie can fit ${nw(n)} dinners.` : `Saved. Charlie sends your invitations Sunday night.`;
   return `<div class="row" style="align-items:flex-start"><div class="grow"><div class="ctitle" style="margin-bottom:6px">Next week, ${esc(a.label)}</div><h3 class="plh">How many dinners with <span class="it">Charlie</span>?</h3></div><span class="saved" id="availSaved">Saved</span></div>
@@ -929,7 +932,7 @@ function drawInvite(already) {
         <p class="dear">${esc(me.first)},</p>
         <h2>${t.round > 1 ? `you’re invited to <span class="it">round ${nw(t.round)}</span>` : `you’re invited to a <span class="it">${k === 'social' ? 'small dinner' : 'tech table'}</span>`}</h2>
         <div class="rule"></div>
-        <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? 'Tonight. The spot is in your table.' : 'The exact spot arrives on the day, at noon.'}</small></div>
+        <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? (t.spotIn ? 'Tonight. The spot is on your table.' : 'Tonight. The exact spot arrives at noon.') : 'The exact spot arrives on the day, at noon.'}</small></div>
         <div class="rule"></div>
         <p class="who">${esc(tableWho(t))}</p>
         ${knownHTML(t, 'known')}
@@ -993,7 +996,7 @@ function openDecline(id, mode) {
   const t = A.view.tables.find((x) => x.id === id) || (A.table && A.table.id === id ? A.table : null); if (!t) return;
   const skip = t.date || ymdLocal(new Date(t.start)), taken = A.view.tables.filter((x) => !x.left && x.phase !== 'past').map((x) => x.date || ymdLocal(new Date(x.start)));
   const days = (A.view.days || []).filter((d) => d.date !== skip && taken.indexOf(d.date) < 0).map((d) => ({ ymd: d.date, dow: d.dow, day: d.day }));
-  A.dec = { id, eventId: t.eventId, days, on: days.map((d) => d.ymd), late: mode !== 'off' && (t.freeUntil ? Date.now() > Date.parse(t.freeUntil) : new Date(t.start) - Date.now() < 864e5), freeLabel: t.freeLabel || '', kind: t.type === 'kindred' ? 'social' : 'tech', mode: mode || '' };
+  A.dec = { id, eventId: t.eventId, days, on: [], late: mode !== 'off' && (t.freeUntil ? Date.now() > Date.parse(t.freeUntil) : new Date(t.start) - Date.now() < 864e5), freeLabel: t.freeLabel || '', kind: t.type === 'kindred' ? 'social' : 'tech', mode: mode || '' };
   openSheet('<div id="decSheet"></div>'); drawDecline(t);
 }
 function drawDecline(t) {
@@ -1030,10 +1033,11 @@ function standbyHTML(s) {
 
 /* ---------------- a table ---------------- */
 function techRoom(on) { const p = $('phone'); if (p.dataset.scene === 'table' || p.dataset.scene === 'techtable') p.dataset.scene = on ? 'techtable' : 'table'; }
+function loadFailed(box, screen) { const el = $(box); if (el && cur === screen) el.innerHTML = '<p class="sub2" style="padding:24px 4px;text-align:center">Couldn’t load this. Go back and try again.</p>'; }
 function openTable(id) {
   go('table');
   $('tableBody').innerHTML = '<div class="spin"></div>';
-  api('GET', '/api/table?id=' + encodeURIComponent(id)).then((t) => { A.table = t; if (cur === 'table') { techRoom(t.type !== 'kindred'); drawTable(); } badges(); }).catch(oops);
+  api('GET', '/api/table?id=' + encodeURIComponent(id)).then((t) => { A.table = t; if (cur === 'table') { techRoom(t.type !== 'kindred'); drawTable(); } badges(); }).catch((e) => { oops(e); loadFailed('tableBody', 'table'); });
 }
 function seatsOf(people) {
   const top = people.filter((p) => p.school === 'mit'), bottom = people.filter((p) => p.school !== 'mit');
@@ -1203,23 +1207,26 @@ function cancelPop(b) { if (!b.dataset.armed) { b.dataset.armed = '1'; b.textCon
 function openPopRefresh() { api('GET', '/api/pop?id=' + encodeURIComponent(A.pop.id)).then((u) => { A.pop = u; if (cur === 'pop') drawPop(); }).catch(() => {}); }
 
 /* start a hang: what, social or topic, when, where */
+// Boston's wall clock as a local Date, so a phone set to another time zone still picks Boston times
+const CLUB_TZ = 'America/New_York', CLUBF = new Intl.DateTimeFormat('en-US', { timeZone: CLUB_TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+function clubDate(ms) { const p = {}; CLUBF.formatToParts(new Date(ms)).forEach((x) => { p[x.type] = x.value; }); return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute); }
 const ymdOf = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const hmOf = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 function nextDays(n) {
-  const out = []; for (let i = 0; i < n; i++) { const d = new Date(Date.now() + i * 864e5); out.push({ date: ymdOf(d), dow: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' }), day: d.getDate() }); }
+  const out = []; for (let i = 0; i < n; i++) { const d = clubDate(Date.now() + i * 864e5); out.push({ date: ymdOf(d), dow: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' }), day: d.getDate() }); }
   return out;
 }
 const WHEN = [['hour', 'In an hour'], ['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'This weekend'], ['pick', 'Pick a time']];
 const HINT = { coffee: 'Coffee and a walk after class', food: 'Dumplings in Central Square', walk: 'Sunset walk on the Esplanade', games: 'Board games and tea', move: 'Pickup basketball, all levels', cowork: 'Two quiet hours, then lunch', culture: 'Free night at a museum',
   genai: 'Evals over dumplings', hcai: 'What hospitals actually buy', founders: 'Founders, honest edition', climate: 'Grid nerds lunch' };
-const hintFor = (H) => hintFor(H) || (H.kind === 'topic' ? SX.track(H.track).t + ' over coffee' : 'Coffee after class');
+const hintFor = (H) => HINT[H.kind === 'topic' ? H.track : H.vibe] || (H.kind === 'topic' ? SX.track(H.track).t + ' over coffee' : 'Coffee after class');
 function setWhen(k) {
-  const H = A.host, soon = () => { const t = new Date(Date.now() + 60 * 60000); t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15, 0, 0); return t; };
+  const H = A.host, now = clubDate(Date.now()), soon = () => { const t = clubDate(Date.now() + 60 * 60000); t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15, 0, 0); return t; };
   let t;
   if (k === 'hour') t = soon();
-  else if (k === 'tonight') { t = new Date(); t.setHours(19, 0, 0, 0); if (t - Date.now() < 45 * 60000) t = soon(); }
-  else if (k === 'tomorrow') { t = new Date(Date.now() + 864e5); t.setHours(19, 0, 0, 0); }
-  else if (k === 'weekend') { t = new Date(); const dow = t.getDay(), add = dow === 6 ? 1 : dow === 0 ? 6 : 6 - dow; t.setDate(t.getDate() + add); t.setHours(11, 0, 0, 0); }
+  else if (k === 'tonight') { t = new Date(now); t.setHours(19, 0, 0, 0); if (t - now < 45 * 60000) t = soon(); }
+  else if (k === 'tomorrow') { t = clubDate(Date.now() + 864e5); t.setHours(19, 0, 0, 0); }
+  else if (k === 'weekend') { t = new Date(now); const dow = t.getDay(), add = dow === 6 ? 1 : dow === 0 ? 6 : 6 - dow; t.setDate(t.getDate() + add); t.setHours(11, 0, 0, 0); }
   else { t = new Date(H.date + 'T' + H.time); }
   H.when = k; H.date = ymdOf(t); H.time = hmOf(t);
 }
@@ -1245,7 +1252,7 @@ function drawHost() {
     <div class="label">When?</div>
     <div class="chips">${WHEN.map(([w, l]) => `<button class="chip ${H.when === w ? 'sel' : ''}" onclick="setWhen('${w}');drawHost()">${l}</button>`).join('')}</div>
     ${H.when === 'pick' ? `<div class="chips datechips" style="margin-top:10px">${H.days.map((d) => `<button class="chip ${H.date === d.date ? 'sel' : ''}" onclick="A.host.date='${d.date}';drawHost()"><small>${esc(d.dow)}</small>${d.day}</button>`).join('')}</div>` : ''}
-    <div class="whenline"><span>${esc(start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }))}</span>${H.when === 'hour' ? `<b>${esc(start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))}</b>` : `<input type="time" value="${esc(H.time)}" onchange="if(this.value){A.host.time=this.value;drawHost()" aria-label="Time" />`}</div>
+    <div class="whenline"><span>${esc(start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }))}</span>${H.when === 'hour' ? `<b>${esc(start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))}</b>` : `<input type="time" value="${esc(H.time)}" onchange="if(this.value){A.host.time=this.value;drawHost()}" aria-label="Time" />`}</div>
     <div class="label">Where?</div><input class="field" maxlength="80" placeholder="A cafe in Central Square" value="${esc(H.place)}" oninput="A.host.place=this.value;drawHostPreview()" />
     <div class="label">How many, including you?</div><div class="seg four">${[3, 4, 6, 8].map((n) => `<button class="${H.size === n ? 'sel' : ''}" onclick="A.host.size=${n};drawHost()">${n}</button>`).join('')}</div>
     <div class="label">A note (optional)</div><textarea class="field area" maxlength="280" rows="2" placeholder="Beginners welcome. I’ll grab a table." oninput="A.host.note=this.value">${esc(H.note)}</textarea>
@@ -1309,12 +1316,13 @@ function openReport(id) {
 }
 function sendReport() {
   if (A.report.pick == null) { toast('Report', 'Pick what happened first.'); return; }
-  api('POST', '/api/report', { id: A.report.id, reason: A.report.reasons[A.report.pick], text: $('repT').value }).then(() => { closeSheet(); toast('Thank you', 'A person will read this within 24 hours.'); }).catch(oops);
+  if (sendReport.busy) return; sendReport.busy = true;
+  api('POST', '/api/report', { id: A.report.id, reason: A.report.reasons[A.report.pick], text: $('repT').value }).then(() => { closeSheet(); toast('Thank you', 'A person will read this within 24 hours. You won’t be seated with them, and if you share a table coming up, you can step out of it at no cost.'); }).catch(oops).then(() => { sendReport.busy = false; });
 }
 
 /* ---------------- group chat: a table or a hang ---------------- */
 function openChat(kind, id, withGame) {
-  A.chat = { kind, id, list: [], last: '', people: [], game: null };
+  A.chat = { kind, id, list: [], last: '', people: [], game: null }; $('chatIn').value = '';
   $('chatIn').placeholder = kind === 'pop' ? 'Message the group' : 'Message the table';
   go('chat');
   $('msgs').innerHTML = '<div class="spin"></div>'; drawGame();
@@ -1325,9 +1333,9 @@ function openChat(kind, id, withGame) {
     $('chatSub').textContent = kind === 'pop' ? `${x.short} at ${x.timeLabel}, ${x.place}` : `${x.mealName || 'Dinner'} on ${x.short} at ${x.time}`;
     $('chatStack').innerHTML = people.slice(0, 6).map((p) => av(p, 's')).join('');
     A.chat.game = x.game && !x.peek ? x.game : null; drawGame(); if (kind === 'table') techRoom(x.type !== 'kindred');
-    drawChat(true); A.poll = setInterval(pollChat, 4000);
+    drawChat(true); if (A.poll) clearInterval(A.poll); A.poll = cur === 'chat' && A.chat && A.chat.id === id ? setInterval(pollChat, 4000) : null;
     if (withGame && A.chat.game) setTimeout(() => { if (cur === 'chat') openGame(); }, 260);
-  }).catch(oops);
+  }).catch((e) => { oops(e); loadFailed('msgs', 'chat'); });
 }
 function msgHTML(m, people) {
   if (m.from === 'charlie') {
@@ -1473,13 +1481,13 @@ function openAfter(id) {
     A.fb = { attended: f ? f.attended : true, rating: f ? f.rating : 0, picks: new Set(f ? f.picks : []), again: f ? f.again : null, done: !!f,
       next: L.here || '', prevDone: L.prev ? (L.prev.done ? 'done' : 'open') : null };
     drawAfter();
-  }).catch(oops);
+  }).catch((e) => { oops(e); loadFailed('afterBody', 'after'); });
 }
 // round two: the switch, how many yeses so far (counting yours before you send), or the booking once it's made
 function againHTML(t, F) {
   const G = t.again; if (!G) return '';
   const rd = nw(G.round);
-  if (G.booked) return `<div class="cardg again booked"><span class="lti">${LTI}</span><div class="grow"><b>Round ${rd} is booked</b><div class="sub2">${esc(G.booked.label)}, ${G.booked.same ? 'same spot' : 'a new spot this time'}. ${G.booked.in ? 'Your invitation is on Tables.' : 'You’re sitting this one out, and that’s fine.'}</div>${G.booked.in ? `<button class="link" style="margin:6px 0 0;text-align:left" onclick="openInvite('${G.booked.id}')">Open the invitation</button>` : ''}</div></div>`;
+  if (G.booked) return `<div class="cardg again booked"><span class="lti">${LTI}</span><div class="grow"><b>Round ${rd} is booked</b><div class="sub2">${esc(G.booked.label)}, ${G.booked.same ? 'same spot' : 'a new spot this time'}. ${G.booked.in ? 'Your invitation is on Tables.' : 'You’re sitting this one out, and that’s fine.'}</div>${!G.booked.in && G.open !== false ? `<button class="link" style="margin:6px 0 0;text-align:left" onclick="lateIn(this)">Count me in after all</button>` : ''}${G.booked.in ? `<button class="link" style="margin:6px 0 0;text-align:left" onclick="openInvite('${G.booked.id}')">Open the invitation</button>` : ''}</div></div>`;
   if (G.off) return `<div class="cardg again"><div class="grow"><b>Round ${rd} is off</b><div class="sub2">Plans changed and there weren’t three of you left. Pick each other and mark the same evening, and I’ll seat you together.</div></div></div>`;
   if (G.open === false) return '';
   if (G.busy) return `<div class="cardg again"><div class="grow"><b>Round ${rd} didn’t fit</b><div class="sub2">Most of you already have a dinner that evening. Pick each other and mark the same evening, and I’ll seat you together.</div></div></div>`;
@@ -1518,6 +1526,13 @@ function drawAfter() {
     ${F.attended && t.game && t.game.stage === 'revealed' ? `<div class="gafter">${gameBodyHTML(t.game, t.people)}</div>` : ''}`;
 }
 function togglePick(id) { if (A.fb.picks.has(id)) A.fb.picks.delete(id); else A.fb.picks.add(id); drawAfter(); }
+function lateIn(b) {
+  const F = A.fb, t = A.table; F.again = true; b.disabled = true;
+  api('POST', '/api/feedback', { table: t.id, attended: F.attended, rating: F.rating, picks: Array.from(F.picks), again: true, next: (F.next || '').trim() }).then((r) => {
+    if (r.again) t.again = r.again; F.done = true; drawAfter();
+    toast('Charlie', r.again && r.again.booked && r.again.booked.in ? 'You’re in. Your invitation is on Tables.' : 'Saved. The table is full right now, so I’ll seat you if a chair opens.');
+  }).catch((e) => { b.disabled = false; oops(e); });
+}
 function sendAfter(b) {
   const F = A.fb, t = A.table, P = t.myLoose && t.myLoose.prev, was = !!(t.again && t.again.booked);
   if (b) b.disabled = true;
@@ -1585,19 +1600,19 @@ function votePost(id, side) { const p = A.posts.find((x) => x.id === id); api('P
 function plusPost(id, el) { if (el) { el.classList.toggle('on'); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } api('POST', '/api/plus', { post: id }).then((r) => setTimeout(() => updPost(r.post), 260)).catch(oops); }
 function openPost(id) {
   A.openPost = id; openSheet('<div id="postSheet"><div class="spin"></div></div>');
-  api('GET', '/api/post?id=' + encodeURIComponent(id)).then(drawPostSheet).catch(oops);
+  api('GET', '/api/post?id=' + encodeURIComponent(id)).then(drawPostSheet).catch((e) => { oops(e); closeSheet(); });
 }
 function drawPostSheet(p) {
   const el = $('postSheet'); if (!el || A.openPost !== p.id) return;
   el.innerHTML = `${postHTML(p).replace('role="button" tabindex="0" onclick="openPost(\'' + p.id + '\')"', '').replace('class="bpost', 'class="bpost open')}
     <div class="label" style="margin-top:18px">Replies${p.replyN ? ` <span class="cnt">${p.replyN}</span>` : ''}</div>
     ${(p.replies || []).length ? p.replies.map((r) => `<div class="m">${av(r.by, 's')}<div><div class="who">${esc(r.by.first)} <span>${esc(r.age)}</span></div><div class="bub">${esc(r.text)}</div></div></div>`).join('') : '<div class="sub2" style="margin-bottom:6px">No replies yet. Start it off.</div>'}
-    <div class="bp-reply"><input class="field" id="replyIn" maxlength="400" placeholder="Reply to ${esc(p.by.first)}" onkeydown="if(event.key==='Enter')sendReply('${p.id}')" /><button class="btn sm" style="margin:0" onclick="sendReply('${p.id}')">Send</button></div>
+    <div class="bp-reply"><input class="field" id="replyIn" maxlength="400" placeholder="Reply to ${esc(p.by.first)}" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendReply('${p.id}')" /><button class="btn sm" style="margin:0" onclick="sendReply('${p.id}')">Send</button></div>
     ${p.mine ? `<button class="link" onclick="deletePost('${p.id}', this)">Delete my post</button>` : ''}`;
 }
 function sendReply(id) {
-  const v = $('replyIn').value.trim(); if (!v) return;
-  api('POST', '/api/reply', { post: id, text: v }).then((r) => { updPost(r.post); drawPostSheet(r.post); }).catch(oops);
+  const v = $('replyIn').value.trim(); if (!v || sendReply.busy) return; sendReply.busy = true;
+  api('POST', '/api/reply', { post: id, text: v }).then((r) => { updPost(r.post); drawPostSheet(r.post); }).catch(oops).then(() => { sendReply.busy = false; });
 }
 function deletePost(id, b) {
   if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again to delete it'; return; }
@@ -1715,19 +1730,20 @@ function openPostJob() {
 }
 function sendJob() {
   const b = { title: $('jfT').value, company: $('jfC').value, track: (A.view.me.profile.tracks || [])[0], kind: $('jfK').value, location: $('jfL').value, about: $('jfA').value, note: $('jfN').value, refer: $('jfRef').checked };
-  api('POST', '/api/job', b).then(() => { closeSheet(); toast('Shared', 'Your role is up.'); A.bf = 'all'; drawRoles(); }).catch((e) => { $('jfErr').textContent = cap(e.message) + '.'; });
+  if (sendJob.busy) return; sendJob.busy = true;
+  api('POST', '/api/job', b).then(() => { closeSheet(); toast('Shared', 'Your role is up.'); A.bf = 'all'; drawRoles(); }).catch((e) => { $('jfErr').textContent = cap(e.message) + '.'; }).then(() => { sendJob.busy = false; });
 }
 
 /* ---------------- 1:1 ---------------- */
 function openDm(id) {
-  A.dm = { with: id, list: [], last: '', who: null };
+  A.dm = { with: id, list: [], last: '', who: null }; $('dmIn').value = '';
   go('dm');
   $('dmMsgs').innerHTML = '<div class="spin"></div>';
   api('GET', '/api/dm?with=' + encodeURIComponent(id)).then((r) => {
     A.dm.who = r.with; A.dm.list = r.messages; A.dm.last = r.messages.length ? r.messages[r.messages.length - 1].at : '';
     $('dmHead').innerHTML = `<div class="row" style="gap:10px">${av(r.with, 's')}<div><b>${esc(r.with.first)} ${esc(r.with.last)}</b><small>${SCH(r.with.school)}${r.with.headline ? ', ' + esc(r.with.headline) : ''}</small></div></div>`;
-    drawDm(true); A.poll = setInterval(pollDm, 4000);
-  }).catch(oops);
+    drawDm(true); if (A.poll) clearInterval(A.poll); A.poll = cur === 'dm' && A.dm && A.dm.with === id ? setInterval(pollDm, 4000) : null;
+  }).catch((e) => { oops(e); loadFailed('dmMsgs', 'dm'); });
 }
 function drawDm(scroll) {
   const box = $('dmMsgs');
@@ -1775,7 +1791,7 @@ function renderMe() {
     <p class="hint">Each table has a captain who gets there first and gives the name at the door. It rotates, and you can always pass it on.</p>
     <div class="sp"></div>
     <div class="cardg" style="padding-top:2px;padding-bottom:2px">
-      <div class="setrow"><div class="grow">Notifications<small>Invitations, people joining your hangs, mutual picks, messages</small></div><button class="tog ${me.push ? 'on' : ''}" onclick="${me.push ? 'disablePush()' : 'enablePush()'}" aria-label="Notifications"></button></div>
+      <div class="setrow"><div class="grow">Notifications<small>Invitations, people joining your hangs, mutual picks, messages</small></div><button class="tog ${me.push && devicePush() ? 'on' : ''}" aria-pressed="${!!(me.push && devicePush())}" onclick="${me.push && devicePush() ? 'disablePush()' : 'enablePush()'}" aria-label="Notifications"></button></div>
       <div class="setrow"><div class="grow">Pause<small>Skip weekly tables until you’re back</small></div><button class="tog ${me.paused ? 'on' : ''}" onclick="setPause(${!me.paused})" aria-label="Pause"></button></div>
     </div>
     ${neverPeople.length ? `<div class="label">Won’t be seated with</div><div class="cardg" style="padding-top:2px;padding-bottom:2px">${neverPeople.map((x) => `<div class="setrow"><div class="grow">${esc(x.first)} ${esc(x.last || '')}</div><button class="link" style="margin:0" onclick="setNever('${x.id}', false)">Undo</button></div>`).join('')}</div>` : ''}
@@ -1805,14 +1821,25 @@ function deleteMe(b) {
 
 /* ---------------- notifications ---------------- */
 function b64ToBytes(s) { const p = '='.repeat((4 - (s.length % 4)) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, (c) => c.charCodeAt(0)); }
+const devicePush = () => { try { return localStorage.getItem('sixtopPush') === '1'; } catch (e) { return false; } };
+const setDevicePush = (on) => { try { if (on) localStorage.setItem('sixtopPush', '1'); else localStorage.removeItem('sixtopPush'); } catch (e) {} };
+const sameKey = (a, b) => { const x = new Uint8Array(a); if (x.length !== b.length) return false; for (let i = 0; i < x.length; i++) if (x[i] !== b[i]) return false; return true; };
 function enablePush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Notifications', /iPhone|iPad/.test(navigator.userAgent) ? 'On iPhone, add Sidetable to your Home Screen first (Share → Add to Home Screen), then turn this on there.' : 'This browser can’t do notifications.'); return; }
-  navigator.serviceWorker.register('/sw.js').then((reg) => Notification.requestPermission().then((perm) => {
-    if (perm !== 'granted') throw new Error('notifications are blocked for this site');
-    return reg.pushManager.getSubscription().then((s) => s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(A.view.pushKey) }));
-  })).then((sub) => api('POST', '/api/push', { sub: sub.toJSON() })).then(() => { toast('Charlie', 'Done. I’ll ping you when your tables are set.'); if (cur === 'me') renderMe(); }).catch(oops);
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { toast('Notifications', /iPhone|iPad/.test(navigator.userAgent) ? 'On iPhone, add Sidetable to your Home Screen first (Share → Add to Home Screen), open it from there, sign in with your school email once more, then turn this on.' : 'This browser can’t do notifications.'); return; }
+  const key = b64ToBytes(A.view.pushKey || '');
+  Promise.resolve(Notification.permission === 'granted' ? 'granted' : Notification.requestPermission()).then((perm) => {
+    if (perm !== 'granted') throw new Error('notifications are off for Sidetable in this browser’s settings');
+    return navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready);
+  }).then((reg) => reg.pushManager.getSubscription().then((s) => {
+    if (s && s.options && s.options.applicationServerKey && !sameKey(s.options.applicationServerKey, key)) return s.unsubscribe().then(() => reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
+    return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+  })).then((sub) => api('POST', '/api/push', { sub: sub.toJSON() })).then(() => { setDevicePush(true); toast('Charlie', 'Done. I’ll ping you on this phone when your tables are set.'); if (cur === 'me') renderMe(); }).catch(oops);
 }
-function disablePush() { api('POST', '/api/push', { off: true }).then(() => { if (cur === 'me') renderMe(); }).catch(oops); }
+function disablePush() {
+  const off = (ep) => api('POST', '/api/push', ep ? { off: true, endpoint: ep } : { off: true }).then(() => { setDevicePush(false); if (cur === 'me') renderMe(); }).catch(oops);
+  if (!('serviceWorker' in navigator)) return off('');
+  navigator.serviceWorker.getRegistration().then((reg) => reg && reg.pushManager.getSubscription()).then((s) => (s ? s.unsubscribe().catch(() => {}).then(() => off(s.endpoint)) : off(''))).catch(() => off(''));
+}
 
 /* ---------------- the opening film ----------------
    The first screen is a 25-second film of real footage (art/make-film.js): the city at night and strange light, then
@@ -1921,7 +1948,7 @@ document.querySelectorAll('.scr[data-step]').forEach((s) => {
 });
 function route() {
   const h = (location.hash || '').slice(1);
-  if (h === 'popups' || h === 'hangs') tab('popups'); else if (h === 'roles') { A.bseg = 'roles'; tab('board'); } else if (h === 'board' || h === 'pulse') { A.bseg = 'all'; tab('board'); } else if (h === 'messages') { A.pseg = 'messages'; tab('people'); } else if (h === 'people' || h === 'friends') tab('people'); else if (h === 'me') tab('me'); else tab('home');
+  if (h === 'popups' || h === 'hangs') tab('popups'); else if (h === 'roles') { A.bseg = 'roles'; tab('board'); } else if (h === 'board' || h === 'pulse') { A.bseg = 'all'; tab('board'); } else if (h === 'messages') { A.pseg = 'messages'; tab('people'); } else if (h === 'people' || h === 'friends') tab('people'); else if (h === 'me') tab('me'); else if (h === 'table') { tab('home'); const ts = ((A.view && A.view.tables) || []).filter((x) => !x.left && !x.closed), t = ts.find((x) => x.phase === 'tonight') || ts[0]; if (t) openTable(t.id); } else tab('home');
 }
 let loops = false;
 function boot() {
@@ -1932,13 +1959,14 @@ function boot() {
     if (!v.me.done) { initDraft(); hist.length = 0; go('school', { noHist: true }); return; }
     route();
   }).catch((e) => {
+    if (e.status === 401 && A.joinCode) { store.clear(); A.token = ''; openJoin(A.joinCode); return; }
     if (e.status === 401) { store.clear(); A.token = ''; renderStart('This link isn’t active anymore. Sign in with your school email instead.'); }
     else renderStart('Couldn’t reach Sidetable. Check your connection and try again.');
     go('start', { noHist: true });
   });
 }
 (function start() {
-  const qs = new URLSearchParams(location.search), inv = qs.get('invite'), join = qs.get('join');
+  const qs = new URLSearchParams(location.search), inv = qs.get('invite'), join = qs.get('join'); A.joinCode = join || '';
   if (inv && /^[a-f0-9]{32}$/.test(inv)) { A.token = inv; store.set(inv); history.replaceState(null, '', '/' + location.hash); }
   A.token = A.token || store.get();
   if ('serviceWorker' in navigator) {

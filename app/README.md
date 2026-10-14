@@ -36,18 +36,19 @@ SIXTOP_ADMIN_KEY=choose-a-long-secret SIXTOP_PUBLIC_URL=https://your-domain npm 
 
 | 환경 변수 | 기본값 | 설명 |
 |---|---|---|
-| `SIXTOP_ADMIN_KEY` | 실행마다 랜덤, 로그에 출력 | 관리자 페이지 키, 길고 복잡하게 설정 |
+| `SIXTOP_ADMIN_KEY` | 실행마다 랜덤, 로그에 출력 | 관리자 페이지 키, https 주소에서는 16자 이상 필수 |
 | `PORT` | 8800 | Railway 등에서는 자동 지정 |
-| `SIXTOP_DATA_DIR` | `./data` | 회원, 테이블, 채팅, 사진 저장 위치, 반드시 영구 디스크 사용 |
+| `SIXTOP_DATA_DIR` | Railway 볼륨 경로, 없으면 `./data` | 회원, 테이블, 채팅, 사진, 백업 저장 위치, Railway에서 볼륨이 없으면 시작 거부 |
 | `SIXTOP_PUBLIC_URL` | 없음 | 초대 링크, 클럽 링크, 식당 링크의 기본 주소 |
 | `SIXTOP_TZ` | `America/New_York` | 마감, 장소 공개 등 시각 계산 기준 |
 | `SIXTOP_AREA` | `Central Square` | 새로 여는 밤의 기본 동네 |
 | `RESEND_API_KEY`, `SIXTOP_MAIL_FROM` | 없음 | 인증 코드와 식당 메일을 보내는 [Resend](https://resend.com) 키와 보내는 주소, 없으면 가입 불가 |
-| `SIXTOP_MAIL` | 없음 | `show`면 인증 코드를 화면에 표시, 로컬 개발과 데모 전용 |
+| `SIXTOP_MAIL` | 없음 | `show`면 인증 코드를 화면에 표시, 로컬 개발과 데모 전용, https 주소에서는 시작 거부 |
 | `SIXTOP_AUTO_WEEK` | 없음 | `1`이면 일요일 20시에 다음 주 테이블 자동 구성과 공개 |
 | `SIXTOP_LONG_TIME` | `19:00` | Long table 시작 시각 |
 | `SIXTOP_PUSH_DAY` | 4 | 한 사람이 하루에 받는 알림 최대 개수 |
-| `SIXTOP_VAPID_PUBLIC`, `SIXTOP_VAPID_PRIVATE` | 처음 실행 때 생성해 데이터 폴더에 저장 | 푸시 알림 키, 바꾸면 회원 전원 알림 재설정 필요 |
+| `SIXTOP_VAPID_PUBLIC`, `SIXTOP_VAPID_PRIVATE` | 처음 실행 때 생성해 데이터 폴더에 저장 | 푸시 알림 키, 바꾸면 회원 전원 알림 재설정 필요, 잘못된 키면 시작 거부 |
+| `SIXTOP_VAPID_SUBJECT` | 없음 | 푸시 서비스에 알릴 연락처(예: `mailto:hello@your-domain`), 아이폰 알림을 위해 설정 권장 |
 
 ## 한 주 운영
 
@@ -61,7 +62,7 @@ SIXTOP_ADMIN_KEY=choose-a-long-secret SIXTOP_PUBLIC_URL=https://your-domain npm 
 | 일요일 22:00 | 제휴 식당마다 그 주 계획 메일 발송 |
 | 공개 직후 | 회원에게 초대장과 단톡방 오픈, Charlie가 테이블 소개와 그 주 질문 게시 |
 | 전날 09:00 | 정오까지는 무료로 바꿀 수 있다는 알림 |
-| 전날 정오 | 무료 변경 마감, 식당에 최종 인원 발송 |
+| 전날 정오 | 무료 변경 마감, 식당에 최종 인원 발송 (월요일 테이블은 일요일 저녁에 나가서 월요일 오전 10시) |
 | 당일 정오 | 식당 주소 공개, 단톡방에 캡틴 이름 게시 |
 | 당일 저녁 | 테이블에서 Table deck 3라운드 진행 |
 | 다음 날 10:00 | 피드백 알림: 참석 여부, 평점, 다시 보고 싶은 사람, round two 여부 |
@@ -182,15 +183,18 @@ npm run film
 - 기본은 상시 확보, 식당이 못 받는다고 알려올 때만 제외
 - 저녁마다 확인을 원하는 식당은 매번 확인 모드, 확인 전에는 회원에게 주소 비공개
 - 초대장이 나갈 때 자리가 남은 제휴 식당으로 자동 배치, 같은 동네와 덜 붐비는 곳 우선
-- 식당이 받는 메일: 일요일 밤 주간 계획, 전날 정오 최종 인원, 이후 변경 사항
+- 식당이 받는 메일: 일요일 밤 주간 계획, 전날 정오 최종 인원, 이후 저녁 시작 전까지 변경 사항
+- 메일이 실패하면 몇 분 뒤 다시 발송하고 당번에게 알림, 이메일이 없는 식당은 최종 인원 때 당번에게 전화 요청
 - 회원 이름과 프로필 없이 인원, 시간, 식단 메모, 캡틴 이름만 전달
 - 식당 전용 페이지(`/place?k=…`)에서 로그인 없이 확인 또는 거절
 - 식당이 거절하면 다른 제휴 식당으로 이동, 옮길 곳이 없으면 당번이 처리
+- 매번 확인 식당에 테이블이 하나 늘면 이미 확인한 테이블은 그대로, 새 테이블만 다시 확인
 
 ### 회원
 
-- 전날 정오까지 무료 변경
+- 전날 정오까지 무료 변경 (월요일 테이블은 월요일 오전 10시까지)
 - 그 뒤 취소는 1점, 노쇼는 2점, 60일 안에 3점이면 2주 동안 초대 중단
+- 차단하거나 신고한 사람과 같은 테이블이면 늦게 빠져도 점수 없음, 신고는 당번에게 바로 알림
 - 세 명 아래로 줄면 다른 테이블과 합치거나 종료, 둘만 남는 저녁은 데이트처럼 보일 수 있어 만들지 않음
 - 닫힌 테이블 사람은 다음 주 우선 배정
 - 캡틴: 테이블마다 한 명이 5분 먼저 도착해 일행 확인과 각자 계산 요청
@@ -201,6 +205,7 @@ npm run film
 - 처음에는 창업자와 캠퍼스 리드 1~2명이 하루씩 돌아가며 당번
 - 당번은 자리 없는 테이블, 답 없는 식당, 당일 변동 알림을 메일로 받아 Ops 탭에서 처리
 - Long table 장소는 운영팀이 6~8주 전에 직접 예약, 좌석이 차면 대기, RSVP는 5일 전 마감
+- RSVP가 마감되면 인원을 당번에게 알림, 날짜는 Places 탭에서 변경 가능 (추수감사절, 연말)
 - 서버 코드: `placeTable`, `savePlace`, `syncBooking`, `placeAnswer`, `placeMail`, `shrink`, `closeTable`, `lateChanges`, `pickCaptain`, `alertOps`, 식당 페이지는 `public/place.html`
 
 ## Board
@@ -226,13 +231,15 @@ npm install -g @railway/cli
 ```
 
 - 이 폴더에서 `railway login`, `railway init`, `railway up`, `railway domain` 순서로 실행
-- Railway 대시보드에서 Volume을 `/data`에 연결
-- 환경 변수 `SIXTOP_ADMIN_KEY`, `SIXTOP_DATA_DIR=/data`, `SIXTOP_PUBLIC_URL` 입력
+- Railway 대시보드에서 Volume을 `/data`에 연결 (없으면 서버가 시작을 거부), 볼륨 백업도 켜기
+- 환경 변수 `SIXTOP_ADMIN_KEY`, `SIXTOP_DATA_DIR=/data`, `SIXTOP_PUBLIC_URL`, `RESEND_API_KEY`, `SIXTOP_MAIL_FROM`, `SIXTOP_VAPID_SUBJECT` 입력
 - 푸시 알림은 HTTPS에서만 동작, 아이폰은 홈 화면에 추가해야 알림 사용 가능 (iOS 16.4 이상)
 
 ## 데이터와 개인정보
 
 - 데이터 폴더에 이름, 학교 이메일, 사진, 생활 단계 저장, 외부 공개 금지, 파일럿 후 삭제
+- 하루 한 번 `backups/`에 데이터 백업, 최근 14일치 보관
+- `db.json`이 깨졌거나 사진만 있고 `db.json`이 없으면 서버가 시작을 멈춤 (빈 데이터로 덮어쓰지 않음), 이때는 백업 파일을 `db.json`으로 복원
 - 모든 회원은 Harvard 또는 MIT 이메일을 6자리 코드로 인증, 인증 전에는 이용 불가
 - 프로필 사진은 필수, 인증된 회원에게만 표시
 - 생활 단계는 매칭에만 사용, 테이블에서는 두 명 이상일 때 숫자로만 언급
@@ -245,7 +252,8 @@ npm install -g @railway/cli
 |---|---|---|
 | 학교 이메일 발송 | Resend 연동 완료, 실제 발송은 미확인 | 보내는 도메인 인증, harvard.edu와 mit.edu 수신 확인 |
 | 개인정보 동의 | 없음 | 베타 전 가입 동의 화면 추가 |
-| 사진 주소 보안 | 사진 주소에 로그인 토큰 포함 | 베타 전 사진 전용 토큰으로 변경 |
+| 가입 여부 노출 | 로그인 화면에서 가입한 이메일인지 알 수 있음 | 필요하면 가입 여부와 상관없이 같은 안내로 변경 |
+| 동문 메일 | alum.mit.edu 같은 동문 주소도 가입 가능 | 학생만 받을지 결정 필요 |
 | 늦은 변경 수수료 | 점수제 | 카드 등록 후 1인 약 $15, 가입 때 미리 고지 |
 | Long table 결제 | 비용 안내 문구만 | 선결제 좌석 또는 후원 |
 | 식당 예약 시스템 연동 | 메일, 식당 전용 페이지, 전화 | 규모가 커지면 OpenTable, Resy 공식 제휴 신청 |
@@ -267,5 +275,5 @@ art/make-film.js   첫 화면 영상 제작
 scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)
 scripts/dev.js     로컬 개발용 실행
 scripts/build-demo.js  폰 데모 생성 (dist/와 저장소의 demo/)
-test/              npm test (테이블 구성 8개, 서버 32개)
+test/              npm test (테이블 구성 8개, 서버 36개)
 ```

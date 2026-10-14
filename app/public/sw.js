@@ -1,15 +1,15 @@
 /* Sidetable service worker (same shape as Amie's). The page: network first, so a new version shows up at once, and the
-   cached copy when offline. Styles, icons and the manifest: cache first. Anything under /api/ is never cached, and the film streams straight from the server (byte ranges can't be cached).
+   cached copy when offline. Styles, icons and the manifest: network first too, with the cached copy as the fallback. Anything under /api/ is never cached, and the film streams straight from the server (byte ranges can't be cached).
    It also shows Sidetable's notifications, and a tap opens the app where the notification points. */
-var CACHE = 'sixtop-v2';
+var CACHE = 'sixtop-v3';
 var ASSETS = ['./', './app.css', './shared.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).catch(function () {})); self.skipWaiting(); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); })); self.clients.claim(); });
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   var u = new URL(e.request.url); if (u.origin !== location.origin || u.pathname.indexOf('/api/') === 0 || u.pathname.indexOf('/video/') === 0 || u.pathname === '/admin') return;
-  if (e.request.mode === 'navigate') { e.respondWith(fetch(e.request).then(function (res) { var cp = res.clone(); caches.open(CACHE).then(function (c) { c.put('./', cp); }); return res; }).catch(function () { return caches.match('./'); })); return; }
-  e.respondWith(fetch(e.request).then(function (res) { var cp = res.clone(); caches.open(CACHE).then(function (c) { c.put(e.request, cp); }); return res; }).catch(function () { return caches.match(e.request); }));
+  if (e.request.mode === 'navigate') { e.respondWith(fetch(e.request).then(function (res) { if (res.ok) { var cp = res.clone(); caches.open(CACHE).then(function (c) { c.put('./', cp); }); return res; } return caches.match('./').then(function (c) { return c || res; }); }).catch(function () { return caches.match('./'); })); return; }
+  e.respondWith(fetch(e.request).then(function (res) { if (res.ok) { var cp = res.clone(); caches.open(CACHE).then(function (c) { c.put(e.request, cp); }); return res; } return caches.match(e.request).then(function (c) { return c || res; }); }).catch(function () { return caches.match(e.request); }));
 });
 self.addEventListener('push', function (e) {
   var d = {}; try { d = e.data ? e.data.json() : {}; } catch (er) { d = { body: e.data ? e.data.text() : '' }; }

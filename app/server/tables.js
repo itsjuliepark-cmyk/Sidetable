@@ -193,6 +193,16 @@ function assembleGroup(ps, type, trackId, ctx) {
       if (sa + sb > sc[i] + sc[j] + 1e-9) { live[i] = A2; live[j] = B2; sc[i] = sa; sc[j] = sb; }
     }
   }
+  // people who blocked or reported each other never share a table: the one with less priority (the later one, if equal)
+  // moves to another table that keeps the mix, or waits; a table left under four people can't run, so its people wait
+  const clash = (t, p) => t.some((q) => q !== p && ctx.blocked.has(pk(p.id, q.id)));
+  for (let guard = 0; guard < 50; guard++) {
+    const ti = live.findIndex((t) => t.some((p) => clash(t, p))); if (ti < 0) break;
+    const t = live[ti], mv = t.filter((p) => clash(t, p)).sort((a, b) => (!!ctx.lockOf[a.id] - !!ctx.lockOf[b.id]) || (a.prio - b.prio) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
+    live[ti] = t.filter((p) => p !== mv);
+    const to = live.find((o, j) => j !== ti && o.length < 6 && !clash(o.concat([mv]), mv) && balanced(o.concat([mv]), ctx.mix)); if (to) to.push(mv); else wait.push(mv);
+  }
+  for (let i = live.length - 1; i >= 0; i--) if (live[i].length < 4) { live[i].forEach((p) => wait.push(p)); live.splice(i, 1); }
   return {
     tables: live.map((t) => { const s = scoreTable(t, type, trackId, ctx); return { track: type === 'kindred' ? null : trackId, ids: t.map((p) => p.id), score: Math.round(s.base * 100), flags: s.flags }; }),
     wait: wait.map((p) => p.id)
@@ -218,7 +228,7 @@ function assemble(members, opt) {
   else {
     ps.forEach((p) => { const t = p.gtrack || p.track; (groups[t] = groups[t] || []).push(p); });
     const canForm = (L) => { if (L.length < 4) return false; if (!ctx.mix) return true; const c = {}; L.forEach((p) => { c[p.school] = (c[p.school] || 0) + 1; }); return L.length - Math.max.apply(null, Object.values(c)) >= 2; };
-    for (let guard = 0; guard < 8; guard++) {
+    for (let guard = 0; guard < 40; guard++) {
       const small = Object.keys(groups).filter((t) => !canForm(groups[t])).sort((a, b) => groups[a].length - groups[b].length)[0];
       const others = Object.keys(groups).filter((t) => t !== small);
       if (!small || !others.length) break;

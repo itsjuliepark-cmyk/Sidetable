@@ -44,24 +44,25 @@
   function draw(v) {
     var hold = v.mode !== 'ask';
     document.getElementById('app').innerHTML = '<div class="brand">Sidetable</div><h1>' + esc(v.name) + '</h1>'
-      + '<p class="lead">' + (hold ? 'These evenings are held for Sidetable (' + esc(v.nights) + ', up to ' + v.holds + ' tables of ' + v.seats + '). Nothing to do unless one can’t work.' : 'Please confirm each evening below, or tell us you can’t host it.') + ' The final count comes at noon the day before. Everyone pays their own check.</p>'
+      + '<p class="lead">' + (hold ? 'These evenings are held for Sidetable (' + esc(v.nights) + ', up to ' + v.holds + ' tables of ' + v.seats + '). Nothing to do unless one can’t work.' : 'Please confirm each evening below, or tell us you can’t host it.') + ' The final count comes at noon the day before (for Monday, that morning). Everyone pays their own check.</p>'
       + (v.evenings.length ? v.evenings.map(function (e) {
         var acts = '';
         if (e.started) acts = '';
         else if (e.state === 'asked') acts = '<button class="yes" data-d="' + e.date + '" data-ok="1">Confirm</button><button class="no" data-d="' + e.date + '" data-ok="0">We can’t host</button>';
         else if (e.state === 'held' || e.state === 'confirmed') acts = '<button class="no" data-d="' + e.date + '" data-ok="0">We can’t host this one</button>';
         return '<div class="ev"><div class="top"><b>' + esc(e.label) + '</b><span class="chip ' + e.state + '">' + (e.more && e.state === 'asked' ? 'One more table: your yes?' : LABEL[e.state]) + '</span></div>'
-          + (e.tables.length ? '<ul>' + e.tables.map(function (t, i) { return '<li>Table ' + (i + 1) + ': <b>' + t.size + ' people</b> at ' + esc(t.time) + (diets(t.diets) ? ' <span class="small">(' + esc(diets(t.diets)) + ')</span>' : '') + (t.captain ? ' <span class="small">ask for ' + esc(t.captain) + '</span>' : '') + '</li>'; }).join('') + '</ul><div class="small" style="margin-top:6px">' + e.covers + ' people in all' + (e.final ? ', final count' : ', may still change until noon the day before') + (e.state === 'asked' && e.by ? '. Please answer by ' + esc(e.by) : '') + '</div>' : '')
+          + (e.tables.length ? '<ul>' + e.tables.map(function (t, i) { return '<li>Table ' + (i + 1) + ': <b>' + t.size + ' people</b> at ' + esc(t.time) + (diets(t.diets) ? ' <span class="small">(' + esc(diets(t.diets)) + ')</span>' : '') + (t.captain ? ' <span class="small">ask for ' + esc(t.captain) + '</span>' : '') + '</li>'; }).join('') + '</ul><div class="small" style="margin-top:6px">' + e.covers + ' people in all' + (e.final ? ', final count' : ', may still change until the final count') + (e.state === 'asked' && e.by ? '. Please answer by ' + esc(e.by) : '') + '</div>' : '')
           + (acts ? '<div class="row">' + acts + '</div>' : '') + '</div>';
       }).join('') : '<p class="small">Nothing on the books for the next three weeks yet.</p>')
       + (v.terms ? '<div class="terms"><b>Our agreement</b>\n' + esc(v.terms) + '</div>' : '')
       + '<p class="small" style="margin-top:22px">Questions, or a change on the day? Reply to any Sidetable email. This page is private to ' + esc(v.name) + '.</p>';
   }
-  function load() { fetch('/api/place?k=' + encodeURIComponent(K)).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'not found'); return j; }); }).then(draw).catch(function (e) { document.getElementById('app').innerHTML = '<div class="brand">Sidetable</div><h1>This link isn’t active</h1><p class="err">' + esc(e.message) + '. Ask Sidetable for a new one.</p>'; }); }
+  function load() { fetch('/api/place?k=' + encodeURIComponent(K)).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || 'not found'); e.status = r.status; throw e; } return j; }); }).then(draw).catch(function (e) { document.getElementById('app').innerHTML = '<div class="brand">Sidetable</div>' + (e.status === 404 ? '<h1>This link isn’t active</h1><p class="err">Ask Sidetable for a new one.</p>' : '<h1>Couldn’t load your evenings</h1><p class="err">Check the connection and reload this page in a minute.</p>'); }); }
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-d]'); if (!b) return;
     var ok = b.dataset.ok === '1';
-    if (!ok && !b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again: we can’t host'; return; }
+    if (!ok && !b.dataset.armed) { b.dataset.armed = String(Date.now()); b.textContent = 'Tap again: we can’t host'; return; }
+    if (!ok && Date.now() - (+b.dataset.armed || 0) < 600) return; // the other half of a double tap
     b.disabled = true;
     fetch('/api/place', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: K, date: b.dataset.d, ok: ok }) })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'error'); return j; }); }).then(draw).catch(function (e) { b.disabled = false; alert(e.message); });

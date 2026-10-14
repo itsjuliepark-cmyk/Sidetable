@@ -152,8 +152,8 @@ members.slice(1).filter((m, i) => i % 3 === 0 || demoTwo.indexOf(m.id) >= 0).for
 
 // 3. next week: most people have marked their evenings and how many dinners they want (Jordan: two)
 const week = S.targetWeek(), eve = (d) => S.addDays(week, d) + '|dinner';
-members.slice(1).forEach((m, i) => { if (i % 6 === 5) return; S.setAvail(m, { slots: some([0, 1, 2, 3, 4], 2 + (i % 3)).map(eve), max: 1 + (i % 4) }); });
-S.setAvail(demo, { slots: [eve(1), eve(3)], max: 2 });
+members.slice(1).forEach((m, i) => { if (i % 6 === 5) return; S.setAvail(m, { slots: some([0, 1, 2, 3, 4], 2 + (i % 3)).map(eve), max: 1 + (i % 4) }, true); });
+S.setAvail(demo, { slots: [eve(1), eve(3)], max: 2 }, true);
 
 // 4. hangs members started (generic places, made-up plans); Jordan is in for the climate lunch
 const at = (n, hm) => ({ date: S.ymdTz(Date.now() + n * 864e5), time: hm });
@@ -161,7 +161,7 @@ const POPS = [
   [firstWith('genai'), Object.assign({ title: 'Agents and ramen', place: 'A ramen spot in Central Square', kind: 'topic', track: 'genai', size: 6, note: 'Bring one agent demo that broke on you. We trade war stories.' }, at(1, '19:00')), [3, 7, 11]],
   [firstWith('hcai'), Object.assign({ title: 'Morning walk by the river', place: 'Along the Charles, from the Weeks Footbridge', kind: 'social', vibe: 'walk', size: 4, note: 'An easy 45-minute walk. Coffee after if people want.' }, at(2, '08:30')), [12]],
   [members[9], Object.assign({ title: 'Board games and dumplings', place: 'A dumpling place in Central Square', kind: 'social', vibe: 'games', size: 6, note: 'I’ll bring Codenames. Beginners very welcome.' }, at(1, '20:00')), [2, 14]],
-  [members[17], Object.assign({ title: 'Cowork Sunday', place: 'A cafe near Kendall with big tables', kind: 'social', vibe: 'cowork', size: 5, note: 'Two quiet hours of work, then lunch together.' }, at(6, '10:00')), [6]],
+  [members[17], Object.assign({ title: 'Cowork morning', place: 'A cafe near Kendall with big tables', kind: 'social', vibe: 'cowork', size: 5, note: 'Two quiet hours of work, then lunch together.' }, at(6, '10:00')), [6]],
   [firstWith('climate'), Object.assign({ title: 'Climate lunch at Kendall', place: 'Kendall Square, outdoor tables by the T', kind: 'topic', track: 'climate', size: 6, note: 'Grab food anywhere and meet at the tables. Grid, heat pumps, all of it.' }, at(3, '12:15')), [0, 15, 19, 23]],
   [firstWith('founders'), Object.assign({ title: 'First-time founders, honest edition', place: 'A café in Harvard Square', kind: 'topic', track: 'founders', size: 5, note: 'What is actually hard about starting while in school. No pitching.' }, at(5, '16:00')), [8, 16, 20]]
 ];
@@ -258,4 +258,4 @@ S.save(true);
 console.log('Seeded ' + members.length + ' members, 3 dinners, next week’s evenings and ' + POPS.length + ' hangs.');
 console.log('Open as Jordan (Harvard):  http://localhost:' + (process.env.PORT || 8800) + '/?invite=' + demo.token);
 console.log('Open as ' + db.members[friends[0]].name + ':  http://localhost:' + (process.env.PORT || 8800) + '/?invite=' + db.members[friends[0]].token);
-console.log('Club join link:        http://localhost:' + (process.env.PORT || 8800) + '/?join=' + club.code + '  (any email works with SIXTOP_STRICT_EMAIL=0)');
+console.log('Club join link:        http://localhost:' + (process.env.PORT || 8800) + '/?join=' + club.code + '  (any Harvard or MIT email; in dev the code shows on screen)');

@@ -14,7 +14,7 @@ const S = require('../server/server.js');
 const SX = require('../public/shared.js');
 const db = () => S.db();
 const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
-const PHOTO = 'data:image/jpeg;base64,' + Buffer.from('a face').toString('base64');
+const PHOTO = 'data:image/jpeg;base64,' + Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('a face')]).toString('base64');
 test.after(() => { S.save(true); try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {} });
 
 const fullProfile = (i, tr) => ({
@@ -244,7 +244,10 @@ test('http: the app, the member API and the admin API', async () => {
     const bad = await fetch(base + '/api/seat', { method: 'POST', headers: { 'x-sixtop-token': m.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'nope' }) });
     assert.strictEqual(bad.status, 400);
     const other = people(1, 'Http2')[0], stranger = S.newMember('Not Verified', '', 'harvard', 'invite');
-    assert.strictEqual((await fetch(base + '/api/photo?id=' + other.id + '&t=' + m.token)).status, 200, 'verified members see each other’s faces');
+    const pkey = new URL(v.me.photo, base).searchParams.get('t');
+    assert.ok(pkey && pkey !== m.token, 'photo addresses carry a photo key, not the login token');
+    assert.strictEqual((await fetch(base + '/api/photo?id=' + other.id + '&t=' + pkey)).status, 200, 'verified members see each other’s faces');
+    assert.strictEqual((await fetch(base + '/api/photo?id=' + other.id + '&t=' + m.token)).status, 404, 'the login token never opens a photo');
     assert.strictEqual((await fetch(base + '/api/photo?id=' + other.id + '&t=' + stranger.token)).status, 404, 'not before verifying');
     const gated = await fetch(base + '/api/avail', { method: 'POST', headers: { 'x-sixtop-token': stranger.token, 'Content-Type': 'application/json' }, body: '{}' });
     assert.strictEqual(gated.status, 403, 'nothing works until the school email is confirmed');
@@ -318,11 +321,11 @@ test('The week: people pick evenings and how many dinners (1 to 5), Charlie mixe
   const week = S.targetWeek(), day = (n) => S.addDays(week, n) + '|dinner';
   ms.slice(0, 2).forEach((m) => { m.profile.mix = 'topic'; }); ms.slice(2, 4).forEach((m) => { m.profile.mix = 'social'; });
   assert.strictEqual(S.availView(ms[5]).max, 2, 'the week starts from how many invitations they asked for');
-  ms.forEach((m, i) => S.setAvail(m, { slots: i < 18 ? [day(0), day(1), day(2), day(3)] : [day(1)], max: i < 18 ? 3 : 1 }));
+  ms.forEach((m, i) => S.setAvail(m, { slots: i < 18 ? [day(0), day(1), day(2), day(3)] : [day(1)], max: i < 18 ? 3 : 1 }, true));
   assert.strictEqual(S.availView(ms[0]).max, 3);
   assert.ok(S.availView(ms[0]).days.slice(0, 4).every((d) => d.slots[0].on), 'my evenings come back');
-  S.setAvail(ms[23], { slots: [day(1)], max: 9 }); assert.strictEqual(ms[23].avail.max, 5, 'five a week at most');
-  S.setAvail(ms[23], { slots: [day(1)], max: 1 });
+  S.setAvail(ms[23], { slots: [day(1)], max: 9 }, true); assert.strictEqual(ms[23].avail.max, 5, 'five a week at most');
+  S.setAvail(ms[23], { slots: [day(1)], max: 1 }, true);
   const r = S.matchWeek({});
   assert.ok(r.tables >= 4, 'tables were built: ' + JSON.stringify(r));
   const w = S.db().weeks[week], byPerson = {};
@@ -736,6 +739,7 @@ test('ops edge cases: a re-ask reaches the restaurant, a hand-typed note keeps t
   // someone who left sees the chat only up to when they left
   const leaver = db().members[t2.ids.find((id) => id !== t2.captain)];
   S.cancelSeat(leaver, { event: n2.e.id });
+  for (const t0 = Date.now(); Date.now() === t0;); // the next message is at least a millisecond later
   S.postChat(db().members[t2.ids.find((id) => !(t2.out || {})[id])], { table: t2.id, text: 'After you left' });
   assert.ok(!S.tableView(leaver, t2.id).chat.some((x) => x.text === 'After you left'), 'no chat after leaving');
   // answers stop once dinner starts
@@ -758,4 +762,47 @@ test('late changes are fair: a waitlisted cancel isn’t late, a chair taken aft
   const p2 = night(ms.slice(0, 4), 'topic', day(-5)), tp2 = Object.values(db().tables).find((x) => x.eventId === p2.e.id);
   tp2.attended = { [m.id]: false };
   assert.strictEqual(S.lateChanges(m), 3);
+});
+
+test('sign-in codes: a new code keeps the wrong guesses, and an invite link stops working once its owner verifies', async () => {
+  const [m] = people(1, 'Codes'), em = m.email;
+  let r = await S.startVerify(null, { email: em });
+  for (let i = 0; i < 5; i++) assert.throws(() => S.finishVerify(null, { email: em, code: '000000' }), /match/);
+  db().verify[em].sentAt -= 31000;
+  r = await S.startVerify(null, { email: em });
+  assert.throws(() => S.finishVerify(null, { email: em, code: r.devCode }), /too many tries/, 'asking for a new code doesn’t reset the guesses');
+  const inv = S.newMember('Invite Person', '', 'harvard', 'invite'), old = inv.token;
+  const r2 = await S.startVerify(inv, { email: 'invite.person@college.harvard.edu' });
+  const out = S.finishVerify(inv, { email: 'invite.person@college.harvard.edu', code: r2.devCode });
+  assert.ok(out.token && out.token !== old && inv.token === out.token, 'the invite link’s key is replaced once it’s used');
+});
+
+test('people who reported each other never share a table, even on an evening with one table', () => {
+  const ms = people(6, 'Clash');
+  S.report(ms[0], { id: ms[2].id, reason: 'test' });
+  assert.ok(db().alerts.some((a) => a.key === 'report:' + ms[2].id + ':' + ms[0].id && !a.done), 'a report reaches whoever is on duty');
+  const e = S.createEvent({ type: 'topic', date: day(9), time: '19:00' }); db().seats[e.id] = {};
+  ms.forEach((m, k) => { db().seats[e.id][m.id] = { at: new Date(Date.now() - 9e8 + k).toISOString(), size: 'either', diet: [], status: 'held' }; });
+  S.draft({ event: e.id });
+  const ts = Object.values(db().tables).filter((t) => t.eventId === e.id);
+  assert.ok(ts.length >= 1, 'the evening still has a table');
+  ts.forEach((t) => assert.ok(!(t.ids.indexOf(ms[0].id) >= 0 && t.ids.indexOf(ms[2].id) >= 0), 'never at the same table'));
+});
+
+test('the free-change cutoff: noon the day before, and ten that morning for tables that only went out after it (Monday)', () => {
+  const mon = '2026-11-02', sunEve = S.tzMs('2026-11-01', '20:00'), sat = S.tzMs('2026-10-31', '20:00');
+  assert.strictEqual(S.freeUntil({ date: mon, publishedAt: new Date(sunEve).toISOString() }), S.tzMs(mon, '10:00'));
+  assert.strictEqual(S.freeUntil({ date: mon, publishedAt: new Date(sat).toISOString() }), S.tzMs('2026-11-01', '12:00'));
+  assert.strictEqual(S.freeUntil({ date: '2026-11-04', publishedAt: new Date(sunEve).toISOString() }), S.tzMs('2026-11-03', '12:00'));
+});
+
+test('cancelling a night tells everyone at its tables, puts them first next week, and deleting an account takes its words along', () => {
+  const ms = people(5, 'Cancel'), n = night(ms, 'topic', day(6));
+  S.postChat(ms[1], { table: n.t.id, text: 'my number is 617' });
+  S.cancelEvent({ id: n.e.id });
+  assert.strictEqual(n.t.closed, 'admin');
+  assert.ok(ms.every((m) => m.prio >= 1), 'first in line next week');
+  assert.ok(db().chats[n.t.id].some((x) => x.from === 'charlie' && /This evening is off/.test(x.text)), 'Charlie says why');
+  S.erase(ms[1]);
+  assert.ok(!db().chats[n.t.id].some((x) => x.from === ms[1].id), 'their messages are gone');
 });

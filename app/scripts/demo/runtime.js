@@ -46,7 +46,7 @@
     http: { createServer: function (h) { return { handler: h, listen: function () { return this; }, close: function (cb) { if (cb) cb(); }, address: function () { return { port: 0 }; } }; } },
     zlib: {}
   };
-  var PROC = { env: { SIXTOP_ADMIN_KEY: BUILTIN.crypto.randomBytes(16).toString('hex'), SIXTOP_MAIL: 'show', SIXTOP_DATA_DIR: '/data', SIXTOP_AREA: 'Central Square' }, argv: ['node', 'demo'], on: function () {}, exit: function () {} };
+  var PROC = { env: { SIXTOP_ADMIN_KEY: BUILTIN.crypto.randomBytes(16).toString('hex'), SIXTOP_MAIL: 'show', SIXTOP_DEMO: '1', SIXTOP_DATA_DIR: '/data', SIXTOP_AREA: 'Central Square' }, argv: ['node', 'demo'], on: function () {}, exit: function () {} };
 
   /* ---------- the server's own files ---------- */
   var SRC = {/*MODULES*/};
