@@ -1288,3 +1288,62 @@ textarea.field{font-family:inherit;font-size:16px;line-height:1.5;resize:none;pa
 .offbtns{display:flex;align-items:center;gap:14px;margin-top:10px}
 .offbtns .btn{margin:0;width:auto;padding:0 16px}
 .offbtns .link{margin:0}
+
+/* the captain: a brief with three missions, gold stripes, the captain's log, and industry tables */
+.capflag{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FBEFD2,#F2D9A6);color:#8A6420;flex:none;box-shadow:0 4px 12px -6px rgba(200,150,58,.6)}
+.capbrief,.capreport,.caplog{position:relative;overflow:hidden}
+.capbrief.won,.capreport.won{box-shadow:0 0 0 1.5px rgba(214,170,84,.6),0 14px 34px -20px rgba(200,150,58,.7)}
+.caphead{display:flex;align-items:center;gap:11px}
+.caphead b{display:block;font-size:15.5px;font-weight:650;color:var(--ink)}
+.caphead small{display:block;font-size:12.5px;line-height:1.35;color:var(--ink-soft);margin-top:1px}
+.stripes{display:inline-flex;gap:3px;align-items:center;flex:none}
+.stripes i{width:13px;height:5px;border-radius:2px;background:rgba(120,110,90,.16);transform:skewX(-24deg)}
+.stripes i.on{background:linear-gradient(90deg,#EBC877,#C8963A);box-shadow:0 1px 3px rgba(200,150,58,.35)}
+.stripes em{font-style:normal;font-size:11px;font-weight:650;color:#9A7228;margin-left:2px}
+.capbar{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:13px 0 4px}
+.capbar i{height:5px;border-radius:3px;background:rgba(120,110,90,.14);transition:background .5s}
+.capbar i.on{background:linear-gradient(90deg,#EBC877,#C8963A)}
+.capbar.sm{display:inline-grid;width:54px;margin:0;flex:none}
+.mission{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+.capbar+.mission{border-top:0}
+.mission .mnum{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(200,150,58,.55);color:#9A7228;font-size:13px;font-weight:650;flex:none}
+.mission.done .mnum{background:linear-gradient(135deg,#EBC877,#C8963A);border-color:transparent;color:#fff}
+.mission .mnum svg{width:14px;height:14px}
+.mission b{display:block;font-size:14.5px;font-weight:620;color:var(--ink)}
+.mission small{display:block;font-size:12.8px;line-height:1.38;color:var(--ink-soft);margin-top:1px}
+.mission.done b{color:var(--ink-2)}
+.mission .btn.sm{margin:0;flex:none}
+.capdoor{margin-top:4px;padding:10px 12px;border-radius:12px;background:rgba(235,200,119,.14);font-size:13.5px;color:var(--ink-2)}
+.capmini{display:flex;align-items:center;gap:11px;width:100%;text-align:left}
+.capmini b{display:block;font-size:15px;font-weight:650;color:var(--ink)}
+.capmini small{display:block;font-size:12.5px;color:var(--ink-soft)}
+.spots{display:grid;gap:9px;margin:14px 0 6px}
+.spot{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:14px 15px;border-radius:16px;border:1px solid var(--line-2);background:#fff;transition:border-color .2s,box-shadow .2s,opacity .2s}
+.spot b{display:block;font-family:var(--italic);font-style:italic;font-size:18px;font-weight:400;color:var(--ink)}
+.spot small{display:block;font-size:12.8px;color:var(--ink-soft);margin-top:2px}
+.spot.sel{border-color:rgba(200,150,58,.7);box-shadow:0 0 0 3px rgba(235,200,119,.22)}
+.spot .tag{flex:none;font-size:11.5px;font-weight:600;color:#9A7228;background:rgba(235,200,119,.22);padding:4px 9px;border-radius:999px}
+.spot.wait{opacity:.55;pointer-events:none}
+.captag{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 7px;border-radius:999px;background:rgba(235,200,119,.28);color:#8A6420;font-size:11px;font-weight:600;vertical-align:1px}
+.captag svg{width:11px;height:11px}
+.capchecks{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.capchecks span{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border-radius:999px;background:rgba(120,110,90,.1);font-size:13px;color:var(--ink-soft)}
+.capchecks span.on{background:linear-gradient(135deg,#FBEFD2,#F2D9A6);color:#7A5618;font-weight:600}
+.capchecks svg{width:13px;height:13px}
+.capstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;text-align:center}
+.capstats b{display:block;font-size:22px;font-weight:650;letter-spacing:-.02em;color:var(--ink)}
+.capstats small{font-size:11.5px;color:var(--ink-soft)}
+.caplog .rank{font-family:var(--italic);font-style:italic;font-weight:400;font-size:21px;margin-top:1px}
+.pick.salute{margin-top:6px}
+.pick.salute .capflag{width:40px;height:40px}
+.industry .indhead{display:flex;align-items:center;gap:10px}
+.industry .indhead b{display:block;font-size:15px;font-weight:650}
+.industry .indhead small{display:block;font-size:12.5px;color:var(--ink-soft)}
+.industry .guest{margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(235,200,119,.15),rgba(186,200,230,.18))}
+.industry .guest b{display:block;font-family:var(--italic);font-style:italic;font-weight:400;font-size:19px;color:var(--ink)}
+.industry .guest small{display:block;font-size:12.8px;color:var(--ink-2);margin-top:2px}
+.industry .guest p{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink-soft);overflow-wrap:anywhere}
+.pill.gold{display:inline-flex;align-items:center;gap:4px;flex:none;padding:4px 9px;border-radius:999px;background:linear-gradient(135deg,#FBEFD2,#F2D9A6);color:#7A5618;font-size:11.5px;font-weight:600}
+.pill.gold svg{width:11px;height:11px}
+.caphead .stripes i{width:15px;height:6px}
+.m.me .captag{margin-left:0;background:rgba(235,200,119,.2);color:#F2D9A6}

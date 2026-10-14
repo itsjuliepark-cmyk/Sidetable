@@ -665,12 +665,13 @@ const etIn = (h) => { const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Am
 
 test('late changes: free until noon the day before; after that a cancel is one point and a no-show two; three in sixty days pause invitations', () => {
   const ms = people(8, 'Late'), m = ms[0];
-  const [d1, h1] = etIn(5), n1 = night(ms.slice(0, 5), 'topic', d1, h1);
+  const ago = new Date(Date.now() - 3 * 864e5).toISOString();
+  const [d1, h1] = etIn(5), n1 = night(ms.slice(0, 5), 'topic', d1, h1); n1.e.publishedAt = ago;
   S.cancelSeat(m, { event: n1.e.id });
   assert.ok(S.lateChanges(m) === 1 && !S.cooling(m), 'one late change is fine');
   const past = night(ms.slice(0, 4), 'kindred', day(-2)), t = Object.values(db().tables).find((x) => x.eventId === past.e.id);
   t.attended = t.attended || {}; t.attended[m.id] = false;
-  const [d2, h2] = etIn(8), n2 = night(ms.slice(0, 5), 'kindred', d2, h2);
+  const [d2, h2] = etIn(8), n2 = night(ms.slice(0, 5), 'kindred', d2, h2); n2.e.publishedAt = ago;
   const r = S.cancelSeat(m, { event: n2.e.id });
   assert.ok(S.cooling(m) && r.paused, 'one + two + one: paused, and told until when');
   assert.ok(S.view(m).me.cool);
@@ -805,4 +806,60 @@ test('cancelling a night tells everyone at its tables, puts them first next week
   assert.ok(db().chats[n.t.id].some((x) => x.from === 'charlie' && /This evening is off/.test(x.text)), 'Charlie says why');
   S.erase(ms[1]);
   assert.ok(!db().chats[n.t.id].some((x) => x.from === ms[1].id), 'their messages are gone');
+});
+
+test('the captain’s three missions: pick the spot, rally the vote, settle up, and all three earn a stripe', () => {
+  ['Cap Grill', 'Cap Noodle', 'Cap Tavern'].forEach((name) => S.savePlace({ name, address: '9 Test St', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 2, seats: 6 }));
+  const ms = people(5, 'Capt'), n = night(ms, 'topic', day(23)), t = n.t, cap = db().members[t.captain];
+  assert.ok(cap, 'the table has a captain');
+  const v = S.tableView(cap, t.id).cap;
+  assert.ok(v.me && v.spot.state === 'open' && v.spot.options.length >= 2, 'the brief offers partners with room');
+  const other = v.spot.options.find((o) => !o.mine);
+  S.captainSpot(cap, { table: t.id, place: other.id });
+  assert.strictEqual(t.venue.id, other.id, 'the table moves to the captain’s pick');
+  assert.ok(db().chats[t.id].some((x) => x.kind === 'cap' && x.text.indexOf(other.name) < 0), 'the table hears a spot was picked, not which');
+  const mate = db().members[t.ids.find((id) => id !== cap.id)];
+  assert.ok(!S.tableView(mate, t.id).cap.spot, 'tablemates don’t see the brief');
+  assert.throws(() => S.captainSpot(mate, { table: t.id, place: other.id }), /not the captain/);
+  S.captainNudge(cap, { table: t.id });
+  assert.ok(db().chats[t.id].some((x) => x.kind === 'nudge' && x.from === cap.id), 'the nudge lands in the chat from the captain');
+  assert.throws(() => S.captainNudge(cap, { table: t.id }), /moment ago/, 'one nudge at a time');
+  const c1 = t.game.cards[0];
+  t.ids.slice(0, 4).forEach((id) => S.playGame(db().members[id], { table: t.id, act: 'vote', card: c1 }));
+  assert.ok(S.missions(t).vote.done, 'four of five voted');
+  assert.throws(() => S.captainChecks(cap, { table: t.id }), /night of the dinner/);
+  const [d, h] = etIn(-1); n.e.date = d; n.e.time = h;
+  S.captainChecks(cap, { table: t.id });
+  const M = S.missions(t);
+  assert.ok(M.spot.done && M.vote.done && M.checks.done && M.stripe, 'three for three');
+  S.feedback(mate, { table: t.id, rating: 5, picks: [], salute: true });
+  const st = S.captainStats(cap);
+  assert.ok(st.stripes >= 1 && st.salutes >= 1 && st.rank === 'Captain', 'a stripe, a thank-you, and the rank that comes with it');
+});
+
+// a captaincy from last week with all three missions done
+function stripe(m) {
+  const n = night([m].concat(people(4, 'Crew' + m.id.slice(1, 5))), 'topic', day(-3)), t = n.t;
+  t.captain = m.id; t.cap = { spot: { vid: 'x', at: '' }, nudges: [], checks: { at: '' }, salutes: {}, hadChoice: true };
+  t.game = { cards: [], votes: {}, pick: 'x', sides: {}, guess: {}, final: {}, voteBy: 0, notes: {}, turnout: t.ids.length };
+  return t;
+}
+test('industry tables: captains with a stripe get the first 48 hours, and are seated first', () => {
+  const [capt] = people(1, 'Ind'), [plain] = people(1, 'Ind2');
+  stripe(capt);
+  assert.strictEqual(S.captainStats(capt).stripes, 1);
+  const e = S.createEvent({ type: 'topic', date: day(12), time: '19:00', industry: true, guest: 'A seed investor (sample)', role: 'Partner, Sample Ventures' });
+  assert.throws(() => S.bookSeat(plain, { event: e.id }), /captains/, 'not yet for everyone');
+  assert.ok(S.bookSeat(capt, { event: e.id }).ok, 'captains first');
+  const card = S.view(capt).events.find((x) => x.id === e.id);
+  assert.ok(card.industry && card.industry.early && card.industry.you, 'the card says captains first, and that includes you');
+  e.industry.captainsUntil = new Date(Date.now() - 1000).toISOString();
+  assert.ok(S.bookSeat(plain, { event: e.id }).ok, 'after 48 hours, everyone');
+  // seven for one table of six: the captain who booked last still gets a chair
+  const e2 = S.createEvent({ type: 'topic', date: day(13), time: '19:00', industry: true, guest: 'A robotics founder (sample)' });
+  e2.industry.captainsUntil = new Date(Date.now() - 1000).toISOString();
+  people(6, 'Rush').forEach((m) => S.bookSeat(m, { event: e2.id }));
+  S.bookSeat(capt, { event: e2.id }); db().seats[e2.id][capt.id].at = new Date(Date.now() + 1e6).toISOString();
+  S.draft({ event: e2.id });
+  assert.ok(Object.values(db().tables).some((t) => t.eventId === e2.id && t.ids.indexOf(capt.id) >= 0), 'stripes come first at an industry table');
 });

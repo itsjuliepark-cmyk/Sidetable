@@ -108,7 +108,7 @@
         if (id === m.id) return;
         var picks = seated.filter(function (x, k) { return x !== id && (x === m.id ? i % 2 === 0 : (k + i) % 3 === 0); });
         var again = yes < (mine ? need - 1 : need - 2); if (again) yes++;
-        try { S.feedback(db().members[id], { table: t.id, attended: true, rating: 4 + (i % 2), picks: picks, again: again, next: LINES[i] }); } catch (e) {}
+        try { S.feedback(db().members[id], { table: t.id, attended: true, rating: 4 + (i % 2), picks: picks, again: again, next: LINES[i], salute: t.captain === m.id && i % 3 !== 2 }); } catch (e) {}
       });
     });
     S.save(true);

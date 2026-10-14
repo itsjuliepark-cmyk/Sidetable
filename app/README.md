@@ -22,6 +22,7 @@ npm run dev
   - 지난주 테크 디너: 다음 날 픽과 1:1 채팅까지 끝난 상태, 같은 멤버의 round two 예약 완료
   - 이번 주: Jordan에게 온 초대장 두 장(테크, 소셜), 테크 테이블 캡틴은 Jordan
   - 다음 주: 34명이 가능한 저녁을 이미 고른 상태라 관리자 화면에서 바로 테이블 구성 가능
+  - 지난주 테이블에서 Jordan이 캡틴 미션 셋을 모두 해서 스트라이프 1개, 다음 주 Industry table 하나
   - 그 밖에 Hang 6개, Board 글, Long table 신청 15명, 가상의 제휴 식당 4곳
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
@@ -197,7 +198,7 @@ npm run film
 - 차단하거나 신고한 사람과 같은 테이블이면 늦게 빠져도 점수 없음, 신고는 당번에게 바로 알림
 - 세 명 아래로 줄면 다른 테이블과 합치거나 종료, 둘만 남는 저녁은 데이트처럼 보일 수 있어 만들지 않음
 - 닫힌 테이블 사람은 다음 주 우선 배정
-- 캡틴: 테이블마다 한 명이 5분 먼저 도착해 일행 확인과 각자 계산 요청
+- 캡틴: 테이블마다 한 명, 세 가지 미션은 아래 "캡틴: 세 가지 미션" 참고
   - 최근에 맡지 않은 사람 순서, Me에서 제외 가능, 두 시간 전까지 넘기기 가능
 
 ### 운영팀
@@ -207,6 +208,31 @@ npm run film
 - Long table 장소는 운영팀이 6~8주 전에 직접 예약, 좌석이 차면 대기, RSVP는 5일 전 마감
 - RSVP가 마감되면 인원을 당번에게 알림, 날짜는 Places 탭에서 변경 가능 (추수감사절, 연말)
 - 서버 코드: `placeTable`, `savePlace`, `syncBooking`, `placeAnswer`, `placeMail`, `shrink`, `closeTable`, `lateChanges`, `pickCaptain`, `alertOps`, 식당 페이지는 `public/place.html`
+
+## 캡틴: 세 가지 미션
+
+- 테이블마다 회원 한 명이 돌아가며 캡틴, 정해지면 캡틴 브리핑 알림
+- 테이블 화면의 브리핑 카드에 미션 셋과 진행 막대, 홈에는 "Captain on Friday" 카드
+- 미션 1, 장소 고르기: 그날 자리가 있는 제휴 식당 최대 3곳 중 선택, 식당 최종 인원 전까지 변경 가능
+  - 테이블에는 캡틴이 장소를 골랐다는 사실만 알리고, 장소는 당일 정오에 공개
+  - 고르지 않으면 Charlie가 정한 곳 그대로, 자리가 있는 곳이 한 곳뿐이면 자동 완료
+  - 식당 분위기 한 줄은 관리자 Places 탭에서 입력
+- 미션 2, 투표 끌어내기: Tonight’s question에 테이블의 4분의 3 이상 투표
+  - Nudge 두 번까지(3시간 간격), 단톡방에 캡틴 메시지와 투표 버튼, 아직 안 한 사람에게 알림
+- 미션 3, 각자 계산: 자리에 앉을 때 separate checks 요청, 저녁 당일부터 다음 날까지 Done 체크
+- 문 앞에서 "Sidetable, party of six"로 일행 확인은 그대로
+- 세 미션을 모두 하면 스트라이프 하나, 다음 날 아침 리포트 카드와 축하 효과
+- 테이블 사람들은 다음 날 아침 "Thank Jordan for captaining"으로 감사 표시
+- 등급: 스트라이프 1개 Captain, 3개 Senior captain, 5개 Commodore, Me 탭의 Captain’s log에 기록
+- 서버 코드: `missions`, `captainStats`, `spotOptions`, `captainSpot`, `captainNudge`, `captainChecks`, `briefCaptain`, API `/api/captain-spot`, `/api/captain-nudge`, `/api/captain-checks`
+
+## Industry table: 캡틴 우선
+
+- 업계 게스트(창업자, 투자자, 현업 엔지니어 등)가 함께하는 테크 테이블
+- 관리자 Tables 탭의 A special night에서 Industry table로 생성, 게스트 이름과 역할, 한 줄 소개 입력
+- 처음 48시간은 스트라이프가 있는 캡틴만 신청 가능, 이후 모두에게 오픈
+- 테이블을 짤 때도 스트라이프가 많은 순서로 먼저 배정
+- 열리면 캡틴에게 바로 알림, 48시간 뒤 전체 알림 (Ping everyone을 켠 경우)
 
 ## Board
 
@@ -275,5 +301,5 @@ art/make-film.js   첫 화면 영상 제작
 scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)
 scripts/dev.js     로컬 개발용 실행
 scripts/build-demo.js  폰 데모 생성 (dist/와 저장소의 demo/)
-test/              npm test (테이블 구성 8개, 서버 36개)
+test/              npm test (테이블 구성 8개, 서버 38개)
 ```
