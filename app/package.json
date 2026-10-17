@@ -11,7 +11,8 @@
     "test": "node --test test/tables.test.js test/server.test.js",
     "demo": "node scripts/build-demo.js",
     "art": "node art/make-art.js && powershell -NoProfile -ExecutionPolicy Bypass -File art/render.ps1",
-    "film": "node art/make-film.js"
+    "film": "node art/make-film.js",
+    "simulate": "node scripts/simulate.js"
   },
   "engines": {
     "node": ">=18"

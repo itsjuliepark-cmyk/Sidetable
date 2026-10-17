@@ -604,11 +604,14 @@ test('a partner that confirms each evening: asked once, reminded at the deadline
   const ms = people(10, 'Conf');
   const date = day(2), dow = new Date(date + 'T12:00:00Z').getUTCDay();
   const v1 = S.savePlace({ name: 'Asking Place', address: '10 A St', area: 'Central Square', nights: [dow], tables: 2, seats: 6, email: 'first@example.com', contact: 'Ana', mode: 'ask' }).id;
-  const v2 = S.savePlace({ name: 'Second Place', address: '20 B St', area: 'Kendall Square', nights: [dow], tables: 2, seats: 6, email: 'second@example.com', backup: true }).id;
+  const v2 = S.savePlace({ name: 'Second Place', address: '20 B St', area: 'Kendall Square', nights: [dow], tables: 6, seats: 6, email: 'second@example.com', backup: true }).id;
   const { e } = night(ms, 'topic', date), t = Object.values(db().tables).find((x) => x.eventId === e.id), m = db().members[t.ids[0]];
   assert.strictEqual(t.venue.id, v1, 'backups come last');
   const place = db().places[v1];
   assert.ok(/^[a-f0-9]{24}$/.test(place.key), 'each partner has a private link');
+  // the week's plan already went out (on a Saturday, the dinner two days on is in next week, whose plan goes out Sunday night)
+  const monday = (d) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7)); return x.toISOString().slice(0, 10); };
+  db().planSent = db().planSent || {}; db().planSent[v1 + '|' + monday(date)] = new Date().toISOString();
   S.tick(); S.tick();
   assert.ok(db().bookings[v1 + '|' + date].askMail, 'asked');
   const pv = S.placeView(place);
@@ -795,6 +798,8 @@ test('the free-change cutoff: noon the day before, and ten that morning for tabl
   assert.strictEqual(S.freeUntil({ date: mon, publishedAt: new Date(sunEve).toISOString() }), S.tzMs(mon, '10:00'));
   assert.strictEqual(S.freeUntil({ date: mon, publishedAt: new Date(sat).toISOString() }), S.tzMs('2026-11-01', '12:00'));
   assert.strictEqual(S.freeUntil({ date: '2026-11-04', publishedAt: new Date(sunEve).toISOString() }), S.tzMs('2026-11-03', '12:00'));
+  assert.strictEqual(S.freeUntil({ date: '2026-11-04', time: '19:00', publishedAt: new Date(S.tzMs('2026-11-03', '15:00')).toISOString() }), S.tzMs('2026-11-04', '10:00'), 'any late build gets the morning');
+  assert.strictEqual(S.freeUntil({ date: '2026-11-04', time: '19:00', publishedAt: new Date(S.tzMs('2026-11-04', '09:00')).toISOString() }), S.tzMs('2026-11-04', '11:00'), 'a same-day build gets two hours');
 });
 
 test('cancelling a night tells everyone at its tables, puts them first next week, and deleting an account takes its words along', () => {
@@ -813,7 +818,7 @@ test('the captain’s three missions: pick the spot, rally the vote, settle up, 
   const ms = people(5, 'Capt'), n = night(ms, 'topic', day(23)), t = n.t, cap = db().members[t.captain];
   assert.ok(cap, 'the table has a captain');
   const v = S.tableView(cap, t.id).cap;
-  assert.ok(v.me && v.spot.state === 'open' && v.spot.options.length >= 2, 'the brief offers partners with room');
+  assert.ok(v.me && v.spot.state === 'held' && v.spot.options.filter((o) => o.kind === 'partner').length >= 2, 'a partner holds a table, and the brief offers the others with room');
   const other = v.spot.options.find((o) => !o.mine);
   S.captainSpot(cap, { table: t.id, place: other.id });
   assert.strictEqual(t.venue.id, other.id, 'the table moves to the captain’s pick');
@@ -840,7 +845,8 @@ test('the captain’s three missions: pick the spot, rally the vote, settle up, 
 // a captaincy from last week with all three missions done
 function stripe(m) {
   const n = night([m].concat(people(4, 'Crew' + m.id.slice(1, 5))), 'topic', day(-3)), t = n.t;
-  t.captain = m.id; t.cap = { spot: { vid: 'x', at: '' }, nudges: [], checks: { at: '' }, salutes: {}, hadChoice: true };
+  if (!t.venue) t.venue = { name: 'Sample Spot', address: '1 Test St', note: '' };
+  t.captain = m.id; t.cap = { spot: { vid: t.venue.id || '', at: '' }, nudges: [], checks: { at: '' }, salutes: {}, hadChoice: true };
   t.game = { cards: [], votes: {}, pick: 'x', sides: {}, guess: {}, final: {}, voteBy: 0, notes: {}, turnout: t.ids.length };
   return t;
 }
@@ -862,4 +868,111 @@ test('industry tables: captains with a stripe get the first 48 hours, and are se
   S.bookSeat(capt, { event: e2.id }); db().seats[e2.id][capt.id].at = new Date(Date.now() + 1e6).toISOString();
   S.draft({ event: e2.id });
   assert.ok(Object.values(db().tables).some((t) => t.eventId === e2.id && t.ids.indexOf(capt.id) >= 0), 'stripes come first at an industry table');
+});
+
+test('the captain books it: a spot from the list, booked under their name, a nudge when the size changes, and nothing sent to the restaurant', () => {
+  const sp = S.savePlace({ name: 'Booked Bistro', address: '5 Elm St, Central Square', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'opentable', bookUrl: 'https://www.opentable.com/r/booked-bistro-cambridge', vibe: 'Booths', price: '$$' }).id;
+  assert.throws(() => S.savePlace({ name: 'No Link', address: '6 Elm St', nights: [1], mode: 'captain' }), /booking link or a phone/);
+  const ms = people(6, 'Book'), n = night(ms, 'topic', day(25)), t = n.t, cap = db().members[t.captain];
+  assert.ok(!t.venue || t.venue.id, 'nobody books a captain spot automatically');
+  const o = S.tableView(cap, t.id).cap.spot.options.find((x) => x.id === sp);
+  assert.ok(o && o.kind === 'book' && /covers=\d&dateTime=/.test(o.link), 'the link opens the booking page with the party and time filled in');
+  assert.throws(() => S.captainBook(cap, { table: t.id, place: sp, time: '22:00', name: cap.name }), /hour and a half/);
+  S.captainBook(cap, { table: t.id, place: sp, time: '19:30', name: cap.name, code: 'AB12' });
+  assert.ok(t.venue.pid === sp && !t.venue.id && t.time === '19:30', 'booked under the captain’s name, at the time they got');
+  assert.ok(S.missions(t).spot.done, 'mission one done');
+  assert.strictEqual(S.view(cap).tables.find((x) => x.id === t.id).time, '7:30 PM', 'the table shows the booked time');
+  assert.ok(!Object.values(db().bookings || {}).some((b) => b.vid === sp), 'Sidetable never contacts a spot the captain booked');
+  const out = db().members[t.ids.find((id) => id !== cap.id)];
+  S.cancelSeat(out, { event: n.e.id }); S.tick();
+  assert.strictEqual(t.cap.booking.warned, t.ids.filter((id) => !(t.out || {})[id]).length, 'a size change after booking nudges the captain once');
+  assert.ok(S.tableView(cap, t.id).cap.spot.booking.now !== S.tableView(cap, t.id).cap.spot.booking.size, 'the brief says the booking needs an update');
+  S.captainBook(cap, { table: t.id, resize: true });
+  assert.strictEqual(t.cap.booking.size, t.cap.booking.now || S.tableView(cap, t.id).cap.spot.booking.now);
+  S.captainBook(cap, { table: t.id, cancel: true });
+  assert.ok(!t.venue && !t.cap.booking && !S.missions(t).spot.done, 'it fell through: back to booking');
+});
+
+// a phone that takes pushes without sending anything (an http endpoint is turned away before any network)
+const ear = (m) => { m.push = [{ endpoint: 'http://push.invalid/' + m.id, keys: { p256dh: 'x', auth: 'x' } }]; m.pushLog = []; };
+const heard = (m, kind) => (m.pushLog || []).some((x) => x.kind === kind);
+// only these spots are open (the rest stay registered from earlier tests); returns a way back
+const only = (ids) => { const was = {}; Object.values(db().places).forEach((v) => { was[v.id] = v.off; v.off = ids.indexOf(v.id) < 0; }); return () => Object.values(db().places).forEach((v) => { v.off = was[v.id]; }); };
+function bookSpot(tag) {
+  return S.savePlace({ name: tag + ' Bistro', address: '7 Elm St, Central Square', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'resy', bookUrl: 'https://resy.com/cities/bos/' + tag.toLowerCase() }).id;
+}
+
+test('a booking belongs to whoever made it: they hear when the table no longer needs it, keep it when they step away, and only they get credit', () => {
+  const sp = bookSpot('Holder'), sp2 = bookSpot('Other'), back = only([sp, sp2]), ms = people(6, 'Hold'), n = night(ms, 'topic', day(29)), t = n.t, cap = db().members[t.captain];
+  if (t.venue && t.venue.id) { const vid = t.venue.id; t.venue = null; S.syncBooking(vid, n.e.date); }
+  S.captainBook(cap, { table: t.id, place: sp, name: cap.name });
+  assert.strictEqual(t.cap.booking.by, cap.id, 'the booking remembers who made it');
+  ear(cap); S.captainMove(cap, { table: t.id, act: 'pass' });
+  assert.ok(heard(cap, 'bookkeep'), 'passing the job: please keep the booking');
+  const next = db().members[t.captain], v = S.tableView(next, t.id).cap.spot;
+  assert.ok(next.id !== cap.id && v.state === 'booked' && v.booking && !v.booking.mine && v.booking.byFirst, 'the new captain sees who holds it');
+  assert.ok(!S.captainStats(next).missions, 'no credit for a booking someone else made');
+  ear(cap); S.captainBook(next, { table: t.id, place: sp2, name: next.name });
+  assert.ok(heard(cap, 'bookcancel'), 'a new booking elsewhere: whoever held the old one is asked to cancel it');
+  ear(next); S.cancelEvent({ id: n.e.id });
+  assert.ok(heard(next, 'bookcancel'), 'the evening is off: the booking gets cancelled too');
+  assert.ok(db().log.some((x) => x.kind === 'booking-release' && x.a === t.id));
+  back();
+});
+
+test('round two starts without last time’s booking: the new captain books, with last time’s spot on top of the list', () => {
+  const sp = bookSpot('Again'), back = only([sp]), ms = people(6, 'Again'), n = night(ms, 'topic', day(-9)), t = n.t, cap = db().members[t.captain];
+  t.venue = { pid: sp, name: 'Again Bistro', address: '7 Elm St', note: 'Booked under ' + cap.name };
+  t.cap = Object.assign(t.cap || {}, { booking: { pid: sp, by: cap.id, size: 6, warned: 6, time: '19:00', name: cap.name } });
+  const seated = t.ids.map((id) => db().members[id]);
+  seated.forEach((m) => S.feedback(m, { table: t.id, rating: 5, picks: [], again: true }));
+  const nt = db().tables[t.next];
+  assert.ok(nt && !nt.venue, 'nothing booked for round two until someone books it');
+  const o = S.tableView(db().members[nt.captain], nt.id).cap.spot.options;
+  assert.ok(o.length && o[0].id === sp && o[0].last, 'last time’s spot comes first');
+  back();
+});
+
+test('late on the day: a captain can still book until 2 PM, a booking that falls through gets an hour, and a partner with its count stays put', () => {
+  const sp = bookSpot('Late'), sp2 = bookSpot('Later'), part = Object.values(db().places).find((v) => v.mode === 'hold' || v.mode === 'ask'), back = only([sp, sp2].concat(part ? [part.id] : [])), ms = people(5, 'Late'), n = night(ms, 'topic', day(31)), t = n.t, cap = db().members[t.captain];
+  const tm = S.eventTimes(n.e), H = 36e5, real = Date.now;
+  try {
+    if (t.venue && t.venue.id) {
+      Date.now = () => S.freeUntil(n.e) + H;
+      assert.throws(() => S.captainBook(cap, { table: t.id, place: sp, name: cap.name }), /partner already has its count/);
+      const vid = t.venue.id; t.venue = null; S.syncBooking(vid, n.e.date);
+    }
+    Date.now = () => tm.reveal + H;
+    const M = S.tableView(cap, t.id).cap.spot;
+    assert.ok(M.state === 'late' && M.options.length && M.options.every((o) => o.kind === 'book'), 'past the cutoff with nothing: book now');
+    S.captainBook(cap, { table: t.id, place: sp, name: cap.name });
+    Date.now = () => tm.reveal + 3 * H;
+    S.captainBook(cap, { table: t.id, cancel: true });
+    assert.ok(t.cap.grace > Date.now(), 'it fell through on the day: an hour to book another');
+    S.tick(Date.now() + 30 * 6e4);
+    assert.ok(!t.closed, 'still open inside the hour');
+    Date.now = () => tm.reveal + 3.5 * H;
+    S.captainBook(cap, { table: t.id, place: sp2, name: cap.name });
+    assert.ok(t.venue && t.venue.pid === sp2, 'booked again in time');
+    S.captainBook(cap, { table: t.id, cancel: true });
+    S.tick(tm.reveal + 5 * H);
+    assert.strictEqual(t.closed, 'nospot', 'nothing after the hour: the table is off');
+  } finally { Date.now = real; back(); }
+});
+
+test('an unbooked table passes to another captain a day and a half out, and with no spot by 2 PM on the day it’s off', () => {
+  Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = true; }); // only spots captains book
+  const ms = people(5, 'Hand'); ms.forEach((m) => { m.captain = 'maybe'; });
+  const n = night(ms, 'topic', day(27)), t = n.t, first = t.captain, st = S.eventTimes(n.e).start, H = 36e5;
+  if (t.venue && t.venue.id) { const vid = t.venue.id; t.venue = null; S.syncBooking(vid, n.e.date); }
+  assert.ok(!t.venue && first, 'nothing booked yet, and a captain to book it');
+  S.tick(st - 47 * H);
+  assert.ok(t.cap.remind, 'two days out: a reminder');
+  S.tick(st - 35 * H);
+  assert.ok(t.cap.handed && t.captain && t.captain !== first, 'a day and a half out: someone else is captain');
+  assert.ok(db().chats[t.id].some((x) => /is captain now/.test(x.text)), 'the table hears who');
+  S.tick(S.eventTimes(n.e).reveal + 2 * H + 6e4);
+  assert.strictEqual(t.closed, 'nospot', 'no spot by 2 PM: the table is off');
+  assert.ok(ms.every((m) => m.prio >= 1), 'and they go first next week');
+  Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = false; });
 });

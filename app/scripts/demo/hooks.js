@@ -41,7 +41,8 @@
       if (t.game) others.slice(0, 3).forEach(function (id, k) { try { S.playGame(db().members[id], { table: t.id, act: 'vote', card: t.game.cards[[0, 1, 0][k]] }); } catch (e) {} });
       try { S.postChat(db().members[others[others.length - 1]], { table: t.id, text: ['Hi all! First one for me too, can’t wait.', 'Hello! I already have opinions about the question.'][j % 2] }); } catch (e) {}
     });
-    db().weeks[wk].events.forEach(function (eid) { Object.values(db().tables).filter(function (t) { return t.eventId === eid; }).forEach(function (t, k) { var v = VENUES[k % VENUES.length]; if (!t.venue) t.venue = { name: v[0], address: v[1], note: 'Ask for the Sidetable table' }; }); }); // partners place tables; this only fills a gap
+    // the other captains book their tables right away; yours waits for you if you're captain
+    db().weeks[wk].events.forEach(function (eid) { Object.values(db().tables).filter(function (t) { return t.eventId === eid && !t.venue && t.captain && t.captain !== m.id; }).forEach(function (t, k) { var o = S.spotOptions(t).filter(function (x) { return x.kind === 'book'; }), c = db().members[t.captain]; if (o.length && c) try { S.captainBook(c, { table: t.id, place: o[k % o.length].id, time: db().events[t.eventId].time, name: c.name }); } catch (e) {} }); }); // partners place tables; this only fills a gap
     S.save(true);
   }
   // the demo is about tech tables: someone who asked for them always gets at least one, swapped in for a social one
@@ -159,6 +160,16 @@
     toast(was, t.venue ? 'Can’t host ' + day + '. Charlie moved your table to ' + t.venue.name + ' before anyone saw the address. Nothing changes for you.' : 'Can’t host ' + day + ', and no partner has room. Whoever is on duty gets an alert to find a spot or call it off.');
     refresh().then(function () { openTable(t.id); });
   };
+  // try the captain's missions on your next dinner
+  D.captain = function () {
+    var m = me(), t = m && nextTable(m); closeSheet();
+    if (!t) { toast('Demo', 'No upcoming table. Get your invitations first.'); return; }
+    t.captain = m.id; m.captainAt = new Date().toISOString(); if (t.cap) { t.cap.briefed = m.id; delete t.cap.booking; t.cap.spot = null; }
+    if (t.venue && t.venue.pid) t.venue = null;
+    S.save(true);
+    toast('Charlie', 'You’re captain now. Three missions: book the spot, rally the vote, settle up');
+    refresh().then(function () { openTable(t.id); });
+  };
   D.dropOuts = function () {
     var m = me(), t = m && nextTable(m); closeSheet();
     if (!t) { toast('Demo', 'No upcoming table. Get your invitations first.'); return; }
@@ -185,8 +196,7 @@
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')
       + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new<small>Join through a club link and do the whole sign-up</small></button>'
       + '<div class="label">Behind the scenes</div>'
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.place()">See it as the restaurant<small>The partner restaurant’s private page for your next dinner</small></button>'
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.cantHost()">The restaurant can’t host my next dinner<small>Charlie moves the table to another partner with room</small></button>'
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.captain()">Make me captain of my next dinner<small>Book the spot, rally the vote, settle up, and earn a stripe</small></button>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.dropOuts()">Most of my next table cancels<small>The people left join another table that night, or it’s called off</small></button>'
       + '<div class="label">Skip ahead</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.ff(\'set\')">Charlie sends next week’s invitations<small>From everyone’s evenings, half tech and half social</small></button>'

@@ -821,7 +821,7 @@ function renderHome() {
   out.push(`<div class="ph" aria-hidden="true"></div>
     <div class="greet"><div class="kick"><span class="orb sm"></span>This week</div><h1>${greeting()},<br><span class="it">${esc(me.first)}</span></h1><p>${esc(line)}</p></div>`);
   v.tables.filter((t) => t.feedbackOpen && !t.feedbackDone && t.phase !== 'past').forEach((t) => out.push(`<button class="cardg row" style="width:100%;text-align:left" onclick="openAfter('${t.id}')"><span class="orb md"></span><div class="grow"><b style="font-size:15px">How was the table?</b><div class="sub2">${esc(t.short)}. Your picks stay private unless they’re mutual</div></div>${ICON.chev}</button><div class="sp"></div>`));
-  v.tables.filter((t) => (t.closed === 'small' || t.closed === 'place') && !t.offSeen && new Date(t.start) > Date.now() - 6 * 36e5).forEach((t) => out.push(`<div class="cardg offcard"><span class="orb md"></span><div class="grow"><b>Your ${esc(t.day)} table is off</b><div class="sub2">${t.closed === 'place' ? 'The restaurant couldn’t host and I couldn’t find another spot in time.' : 'Too many people had to cancel, and a table needs at least three.'} I’m sorry. You’re first in line next week. Want another evening now?</div><div class="offbtns"><button class="btn sm" onclick="openDecline('${t.id}', 'off')">Find me another evening</button><button class="link" onclick="seenOff('${t.id}')">Okay</button></div></div></div><div class="sp"></div>`));
+  v.tables.filter((t) => ['small', 'place', 'nospot', 'admin'].indexOf(t.closed) >= 0 && !t.offSeen && new Date(t.start) > Date.now() - 6 * 36e5).forEach((t) => out.push(`<div class="cardg offcard"><span class="orb md"></span><div class="grow"><b>Your ${esc(t.day)} table is off</b><div class="sub2">${t.closed === 'place' ? 'The restaurant couldn’t host and I couldn’t find another spot in time.' : t.closed === 'nospot' ? 'Nobody managed to book a spot in time.' : t.closed === 'admin' ? 'Something came up on our side and we had to cancel the evening.' : 'Too many people had to cancel, and a table needs at least three.'} I’m sorry. You’re first in line next week. Want another evening now?</div><div class="offbtns"><button class="btn sm" onclick="openDecline('${t.id}', 'off')">Find me another evening</button><button class="link" onclick="seenOff('${t.id}')">Okay</button></div></div></div><div class="sp"></div>`));
   if (v.counts && v.counts.introsIn) out.push(`<button class="cardg row" style="width:100%;text-align:left" onclick="A.bseg='roles';tab('board')"><span class="orb md"></span><div class="grow"><b style="font-size:15px">${v.counts.introsIn} intro ${v.counts.introsIn > 1 ? 'requests' : 'request'}</b><div class="sub2">Someone asked you about a role you shared</div></div>${ICON.chev}</button><div class="sp"></div>`);
   // tables first: your invitations, or how your first one happens; then next week's plan; then hangs
   out.push(`<div class="sechead"><h3>Your tables</h3></div>`);
@@ -1094,11 +1094,23 @@ const RANK = { 1: 'Captain', 3: 'Senior captain', 5: 'Commodore' };
 function stripesHTML(n) { return `<span class="stripes" aria-label="${n} ${n === 1 ? 'stripe' : 'stripes'}">${Array.from({ length: 5 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}${n > 5 ? `<em>+${n - 5}</em>` : ''}</span>`; }
 const capBar = (n, sm) => `<span class="capbar ${sm ? 'sm' : ''}">${[0, 1, 2].map((i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
 function missionRow(n, done, title, sub, action) { return `<div class="mission ${done ? 'done' : ''}"><span class="mnum">${done ? ICON.check : n}</span><div class="grow"><b>${title}</b><small>${sub}</small></div>${action || ''}</div>`; }
+const VIA = { opentable: 'Book on OpenTable', resy: 'Book on Resy', tock: 'Book on Tock', web: 'Book on their site', phone: 'Call to book' };
+const VIATAG = { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock', web: 'Their site', phone: 'Call' };
 function missionSpot(S) {
-  if (S.state === 'open') return missionRow(1, false, 'Pick the spot', `${cap(nw(S.options.length))} partners have room. Choose by ${esc(S.by)}`, `<button class="btn sm" onclick="openSpot()">Choose</button>`);
-  if (S.state === 'picked') return missionRow(1, true, 'Pick the spot', `${esc(S.at)}, your pick. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
-  if (S.state === 'set') return missionRow(1, true, 'Pick the spot', 'Only one partner had room that evening, so it’s set for you');
-  return missionRow(1, false, 'Pick the spot', 'Charlie’s pick stands this time');
+  const cur = (S.options || []).find((o) => o.mine), B = S.booking;
+  if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. The Sidetable team knows');
+  if (S.state === 'open') return missionRow(1, false, 'Book the spot', `Pick a place for ${nw(S.size)} and book it under your name. Book by ${esc(S.by)}`, `<button class="btn sm" onclick="openSpot()">Choose</button>`);
+  if (S.state === 'late') return missionRow(1, false, 'Book the spot', `Still no spot. Book one now: with nothing by ${esc(S.by)}, the table is off`, S.options.length ? `<button class="btn sm" onclick="openSpot()">Choose</button>` : '');
+  if (S.state === 'held') return missionRow(1, false, 'Book the spot', `${esc(S.at)} is holding a table for Sidetable, so there’s nothing to book. Keep it, or pick another`, `<span class="mbtns">${cur ? `<button class="btn sm" onclick="pickSpot('${cur.id}', this)">Keep</button>` : ''}<button class="link" style="margin:0" onclick="openSpot()">Change</button></span>`);
+  if (S.state === 'picked') return missionRow(1, true, 'Book the spot', `${esc(S.at)}, held for Sidetable. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
+  if (S.state === 'booked') {
+    const off = B.now !== B.size;
+    if (!B.mine) return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, booked by ${esc(B.byFirst || 'someone at your table')} under ${esc(B.name)}. They hold the reservation, so changes go through them`);
+    return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, under ${esc(B.name)}${B.code ? ', confirmation ' + esc(B.code) : ''}. A secret until noon on the day`
+      + (off ? `<span class="bookwarn">Booked for ${nw(B.size)}, and you’re ${nw(B.now)} now. Update the booking so they hold the right table</span><span class="mbtns" style="margin-top:6px">${B.link ? `<a class="btn sm" href="${esc(B.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">Update it</a>` : ''}<button class="btn sm ghost" onclick="bookResize(this)">Done</button></span>` : `<button class="link" style="margin:4px 0 0;text-align:left;font-size:12.5px" onclick="unbook(this)">It fell through</button>`));
+  }
+  if (S.state === 'set') return missionRow(1, true, 'Book the spot', 'Set for you by the Sidetable team');
+  return missionRow(1, false, 'Book the spot', 'Charlie’s pick stands this time');
 }
 function missionVote(V) {
   if (V.done) return missionRow(2, true, 'Rally the vote', `${V.voted} of ${V.total} voted. The table picked its question`);
@@ -1117,7 +1129,7 @@ function captainHTML(t) {
     <div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div>${stripesHTML(K.stripes)}</div>
     ${capBar(K.done)}
     ${missionSpot(K.spot)}${missionVote(K.vote)}${missionChecks(K.checks)}
-    <div class="capdoor">At the door: <b>“Sidetable, party of ${nw(t.size)}”</b></div>
+    <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Sidetable, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Sidetable, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   const p = (t.people || []).find((x) => x.id === c.id) || { first: c.first };
@@ -1125,17 +1137,51 @@ function captainHTML(t) {
 }
 function capAfter(r, msg) {
   if (A.table && r.cap) A.table.cap = r.cap;
+  if (A.table && r.time) A.table.time = r.time;
   if (cur === 'table') drawTable();
   if (msg) toast('Charlie', msg);
   const box = $('capBrief'); if (box && r.cap && r.cap.done === 3) setTimeout(() => celebrate(box, tableKind(A.table)), 250);
 }
 function openSpot() {
   const t = A.table, S = t.cap.spot;
-  openSheet(`<h3>Pick the spot</h3><div class="sub2">Partners with room on ${esc(t.day)}. Your table finds out at noon on the day, so it’s your secret till then</div>
-    <div class="spots">${S.options.map((o) => `<button class="spot ${o.mine ? 'sel' : ''}" onclick="pickSpot('${o.id}', this)"><div class="grow"><b>${esc(o.name)}</b><small>${esc(o.area)}${o.note ? ', ' + esc(o.note) : ''}</small></div>${o.mine ? `<span class="tag">${S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`).join('')}</div>
-    <p class="hint">Choose by ${esc(S.by)}. After that the restaurant gets its count and the spot is locked</p>`);
+  openSheet(`<h3>Book the spot</h3><div class="sub2">For ${nw(S.size)} on ${esc(S.when)}. Your table finds out at noon on the day, so it’s your secret till then</div>
+    <div class="spots">${S.options.map((o) => `<button class="spot ${o.mine ? 'sel' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(o.area)}${o.note ? ', ' + esc(o.note) : ''}</small>
+      <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`).join('')}</div>
+    <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>`);
+}
+// booking it yourself: open the restaurant's booking page (date, time and party size filled in), then tell Charlie
+function openBook(id) {
+  const t = A.table, S = t.cap.spot, o = S.options.find((x) => x.id === id); if (!o) return;
+  const [h, m] = (S.time || '19:00').split(':').map(Number), base = h * 60 + m, hm = (x) => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'), lab = (x) => { const hh = Math.floor(x / 60), mm = x % 60; return ((hh + 11) % 12 + 1) + ':' + String(mm).padStart(2, '0') + (hh >= 12 ? ' PM' : ' AM'); };
+  const tel = (o.link || '').indexOf('tel:') === 0, via = tel ? 'phone' : o.via;
+  A.book = { id, time: S.time || '19:00', opened: false };
+  openSheet(`<h3>${esc(o.name)}</h3><div class="sub2">${esc(o.area)}${o.note ? ', ' + esc(o.note) : ''}</div>
+    <div class="bookstep"><span class="mnum">1</span><div class="grow"><b>Book a table for ${nw(S.size)}</b><small>${esc(S.when)}, under your name. If ${lab(base)} is gone, anything from ${lab(base - 60)} to ${lab(base + 60)} works</small></div></div>
+    ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
+    ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
+    <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation policy before you confirm (for six it’s often a fee per person inside 24 to 48 hours), and book just this one spot</p>
+    <div class="bookstep"><span class="mnum">2</span><div class="grow"><b>Tell Charlie it’s booked</b><small>The time you got, and the name it’s under</small></div></div>
+    <div class="chips" id="bookTimes">${[-60, -30, 0, 30, 60].map((d) => `<button class="chip ${hm(base + d) === A.book.time ? 'sel' : ''}" onclick="A.book.time='${hm(base + d)}';document.querySelectorAll('#bookTimes .chip').forEach((c) => c.classList.toggle('sel', c === this))">${lab(base + d)}</button>`).join('')}</div>
+    <input class="field" id="bookName" maxlength="60" placeholder="Name on the booking" value="${esc(A.view.me.name)}" style="margin-top:10px" />
+    <input class="field" id="bookCode" maxlength="40" placeholder="Confirmation number (optional)" style="margin-top:8px" oninput="bookReady()" />
+    <button class="btn" id="bookGo" style="margin-top:12px" disabled onclick="bookIt(this)">I booked it</button><p class="hint" id="bookWait" style="text-align:center;margin-top:6px">Opens once you’ve been to the booking page, or typed a confirmation number</p>
+    <button class="link" onclick="openSpot()">Back to the list</button>`);
+}
+// in the phone demo there's nothing to book
+function bookReady() { const go = $('bookGo'), ok = !!(A.book && (A.book.opened || ($('bookCode') && $('bookCode').value.trim()))); if (go) go.disabled = !ok; const w = $('bookWait'); if (w) w.hidden = ok; }
+function bookOut(ev) { if (A.book) { A.book.opened = true; setTimeout(bookReady, 0); } if (window.SIXTOP_DEMO) { ev.preventDefault(); toast('Demo', 'Nothing to book in the demo. Tap I booked it'); return false; } return true; }
+function bookIt(b) {
+  if (bookIt.busy) return; bookIt.busy = true; b.disabled = true;
+  api('POST', '/api/captain-book', { table: A.table.id, place: A.book.id, time: A.book.time, name: $('bookName').value, code: $('bookCode').value }).then((r) => { closeSheet(); capAfter(r, 'Booked. Keep it a secret until noon on the day'); }).catch((e) => { b.disabled = false; oops(e); }).then(() => { bookIt.busy = false; });
+}
+function bookResize(b) { b.disabled = true; api('POST', '/api/captain-book', { table: A.table.id, resize: true }).then((r) => capAfter(r, 'Thanks. The restaurant has the right count')).catch((e) => { b.disabled = false; oops(e); }); }
+function unbook(b) {
+  if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again if the booking fell through, then book another spot right away'; return; }
+  api('POST', '/api/captain-book', { table: A.table.id, cancel: true }).then((r) => capAfter(r, 'Got it. Pick another spot and book it')).catch(oops);
 }
 function pickSpot(id, b) {
+  const B = A.table.cap.spot.booking;
+  if (B && B.mine && !b.dataset.armed) { b.dataset.armed = '1'; const s = b.querySelector('small'); if (s) s.textContent = `Tap again to switch, then cancel your booking at ${A.table.cap.spot.at} yourself`; return; }
   if (pickSpot.busy) return; pickSpot.busy = true; b.classList.add('wait');
   api('POST', '/api/captain-spot', { table: A.table.id, place: id }).then((r) => { closeSheet(); capAfter(r, 'Locked in. Keep it a secret until noon on the day'); }).catch((e) => { b.classList.remove('wait'); oops(e); }).then(() => { pickSpot.busy = false; });
 }

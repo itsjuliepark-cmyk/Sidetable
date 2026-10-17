@@ -25,7 +25,7 @@ function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>>
 function prep(m) {
   const p = m.profile || {}, ax = SX.axes(p.answers);
   return {
-    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', ints: new Set(p.interests || []), lens: p.lens || 'build',
+    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', tracks: (p.tracks || []).length ? p.tracks.slice(0, 3) : ['genai'], ints: new Set(p.interests || []), lens: p.lens || 'build',
     ax, code: SX.codeOf(ax), rhythm: p.rhythm || '', look: p.look || '', life: new Set(p.life || []), acts: new Set(p.acts || []), takes: p.takes || {}, next: new Set([].concat(p.next || [])),
     size: m.size || 'either', prio: m.prio || 0, at: m.at || ''
   };
@@ -51,10 +51,13 @@ function scoreTable(ps, type, trackId, ctx) {
   const n = ps.length; if (n < 2) return { total: -10, base: 0, parts: {}, flags: ['too small'] };
   const jac = pairsAvg(ps, (x, y) => jacc(x.ints, y.ints)), top = topCount(ps, 'ints');
   const interest = 0.5 * Math.min(1, jac / 0.35) + 0.5 * (top ? top[1] / n : 0);
-  const sp = splits(ps, trackId), split = ((sp[0] ? sp[0].bal : 0) + (sp[1] ? sp[1].bal : 0)) / 2;
+  // a pooled evening (too few people per track): the table's own shared track counts, so people who share one sit together
+  const pooled = trackId === 'pool', tid = pooled ? sharedTrack(ps, ps[0].track) : trackId;
+  const share = pooled ? ps.filter((p) => p.tracks.indexOf(tid) >= 0).length / n : 1;
+  const sp = splits(ps, tid), split = ((sp[0] ? sp[0].bal : 0) + (sp[1] ? sp[1].bal : 0)) / 2;
   const lensDiv = Math.min(1, new Set(ps.map((p) => p.lens)).size / Math.min(n, 4));
   const funders = ps.filter((p) => p.lens === 'fund').length;
-  const topic = 0.55 * interest + 0.2 * split + 0.25 * lensDiv;
+  const topic = pooled ? 0.4 * interest + 0.3 * share + 0.1 * split + 0.2 * lensDiv : 0.55 * interest + 0.2 * split + 0.25 * lensDiv;
 
   const depthSim = clamp01(1 - sd(ps.map((p) => p.ax.d)) / 35), ritualSim = clamp01(1 - sd(ps.map((p) => p.ax.a)) / 35);
   const rhythmSim = pairsAvg(ps, (x, y) => (x.rhythm && y.rhythm ? (x.rhythm === y.rhythm ? 1 : Math.abs(RIDX[x.rhythm] - RIDX[y.rhythm]) === 1 ? 0.4 : 0) : 0.3));
@@ -212,6 +215,11 @@ function assembleGroup(ps, type, trackId, ctx) {
 /* ---------- one night ----------
    members: [{ id, school, profile, size, prio, at }]
    opt: { type: 'topic'|'kindred', blocked: [pairKey], history: [pairKey], locks: [[ids]], mix: true, seed } */
+// the track most of a table shares (a first pick counts double), the group's own track on a tie
+function sharedTrack(people, fallback) {
+  const c = {}; people.forEach((p) => p.tracks.forEach((x, i) => { c[x] = (c[x] || 0) + (i === 0 ? 2 : 1); }));
+  return Object.keys(c).sort((a, b) => (c[b] - c[a]) || ((b === fallback) - (a === fallback)))[0] || fallback;
+}
 function assemble(members, opt) {
   opt = opt || {};
   const type = opt.type === 'kindred' ? 'kindred' : 'topic';
@@ -228,7 +236,21 @@ function assemble(members, opt) {
   else {
     ps.forEach((p) => { const t = p.gtrack || p.track; (groups[t] = groups[t] || []).push(p); });
     const canForm = (L) => { if (L.length < 4) return false; if (!ctx.mix) return true; const c = {}; L.forEach((p) => { c[p.school] = (c[p.school] || 0) + 1; }); return L.length - Math.max.apply(null, Object.values(c)) >= 2; };
-    for (let guard = 0; guard < 40; guard++) {
+    // a track too small for a table: its people go to their other track first, when that one can make a table (or nearly)
+    Object.keys(groups).filter((t) => !canForm(groups[t])).sort((a, b) => groups[a].length - groups[b].length).forEach((t) => {
+      const g = groups[t]; if (!g || canForm(g)) return;
+      g.slice().forEach((p) => {
+        if (p.gtrack) return; // a reunion stays in its track
+        const alt = p.tracks.slice(1).find((x) => x !== t && groups[x] && (canForm(groups[x]) || groups[x].length >= 3));
+        if (alt) { groups[alt].push(p); g.splice(g.indexOf(p), 1); }
+      });
+      if (!g.length) delete groups[t];
+    });
+    // when most people's tracks are too small for a table that evening, one pool beats merging into whichever track is
+    // biggest: the scorer then seats people who share a track together, and each table is named for what it shares
+    const viable = Object.keys(groups).filter((t) => canForm(groups[t])).reduce((n, t) => n + groups[t].length, 0);
+    if (viable < 0.6 * ps.length && !ctx.locks.length) groups = { pool: ps };
+    for (let guard = 0; guard < 40 && !groups.pool; guard++) {
       const small = Object.keys(groups).filter((t) => !canForm(groups[t])).sort((a, b) => groups[a].length - groups[b].length)[0];
       const others = Object.keys(groups).filter((t) => t !== small);
       if (!small || !others.length) break;
@@ -241,6 +263,7 @@ function assemble(members, opt) {
     const r = assembleGroup(groups[g], type, g === 'all' ? null : g, ctx);
     r.tables.forEach((t) => {
       const people = t.ids.map((id) => byId[id]);
+      if (type !== 'kindred') t.track = sharedTrack(people, t.track); // named for the track most of the table shares
       tables.push(Object.assign(t, { why: whyLines(people, type, t.track, ctx), split: type === 'kindred' ? null : splits(people, t.track)[0] }));
     });
     wait.push.apply(wait, r.wait);

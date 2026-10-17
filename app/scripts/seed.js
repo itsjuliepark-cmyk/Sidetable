@@ -71,12 +71,16 @@ function makeMember(i) {
 }
 const members = NAMES.map((_, i) => makeMember(i)), demo = members[0];
 const holdSeats = (e, ms, back) => { db.seats[e.id] = db.seats[e.id] || {}; ms.forEach((m, k) => { db.seats[e.id][m.id] = { at: new Date(Date.now() - (back || 5) * 864e5 + k * 6e4).toISOString(), size: pick(['either', 'either', 'six', 'four']), diet: [], status: 'held' }; }); };
-const venues = [['Demo Bistro', 'Massachusetts Ave, Central Square', 'Cozy booths and great dumplings'], ['Demo Table House', 'Main St, Kendall Square', 'One big shared table, loud in a good way'], ['Demo Trattoria', 'Prospect St, Central Square', 'Candles, fresh pasta, quiet corners'], ['Demo Supper Room', 'Brattle St, Harvard Square', 'Old wood, small plates, a back room for six']];
+// spots captains book themselves (made up): through OpenTable, Resy, a call, or the restaurant's site
+const venues = [['Demo Bistro', 'Massachusetts Ave, Central Square', 'Cozy booths and great dumplings', 'opentable', 'https://www.opentable.com/', '$$', false],
+  ['Demo Table House', 'Main St, Kendall Square', 'One big shared table, loud in a good way', 'resy', 'https://resy.com/cities/bos', '$$', true],
+  ['Demo Trattoria', 'Prospect St, Central Square', 'Candles, fresh pasta, quiet corners', 'phone', '', '$$$', false],
+  ['Demo Supper Room', 'Brattle St, Harvard Square', 'Old wood, small plates, a back room for six', 'web', 'https://example.com/', '$$', false]];
 // partner restaurants (made up). In the demo they're open every evening, since sample dates can land on a weekend. Tables are
 // placed at them automatically when they're published.
 // the people who run it: an ops lead and a campus lead take turns being on duty (made up)
 S.saveOps({ team: [{ name: 'Demo Ops Lead', role: 'ops lead' }, { name: 'Demo Campus Lead', role: 'campus lead (MIT)' }], rota: {} });
-venues.forEach(([name, address, vibe]) => S.savePlace({ name, address, vibe, area: address.split(', ')[1], nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, contact: 'the host stand', note: 'Ask for the Sidetable table' }));
+venues.forEach(([name, address, vibe, bookVia, bookUrl, price, card], k) => S.savePlace({ name, address, vibe, mode: 'captain', bookVia, bookUrl, price, card, phone: bookVia === 'phone' ? '(617) 555-01' + (40 + k) : '', area: address.split(', ')[1], nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, contact: 'the host stand', note: 'Ask for the Sidetable table' }));
 
 const ago = (h) => new Date(Date.now() - h * 36e5).toISOString();
 const firstWith = (tr, not) => members.find((m) => m.profile.tracks[0] === tr && m !== demo && (!not || not.indexOf(m) < 0));
@@ -144,13 +148,20 @@ S.draft({ event: social2.id }); S.publish({ event: social2.id });
   ids.forEach((id, k) => { pastTable.game.sides[id] = k % 3 ? 'a' : 'b'; pastTable.game.final[id] = k === 2 ? (k % 3 ? 'b' : 'a') : pastTable.game.sides[id]; });
   // Jordan captained that one and did all three missions, so Jordan already has a stripe (and three thank-yous)
   pastTable.captain = demo.id; pastTable.game.turnout = ids.length;
-  pastTable.cap = { spot: { vid: (pastTable.venue && pastTable.venue.id) || '', at: ago(24 * 9) }, nudges: [ago(24 * 8)], checks: { at: ago(24 * 7) }, salutes: {}, hadChoice: true, briefed: demo.id, thanked: true };
+  const sp = Object.values(db.places)[0];
+  pastTable.venue = { pid: sp.id, name: sp.name, address: sp.address, note: 'Booked under ' + demo.name };
+  pastTable.cap = { booking: { pid: sp.id, at: ago(24 * 9), size: ids.length, warned: ids.length, time: '19:00', name: demo.name, code: '', via: sp.bookVia }, spot: { vid: sp.id, at: ago(24 * 9), booked: true }, nudges: [ago(24 * 8)], checks: { at: ago(24 * 7) }, salutes: {}, hadChoice: true, briefed: demo.id, thanked: true };
   ids.filter((x) => x !== demo.id).slice(0, 3).forEach((id, k) => { pastTable.cap.salutes[id] = ago(24 * 6 + k); });
   const nt = S.roundTwo(pastTable);
   if (nt) { demo.read['inv:' + nt.id] = ago(24 * 6); nt.ids.filter((id) => id !== demo.id).slice(0, 2).forEach((id, j) => db.chats[nt.id].push({ id: 'r' + j, from: id, text: ['Round two! I have a rebuttal ready.', 'Same seat as last time, I’m calling it.'][j], at: ago(30 - j * 6) })); }
 }
 // an industry table next week: a guest from the industry, open to captains with a stripe for the first 48 hours (Jordan has one)
 S.createEvent({ type: 'topic', date: day(9), time: '19:00', area: 'Kendall Square', industry: true, guest: 'A seed-fund partner (sample guest)', role: 'Invests in early AI teams. Made up for the demo', about: 'No pitching: what investors actually look for in a first AI hire, and what they get wrong' });
+// the other captains already booked their tables (made up); Jordan's waits for Jordan
+Object.values(db.tables).filter((t) => t.published && !t.closed && !t.venue && t.captain && t.captain !== demo.id && db.events[t.eventId] && S.eventTimes(db.events[t.eventId]).start > Date.now() + 2 * 36e5).forEach((t, k) => {
+  const opts = S.spotOptions(t).filter((o) => o.kind === 'book'), c = db.members[t.captain]; if (!opts.length || !c) return;
+  try { S.captainBook(c, { table: t.id, place: opts[k % opts.length].id, time: db.events[t.eventId].time, name: c.name }); } catch (e) {}
+});
 // the long table at the end of the month: some of Jordan's people already said they're in (Jordan hasn't yet)
 const month = S.monthNow(); db.long[month] = {};
 db.longSpot[month] = { name: 'The Demo Loft', address: 'Main St, Kendall Square', note: 'Upstairs, one long table' };
