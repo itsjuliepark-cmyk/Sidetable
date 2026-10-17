@@ -1,4 +1,4 @@
-/* Sidetable: what the app and the server both need to know. Tracks, questions, personas, and the small helpers that
+/* Hash Table: what the app and the server both need to know. Tracks, questions, personas, and the small helpers that
    turn answers into a Friend Persona. Loaded by the page as window.SX and by the server with require(). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -7,7 +7,7 @@
   'use strict';
 
   // Who can join: anyone at Harvard (any school; harvard.edu and hbs.edu, subdomains included) or MIT. A school is a
-  // community, so opening Sidetable to more people later is a new entry here (and its email domains).
+  // community, so opening Hash Table to more people later is a new entry here (and its email domains).
   const SCHOOLS = {
     harvard: { id: 'harvard', t: 'Harvard', short: 'Harvard', domains: ['harvard.edu', 'hbs.edu'],
       programs: ['Business School', 'College', 'Kennedy School', 'Law School', 'Medical School', 'Public Health', 'Engineering (SEAS)', 'Arts & Sciences (PhD)', 'Design', 'Education', 'Other'] },

@@ -1,6 +1,6 @@
 {
-  "name": "Sidetable",
-  "short_name": "Sidetable",
+  "name": "Hash Table",
+  "short_name": "Hash Table",
   "description": "Private invitations to small dinners, and spur-of-the-moment hangs anyone can start.",
   "lang": "en-US",
   "start_url": "./",

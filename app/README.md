@@ -1,9 +1,9 @@
-# Sidetable 웹앱
+# Hash Table 웹앱
 
 - Harvard, MIT 파일럿에서 실제로 쓰는 웹앱
 - 앱스토어 설치 없이 브라우저 링크로 접속, 홈 화면에 추가하면 앱처럼 사용 가능
 - 외부 패키지 없는 Node 서버 파일 하나와 JSON 데이터 파일 하나로 동작 (Amie 베타와 같은 구조)
-- 화면 이름은 Sidetable, 코드 폴더(sixtop/)와 환경 변수(SIXTOP_*)는 예전 이름 그대로
+- 화면 이름은 Hash Table, 코드 폴더(sixtop/)와 환경 변수(SIXTOP_*), GitHub 저장소 이름(Sidetable)은 예전 이름 그대로
 - Harvard는 HBS뿐 아니라 College, Kennedy School, Law, Medical, SEAS 등 모든 학교 가입 가능
 - 학교 밖 사람을 받을 때는 `public/shared.js`의 `SCHOOLS`에 학교와 이메일 도메인만 추가
 - 기획은 [CONCEPT.md](../CONCEPT.md), 사업 검토는 [BUSINESS.md](../BUSINESS.md), 초기 프로토타입은 [sixtop.html](../sixtop.html)
@@ -27,7 +27,7 @@ npm run dev
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
-- `npm run demo`를 실행하면 저장소의 `demo/sidetable-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
+- `npm run demo`를 실행하면 저장소의 `demo/hash-table-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
 
 ## 실제 파일럿 실행
 
@@ -77,21 +77,26 @@ SIXTOP_ADMIN_KEY=choose-a-long-secret SIXTOP_PUBLIC_URL=https://your-domain npm 
 
 ### 첫 화면
 
-- 25초짜리 세로 영상이 화면 가득 재생, 위에 Sidetable 로고, 가운데 Charlie의 문장, 아래에 Sign in과 Join
-- 영상은 네 장면으로 구성
-  1. 밤의 도시와 과학 이미지, "Six people who build things, one table, zero small talk"
-  2. 코드, 로봇, 현미경, 칩이 점점 빠르게 바뀌는 장면
-  3. 함께 만드는 사람들, "Talk AI, bio and robots until they stack the chairs"
-  4. 웃고 건배하는 저녁, "Come for the tech talk, stay for the friends"
+- 24초짜리 세로 영상이 화면 가득 재생, 위에 Hash Table 로고, 가운데 Charlie의 문장, 아래에 Sign in과 Join
+- 늦은 오후 햇살 같은 따뜻한 색감, 학생들이 뭔가를 시작하는 느낌
+- 영상은 다섯 장면으로 구성
+  1. 가을 캠퍼스, 수업 가는 길, 벤치의 친구들, 나무 아래 노트북, "A small group of builders, one table, deeper connection"
+  2. 늦은 밤의 코드, 3D 모델, 회로 기판, 화이트보드, 현미경이 빠르게 바뀌는 장면, "Late nights, big ideas, new friends"가 한 단어씩
+  3. 도서관 하이파이브, 카페 테이블 계획, 노트북 앞 환호, "Talk AI, bio and robots until they stack the chairs"
+  4. 피자, 친구들로 꽉 찬 부엌, 무너지는 젠가, 마시멜로, 공원의 기타
+  5. 함께 차리는 식탁과 촛불 저녁, "Come for the tech talk, stay for the friends"
 - 자동 재생이 막히면 첫 프레임을 보여주고 터치하면 재생, 움직임 줄이기 설정이면 재생 생략
-- 영상 원본은 모두 [Mixkit](https://mixkit.co) 무료 라이선스 (상업적 사용 가능, 출처 표기 불필요)
+- 영상 원본은 Mixkit Free License 클립과 Pexels 클립만 사용, 둘 다 상업적 사용 가능하고 출처 표기 불필요
+- Mixkit의 Restricted License 클립(개인 용도만 가능)은 사용 금지, 2026-10-17 이전 영상에 19개가 섞여 있어 전부 교체
+- Pexels 조건: 화면 속 사람이 우리 서비스를 보증하는 것처럼 보이게 쓰지 않기
 
 ```bash
 npm run film
 ```
 
 - 첫 화면 영상을 다시 만드는 명령, ffmpeg 필요 (`winget install Gyan.FFmpeg`)
-- 원본 클립 번호와 색 보정은 `art/make-film.js`, 결과물은 `public/video/film.mp4`
+- 원본 클립 번호(Pexels는 P+번호)와 색 보정은 `art/make-film.js`, 결과물은 `public/video/film.mp4`
+- 새 클립을 넣기 전에 Mixkit 페이지에서 "Free License" 표기 확인
 - 컷을 바꾸면 `index.html`의 `FILM_T`도 `film.json`에 맞춰 수정
 
 ### 회원 화면
@@ -176,7 +181,7 @@ npm run film
 
 - 기본은 캡틴이 직접 예약: 목록에서 고른 식당을 OpenTable, Resy, Tock, 식당 사이트, 전화로 자기 이름으로 예약
 - 예약 링크는 날짜, 시간, 인원이 채워진 채로 열림 (OpenTable는 `covers`와 `dateTime`, Resy는 `date`와 `seats`, Tock은 `date`, `size`, `time`, 2026-10 실제 브라우저로 확인)
-- 예약 후 캡틴이 시간, 예약자 이름, 확인 번호(선택)를 입력, Sidetable은 식당에 연락하지 않음
+- 예약 후 캡틴이 시간, 예약자 이름, 확인 번호(선택)를 입력, Hash Table은 식당에 연락하지 않음
 - OpenTable, Resy는 공개 예약 API가 없어 자동 예약 불가, OpenTable Directory API는 제휴 심사와 계약 필요
 - 6명은 온라인 예약 한도 경계라 전화 안내 함께 표시, 6명이면 카드 보증과 1인 $25~50 취소 수수료가 흔해 예약 전 확인 안내
 - 제휴 식당(상시 확보, 매번 확인)은 선택 기능으로 유지, 테이블을 잡아둔 곳이라 예약 없이 캡틴이 고르기만
@@ -243,7 +248,7 @@ npm run film
 - 미션 2, 투표 끌어내기: Tonight’s question에 테이블의 4분의 3 이상 투표
   - Nudge 두 번까지(3시간 간격), 단톡방에 캡틴 메시지와 투표 버튼, 아직 안 한 사람에게 알림
 - 미션 3, 각자 계산: 자리에 앉을 때 separate checks 요청, 저녁 당일부터 다음 날까지 Done 체크
-- 문 앞에서 "Sidetable, party of six"로 일행 확인은 그대로
+- 문 앞에서 "Hash Table, party of six"로 일행 확인은 그대로
 - 세 미션을 모두 하면 스트라이프 하나, 다음 날 아침 리포트 카드와 축하 효과
 - 테이블 사람들은 다음 날 아침 "Thank Jordan for captaining"으로 감사 표시
 - 등급: 스트라이프 1개 Captain, 3개 Senior captain, 5개 Commodore, Me 탭의 Captain’s log에 기록
@@ -274,7 +279,15 @@ npm run film
 - 매칭 비중: 테크 테이블은 주제 60, 사람 40 / 소셜 테이블은 주제 20, 사람 80
 - 사람이 모자란 트랙은 가까운 트랙과 합치고, 트랙이 대부분 작으면 한데 모아 같은 트랙끼리 앉힘
 - 트랙별 배정 후 남은 사람끼리 4명 이상이면 섞어서 한 테이블, 테이블 이름은 가장 많이 겹치는 트랙
-- 그래도 자리를 못 받은 사람은 다음 디너에 우선 배정
+- 정규 배정 뒤 "아무도 빠지지 않게" 2차 배정, 아래 순서로 가장 작은 양보부터
+  - 원하는 종류 테이블의 빈자리 (같은 트랙 우선, 작은 테이블 우선)
+  - 그날 남은 사람끼리 3명 이상 새 테이블
+  - 학교 비율 완화 (두 학교는 반드시 포함)
+  - 그날 혼자 남은 사람: 같은 저녁을 고른 2~3명을 데려와 새 테이블, 6명 테이블에서 빼거나 한 번 더 원한 사람, 다른 저녁의 여유 있는 테이블에서 이동 (이동한 사람도 디너 수는 그대로)
+  - 그래도 없으면 다른 종류 테이블, 마지막으로 그날 한 학교만 있을 때만 한 학교 테이블
+- 원래 테이블에서 사람을 데려올 때 그 테이블의 학교 비율과 4명 이상은 유지
+- 2차 배정으로 앉은 자리는 seats의 `rescued`, 비율을 완화한 테이블은 `loose`로 표시, 관리자 화면에 school mix 표시
+- 그 주에 같은 저녁을 고른 사람이 아무도 없을 때만 배정 불가, 이 경우 그 저녁들의 빈자리 대기(종류 무관)와 다음 주 우선 배정
 - 같은 seed면 같은 결과
 
 ## 출시 전 리허설
@@ -288,7 +301,7 @@ npm run simulate
 - 같은 날 두 테이블, 3~6명, 학교 비율, 차단한 사람, 캡틴, 요청한 횟수와 저녁, 중단된 회원 규칙을 매 단계 검사
 - 당일 예약이 깨지는 경우(20건 중 1건)와 다시 예약, 닫힌 테이블의 예약 취소 알림, 예약 없는 장소 표시도 검사
 - 옵션: `--people 100`, `--weeks 6`, `--seed 3`, `--flat`(트랙을 고르게 퍼뜨린 가장 어려운 경우)
-- 2026-10-17 기준 결과(8가지 설정): 저녁을 고른 사람의 대부분 주 97~100%, 최저 85%가 그 주 저녁 확보
+- 2026-10-17 기준 결과(20명~100명, 8가지 설정): 저녁을 고른 사람의 100%가 매주 디너 확보, 2차 배정으로 앉은 사람은 한 주 평균 2~6명
 - 테크 테이블 좌석의 46~50%가 자기 트랙, 인접 트랙 포함 61~73%, 트랙을 고르게 퍼뜨린 최악의 경우 39~44%
 - 규칙 위반 0, 장소 없이 저녁을 맞은 테이블 0, 회원 화면 응답 중앙값 3~10ms
 - 매칭 엔진 별도 검증: 무작위 200개 구성과 서버 120주, 학교 비율과 차단 규칙 위반 0, 같은 데이터면 같은 결과

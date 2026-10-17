@@ -1,4 +1,4 @@
-# Sidetable 컨셉 (v0.2)
+# Hash Table 컨셉 (v0.2)
 
 - 초기 컨셉 문서, 현재 동작은 [app/README.md](app/README.md) 기준
 - 사업 검토는 [BUSINESS.md](BUSINESS.md), 초기 프로토타입은 [sixtop.html](sixtop.html)
@@ -17,7 +17,8 @@
 ## 한 줄 정의
 
 - 큰 모임에 지친 사람에게, 관심사가 같고 잘 맞을 사람끼리 4~6인 디너 테이블을 만들어주는 웹앱
-- 이름 Sidetable: 큰 행사 옆의 작은 테이블, 사이드 프로젝트, 본론보다 깊어지는 옆자리 대화
+- 이름 Hash Table: 개발자라면 다 아는 자료구조, 비슷한 것끼리 같은 칸(테이블)에 모으는 구조라 관심사로 자리를 정하는 서비스와 같은 원리
+- #은 해시태그이기도 해서 관심사 태그로 사람을 모은다는 뜻도 함께
 - 슬로건: Six seats. Both sides of the Charles.
 - 찰스강은 HBS와 MIT, Boston과 Cambridge 사이를 모두 흐르는 강이라 퍼블릭 런칭 후에도 사용 가능
 - 보조 문구: Fewer people. Better conversations.
@@ -74,7 +75,7 @@
 
 ## 데이팅 앱과 다른 점
 
-| | Amie (데이팅) | Sidetable (찐친) |
+| | Amie (데이팅) | Hash Table (찐친) |
 |---|---|---|
 | 보는 것 | 끌림, 외모 취향, 연애 스타일 | 유머, 대화 깊이, 만남 빈도, 생활 단계, 같이 할 활동 |
 | 닮음과 다름 | 일부 축은 서로 다를수록 좋음 | 대부분 비슷할수록 좋음, 예외는 말하는 사람과 듣는 사람, 약속을 잡는 사람과 따라가는 사람 |
@@ -172,7 +173,7 @@
 |---|---|
 | 클럽이 얻는 것 | 큰 행사 후 소그룹 후속 프로그램을 운영 부담 없이 확보, HBS×MIT 공동 프로그램이라는 타이틀 |
 | 우리가 얻는 것 | 첫 모집, 신뢰, 클럽 뉴스레터와 슬랙 채널 |
-| 형태 | 트랙마다 양쪽 클럽 한 쌍, 예: Healthcare Club × Sidetable |
+| 형태 | 트랙마다 양쪽 클럽 한 쌍, 예: Healthcare Club × Hash Table |
 | 클럽 리더 역할 | 첫 2주 동안 테이블마다 1명씩 Table captain |
 | 요청 사항 | 학기 중 수요일 4번, 클럽 채널 공지 2번, 첫 디너 디저트 지원(선택) |
 | 피치 한 줄 | "Your big events fill the room. We make sure people meet again." |
@@ -251,7 +252,7 @@
 
 ## 정해야 할 것
 
-1. 이름: Sidetable로 변경(2026-10-06), 이전 이름 Tech Table은 SF의 Tech2Table과 겹침, 퍼블릭 전 상표와 도메인 확인 필요
+1. 이름: Hash Table로 변경(2026-10-17), 그 전 이름은 Sidetable(2026-10-06), Tech Table은 SF의 Tech2Table과 겹쳐 제외, 퍼블릭 전 상표와 도메인 확인 필요
 2. Kindred table 요일: 금요일(추천) 또는 일요일 브런치
 3. 여성 전용 테이블: 파일럿부터, 캠퍼스 단계부터, 하지 않음 중 선택
 4. 트랙 오픈: 클럽 4쌍이 모두 잡히면 동시에, 아니면 Generative AI와 Entrepreneurship 먼저

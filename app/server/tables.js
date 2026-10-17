@@ -1,4 +1,4 @@
-// Sidetable table assembly: who sits with whom on one night.
+// Hash Table table assembly: who sits with whom on one night.
 // Pure functions, no I/O, so the same code runs in the server, the seed script and the tests.
 //
 // Hard rules (never broken on purpose; if the people in a group make one impossible, the table carries a flag the

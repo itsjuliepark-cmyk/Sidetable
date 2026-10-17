@@ -22,7 +22,7 @@ const inlineStyle = html.indexOf('<style>') >= 0 ? html.slice(html.indexOf('<sty
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="/shared.js"></script>'));
 let app = html.slice(html.lastIndexOf('<script>') + 8, html.lastIndexOf('</script>'));
 app = must(app, "if ('serviceWorker' in navigator) {", "if (!window.SIXTOP_DEMO && 'serviceWorker' in navigator) {");
-app = must(app, "history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Sidetable.'); return boot();", "toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Sidetable.'); return boot();");
+app = must(app, "history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();", "toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();");
 // the opening film ships next to the page (published with it as video/film.mp4), not inside it
 app = must(app, "const FILM_SRC = '/video/film.mp4';", "const FILM_SRC = 'video/film.mp4';");
 
@@ -36,7 +36,7 @@ const demoCss = `
 `;
 const out = `<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Sidetable</title>
+<title>Hash Table</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Newsreader:ital,opsz,wght@1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
@@ -67,6 +67,6 @@ fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(root, 
 // the same demo as a standalone page in the repo (demo/), so anyone with access to the repo can download it and open it in a browser
 const repoDemo = path.join(root, '..', 'demo');
 fs.mkdirSync(path.join(repoDemo, 'video'), { recursive: true });
-fs.writeFileSync(path.join(repoDemo, 'sidetable-demo.html'), '<!doctype html>\n<html lang="en">\n' + out + '</html>\n');
+fs.writeFileSync(path.join(repoDemo, 'hash-table-demo.html'), '<!doctype html>\n<html lang="en">\n' + out + '</html>\n');
 fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(repoDemo, 'video', 'film.mp4'));
 console.log('dist/sixtop-demo.html', Math.round(out.length / 1024) + ' KB', '+ dist/video/film.mp4', (fs.statSync(path.join(root, 'dist', 'video', 'film.mp4')).size / 1048576).toFixed(1) + ' MB');

@@ -1,4 +1,4 @@
-// Draws the Sidetable app icon (a table seen from above: a river runner, three mist plates for Kendall, three rose
+// Draws the Hash Table app icon (a table seen from above: a river runner, three mist plates for Kendall, three rose
 // plates for Allston, two candle glows) into PNGs with no dependencies. Run once: node scripts/make-icons.js
 'use strict';
 const fs = require('fs');

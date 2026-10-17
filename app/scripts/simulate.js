@@ -1,4 +1,4 @@
-// A pre-launch rehearsal: 50 made-up members (25 Harvard, 25 MIT) live four weeks of Sidetable on a fake clock, in a
+// A pre-launch rehearsal: 50 made-up members (25 Harvard, 25 MIT) live four weeks of Hash Table on a fake clock, in a
 // throwaway data folder. Every hour the server's own tick runs; people mark evenings, captains book, tables vote, some
 // cancel late or don't show, everyone sends feedback, round twos get booked. After each step the rules are checked:
 // nobody twice in one evening, tables of three to six, no school over half, blocked pairs apart, captains who said yes or
@@ -15,7 +15,7 @@ global.Date = class extends RealDate { constructor(...a) { if (a.length) super(.
 const tz = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
 const etDay = (ms) => tz.format(new RealDate(ms));
 
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sidetable-sim-'));
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hashtable-sim-'));
 Object.assign(process.env, { SIXTOP_DATA_DIR: dir, SIXTOP_MAIL: 'show', SIXTOP_AUTO_WEEK: '1', SIXTOP_ADMIN_KEY: 'simulation-admin-key-123' });
 const quiet = console.log; console.log = () => {}; // the server prints every mail in show mode
 const S = require('../server/server.js'), SX = require('../public/shared.js');
@@ -81,7 +81,7 @@ function check(label) {
     if (!past && (ids.length < 3 || ids.length > 6)) problem('size', `${label}: table ${t.id} has ${ids.length} people`);
     const h = ids.filter((id) => (db().members[id] || {}).school === 'harvard').length;
     // the mix is a matching rule: a first table nobody has left yet (round twos keep whoever said yes)
-    if (!past && (t.round || 1) === 1 && !Object.keys(t.out || {}).length && ids.length >= 4 && Math.max(h, ids.length - h) > Math.ceil(ids.length / 2)) problem('mix', `${label}: table ${t.id} is ${h} Harvard / ${ids.length - h} MIT`);
+    if (!past && (t.round || 1) === 1 && !t.loose && !Object.keys(t.out || {}).length && ids.length >= 4 && Math.max(h, ids.length - h) > Math.ceil(ids.length / 2)) problem('mix', `${label}: table ${t.id} is ${h} Harvard / ${ids.length - h} MIT`);
     apartPairs.forEach(([a, b]) => { if (ids.indexOf(a) >= 0 && ids.indexOf(b) >= 0) problem('apart', `${label}: a reported or blocked pair shares table ${t.id}`); });
     // a captain-booked spot is always backed by the booking that made it (round two never inherits last time's)
     if (t.venue && t.venue.pid && !(t.cap && t.cap.booking && t.cap.booking.pid === t.venue.pid)) problem('ghost', `${label}: table ${t.id} shows a booked spot nobody booked`);
@@ -105,7 +105,7 @@ function weekCheck(week) {
   // anyone who marked the week and has a dinner in it: from this matching, a round two, or another evening they asked for
   const dates = [0, 1, 2, 3, 4].map((d) => S.addDays(week, d)), dinner = (id) => Object.values(db().tables).some((t) => t.published && !t.closed && evOf(t) && dates.indexOf(evOf(t).date) >= 0 && t.ids.indexOf(id) >= 0);
   const marked = Object.keys(asked).filter((id) => asked[id].slots.length), got = marked.filter((id) => dinner(id));
-  if (process.env.SIM_DEBUG && w.unmatched.length > 3) w.unmatched.forEach((id) => { const m = db().members[id], a = m.avail; quiet('   unmatched', m.school, (m.profile || {}).mix, 'max', a.max, a.slots.map((sl) => sl.slice(5, 10) + ':' + people.filter((p) => p.m.avail && p.m.avail.week === week && p.m.avail.slots.indexOf(sl) >= 0).length).join(' '), 'busy', dates.filter((d) => Object.values(db().tables).some((t) => t.published && evOf(t) && evOf(t).date === d && t.ids.indexOf(id) >= 0)).join(',')); });
+  if (process.env.SIM_DEBUG && w.unmatched.length) w.unmatched.forEach((id) => { const m = db().members[id], a = m.avail; quiet('   unmatched', m.school, (m.profile || {}).mix, 'max', a.max, a.slots.map((sl) => sl.slice(5, 10) + ':' + people.filter((p) => p.m.avail && p.m.avail.week === week && p.m.avail.slots.indexOf(sl) >= 0).length).join(' '), 'tables', a.slots.map((sl) => Object.values(db().tables).filter((t) => evOf(t) && evOf(t).date === sl.split('|')[0] && evOf(t).week === week).map((t) => evOf(t).type[0] + t.ids.length + (t.ids.some((x) => apartPairs.some(([p, q]) => (p === id && q === x) || (q === id && p === x))) ? '!' : '')).join(',')).join(' / '), 'busy', dates.filter((d) => Object.values(db().tables).some((t) => t.published && evOf(t) && evOf(t).date === d && t.ids.indexOf(id) >= 0)).join(',')); });
   return { marked: marked.length, seated: got.length, seats: Object.values(count).reduce((a, b) => a + b, 0), unmatched: w.unmatched.length, tables: w.events.reduce((n, eid) => n + Object.values(db().tables).filter((t) => t.eventId === eid && t.published).length, 0) };
 }
 // every member's screens render, and how long the busiest call takes
@@ -207,12 +207,15 @@ stats.roundTwos = Object.values(db().tables).filter((t) => (t.round || 1) > 1).l
 const req = stats.requests.slice().sort((a, b) => a - b), pct = (p) => req[Math.min(req.length - 1, Math.floor(req.length * p))] || 0;
 console.log = quiet;
 const kinds = {}; problems.forEach((p) => { kinds[p.kind] = (kinds[p.kind] || 0) + 1; });
-console.log(`\nSidetable rehearsal: ${N} people, ${WEEKS} weeks (seed ${SEED})\n`);
+console.log(`\nHash Table rehearsal: ${N} people, ${WEEKS} weeks (seed ${SEED})\n`);
 stats.weeks.forEach((w) => console.log(`  week of ${w.week}: ${w.marked} people marked evenings, ${w.seated} have a dinner that week (${w.marked ? Math.round(100 * w.seated / w.marked) : 0}%), ${w.tables} tables, ${w.unmatched} unmatched`));
 console.log(`\n  tables that happened: ${all.length} (${all.filter((t) => t.closed).length} closed or merged), sizes ${Math.min(...sizes)} to ${Math.max(...sizes)}, average ${(sizes.reduce((a, b) => a + b, 0) / sizes.length).toFixed(1)}`);
 console.log(`  tech table seats in one of the member's own tracks: ${techSeats ? Math.round(100 * trackHit / techSeats) : 0}%, own or next to it: ${techSeats ? Math.round(100 * nearHit / techSeats) : 0}%`);
 console.log(`  pairs who met: ${met.length}, met twice or more: ${met.filter((x) => x >= 2).length}, three times: ${met.filter((x) => x >= 3).length}`);
 console.log(`  captains: ${stats.bookings} booked it themselves, ${stats.unbooked} forgot, ${stats.stripes} stripes earned, ${stats.salutes} thank-yous`);
+const resc = {}; Object.keys(db().seats).forEach((eid) => Object.values(db().seats[eid]).forEach((st) => { if (st.rescued) resc[st.rescued] = (resc[st.rescued] || 0) + 1; }));
+const threes = Object.values(db().tables).filter((t) => t.published && !t.closed && t.ids.length === 3 && (t.round || 1) === 1).length;
+console.log(`  seated by the nobody-left-out pass: ${resc.strict || 0} at the usual rules, ${resc.two || 0} with a looser school mix, ${resc.cross || 0} at the other kind of table, ${resc.any || 0} from one school, ${resc.shift || 0} moved to open a table for someone alone; tables of three at publish: ${threes}`);
 console.log(`  bookings that fell through on the day ${stats.fell || 0}, booked again ${stats.rebooked || 0}`);
 console.log(`  late cancels ${stats.late}, no-shows ${stats.noshow}, another-evening requests ${stats.reinvites}, round twos ${stats.roundTwos}, hangs ${stats.hangs}`);
 console.log(`  paused for late changes: ${people.filter(({ m }) => S.cooling(m)).length}, tables that reached dinner with no spot: ${stats.nospot || 0}`);

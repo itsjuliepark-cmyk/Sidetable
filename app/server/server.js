@@ -1,4 +1,4 @@
-// Sidetable closed beta: a small real server for the Harvard × MIT pilot (a few dozen to a few hundred people).
+// Hash Table closed beta: a small real server for the Harvard × MIT pilot (a few dozen to a few hundred people).
 // One Node file, no dependencies, the same shape as Amie's beta: members in one JSON file, personal invite links and
 // club join links, a table assembly the admin reviews before publishing, a group chat per table, next-morning picks
 // that stay private unless they are mutual, and a 1:1 chat only between two people who picked each other.
@@ -114,8 +114,8 @@ function schoolOfEmail(email) {
 async function sendCode(email, code) {
   if (MAIL_MODE === 'show') return { show: code };
   if (!process.env.RESEND_API_KEY || !MAIL_FROM) fail('email isn’t set up yet, so ask the organizer');
-  const text = 'Your Sidetable code is ' + code + '\n\nIt works for 15 minutes. If you didn’t ask for it, you can ignore this email.';
-  const r = await resend(email, code + ' is your Sidetable code', text).catch((e) => { console.error('code mail failed', e.message); return { ok: false }; });
+  const text = 'Your Hash Table code is ' + code + '\n\nIt works for 15 minutes. If you didn’t ask for it, you can ignore this email.';
+  const r = await resend(email, code + ' is your Hash Table code', text).catch((e) => { console.error('code mail failed', e.message); return { ok: false }; });
   if (!r.ok) fail('the email didn’t go out, so try again in a minute');
   return {};
 }
@@ -128,7 +128,7 @@ async function startVerify(me, b) {
   if (me) { if (owner && owner.id !== me.id) fail('that email belongs to another member'); who = { kind: 'member', id: me.id }; }
   else if (owner) who = { kind: 'signin', id: owner.id };
   else {
-    const c = own(db.clubs, clip(b.code, 20)); if (!c || c.off) fail('Sidetable is invite-only for now, so open the link from your club');
+    const c = own(db.clubs, clip(b.code, 20)); if (!c || c.off) fail('Hash Table is invite-only for now, so open the link from your club');
     const name = oneLine(clip(b.name, 80)); if (name.split(' ').length < 2) fail('your full name, please');
     who = { kind: 'join', club: c.code, name };
   }
@@ -270,13 +270,15 @@ function matchWeek(b) {
   const mixOk = (g) => { const h = g.filter((m) => m.school === 'harvard').length; return g.length >= 4 && Math.min(h, g.length - h) >= 2; };
   const edges = reunionEdges(Date.now());
   const created = []; let tables = 0, seatedN = 0, flip = 0;
+  const pref = (m) => (m.profile && m.profile.mix) || 'both';
+  const mkEvent = (type, date, meal) => { const e = { id: 'e' + rid(4), type, date, time: MEALS[meal].time, meal, week, generated: true, area: AREA, status: 'open', createdAt: new Date().toISOString(), notified: {}, wait: [] }; db.events[e.id] = e; db.seats[e.id] = {}; return e; };
   order.forEach((sid) => {
     const [date, meal] = sid.split('|');
     const pool = pools[sid].filter((m) => cap[m.id] > 0 && !usedDay[m.id][date]);
     if (pool.length < 4) return;
     // tech-only people sit at tech tables and social-only people at social ones; the flexible lean toward whatever they've had less of,
     // and the undecided split evenly, school by school
-    const pref = (m) => (m.profile && m.profile.mix) || 'both', lean = (m) => had[m.id].topic - had[m.id].kindred, career = [], social = [];
+    const lean = (m) => had[m.id].topic - had[m.id].kindred, career = [], social = [];
     Object.keys(SX.SCHOOLS).forEach((sch) => pool.filter((m) => m.school === sch).forEach((m) => {
       const pf = pref(m), l = lean(m);
       if (pf === 'topic' || (pf === 'both' && l < 0)) career.push(m); else if (pf === 'social' || l > 0) social.push(m); else ((flip++) % 2 ? social : career).push(m);
@@ -305,8 +307,7 @@ function matchWeek(b) {
       if (mixOk(c2) && (c2.length >= s2.length || !mixOk(s2))) groups = [['topic', c2]]; else if (mixOk(s2)) groups = [['kindred', s2]];
     }
     groups.forEach(([type, ms]) => {
-      const e = { id: 'e' + rid(4), type, date, time: MEALS[meal].time, meal, week, generated: true, area: AREA, status: 'open', createdAt: new Date().toISOString(), notified: {}, wait: [] };
-      db.events[e.id] = e; db.seats[e.id] = {};
+      const e = mkEvent(type, date, meal);
       ms.forEach((m) => { db.seats[e.id][m.id] = { at: m.avail.at || '', size: m.tableSize || 'either', diet: (m.profile && m.profile.diet) || [], status: 'held' }; });
       draft({ event: e.id, seed: b.seed });
       const seated = [].concat.apply([], tablesOf(e.id).map((t) => t.ids));
@@ -317,10 +318,104 @@ function matchWeek(b) {
       created.push(e.id); tables += tablesOf(e.id).length; seatedN += seated.length;
     });
   });
+  // nobody who marked an evening goes without a dinner if there's any way to seat them. After the regular matching, in this
+  // order, from the gentlest give to the biggest: an open chair at the kind of table they asked for, a new table of three or
+  // more with others still waiting that evening, a table where the school mix is looser (two schools still at it), a chair
+  // at the other kind of table, and last of all a table from one school when nobody from the other marked that evening
+  rescueWeek({ L, want, cap, usedDay, had, created, week, pref, mkEvent });
+  tables = created.reduce((n, eid) => n + tablesOf(eid).length, 0);
+  seatedN = created.reduce((n, eid) => n + tablesOf(eid).reduce((k, t) => k + t.ids.length, 0), 0);
   const unmatched = L.filter((m) => want[m.id] > 0 && cap[m.id] === want[m.id]).map((m) => m.id);
   db.weeks[week] = { matchedAt: new Date().toISOString(), published: false, events: created, unmatched };
   log('match-week', week, tables + ' tables');
   return { week, slots: created.length, tables, seated: seatedN, people: L.length, unmatched: unmatched.length };
+}
+function rescueWeek(W) {
+  const { L, want, cap, usedDay, had, created, pref, mkEvent } = W;
+  const none = () => L.filter((m) => want[m.id] > 0 && cap[m.id] === want[m.id] && !m.deleted)
+    .sort((a, b) => ((b.prio || 0) - (a.prio || 0)) || ((a.avail.at || '') < (b.avail.at || '') ? -1 : 1));
+  const dates = (m) => m.avail.slots.map((s) => s.split('|')).filter(([d]) => !usedDay[m.id][d]);
+  const kindOk = (m, type, cross) => cross || pref(m) === 'both' || (pref(m) === 'topic') === (type === 'topic');
+  const schools = (ids) => { const c = {}; ids.forEach((id) => { const s = (db.members[id] || {}).school; c[s] = (c[s] || 0) + 1; }); return c; };
+  // strict: no school over half; two: both schools at the table; any: whatever's there
+  const mixFits = (ids, level) => { const c = schools(ids), v = Object.values(c), n = ids.length; if (level === 'any') return true; if (v.length < 2) return false; return level === 'two' || Math.max.apply(null, v) <= Math.ceil(n / 2); };
+  const seat = (m, t, e, level) => {
+    t.ids.push(m.id); e.wait = (e.wait || []).filter((x) => x !== m.id);
+    db.seats[e.id][m.id] = { at: m.avail.at || '', size: m.tableSize || 'either', diet: (m.profile && m.profile.diet) || [], status: 'held', rescued: level };
+    cap[m.id]--; usedDay[m.id][e.date] = 1; had[m.id][e.type]++;
+    if (level !== 'strict') t.loose = level; refreshTable(t);
+  };
+  const weekTables = () => [].concat.apply([], created.map((eid) => tablesOf(eid).map((t) => ({ t, e: db.events[eid] }))));
+  const chairs = (level, cross) => none().forEach((m) => {
+    const open = dates(m).map(([d]) => d), tr = (m.profile && m.profile.tracks) || [];
+    const fit = weekTables().filter(({ t, e }) => open.indexOf(e.date) >= 0 && kindOk(m, e.type, cross) && t.ids.length < 6 && !t.ids.some((id) => apart(m.id, id)) && mixFits(t.ids.concat([m.id]), level))
+      .sort((a, b) => ((b.t.track && tr.indexOf(b.t.track) >= 0) - (a.t.track && tr.indexOf(a.t.track) >= 0)) || (a.t.ids.length - b.t.ids.length))[0];
+    if (fit) seat(m, fit.t, fit.e, cross ? 'cross' : level);
+  });
+  // a new table from people still waiting on the same evening: three to six each, schools dealt in turn
+  const fresh = (level, mixKinds) => {
+    const by = {}; none().forEach((m) => dates(m).forEach(([d, meal]) => { (by[d + '|' + meal] = by[d + '|' + meal] || []).push(m); }));
+    Object.keys(by).sort((a, b) => by[b].length - by[a].length).forEach((sid) => {
+      const [date, meal] = sid.split('|');
+      const kinds = mixKinds ? [null] : ['topic', 'kindred'];
+      kinds.forEach((type) => {
+        let ps = none().filter((m) => !usedDay[m.id][date] && m.avail.slots.indexOf(sid) >= 0 && (type ? kindOk(m, type) : true));
+        if (ps.length < 3) return;
+        const kind = type || (ps.filter((m) => pref(m) !== 'social').length >= ps.filter((m) => pref(m) !== 'topic').length ? 'topic' : 'kindred');
+        const order = []; const h = ps.filter((m) => m.school === 'harvard'), o = ps.filter((m) => m.school !== 'harvard');
+        while (h.length || o.length) { if (o.length) order.push(o.shift()); if (h.length) order.push(h.shift()); }
+        let k = Math.max(1, Math.ceil(order.length / 6)); while (k > 1 && order.length / k < 3) k--;
+        const groups = Array.from({ length: k }, () => []); order.forEach((m, i) => groups[i % k].push(m));
+        groups.forEach((g) => {
+          for (let i = g.length - 1; i >= 0; i--) if (g.some((x) => x !== g[i] && apart(x.id, g[i].id))) g.splice(i, 1); // a pair kept apart: the later one waits
+          if (g.length < 3 || !mixFits(g.map((m) => m.id), level)) return;
+          let e = created.map((eid) => db.events[eid]).find((x) => x.date === date && x.type === kind);
+          if (!e) { e = mkEvent(kind, date, meal); e.status = 'draft'; e.draftedAt = new Date().toISOString(); created.push(e.id); }
+          const id = 't' + rid(5), no = tablesOf(e.id).reduce((n, x) => Math.max(n, x.no), 0) + 1, tc = {};
+          g.forEach((m) => ((m.profile && m.profile.tracks) || []).forEach((x, j) => { tc[x] = (tc[x] || 0) + (j ? 1 : 2); }));
+          const t = db.tables[id] = { id, eventId: e.id, no, track: kind === 'kindred' ? null : Object.keys(tc).sort((a, b) => tc[b] - tc[a])[0] || null, ids: [], venue: null, published: false, attended: {}, createdAt: new Date().toISOString() };
+          g.forEach((m) => seat(m, t, e, mixKinds && !kindOk(m, kind) ? 'cross' : level));
+        });
+      });
+    });
+  };
+  // still alone on their evenings: open a table there with two or three people who also marked it, taken from a full table
+  // that evening, from people who wanted another dinner anyway, or moved from a roomy table on another evening (they keep a dinner)
+  const borrow = (level, cross) => none().forEach((m) => {
+    for (const [d, meal] of dates(m)) {
+      if (cap[m.id] !== want[m.id]) return;
+      const T = weekTables(), here = (id) => T.find(({ t, e }) => e.date === d && t.ids.indexOf(id) >= 0);
+      const C = L.filter((x) => x !== m && cap[x.id] >= 0 && x.avail.slots.indexOf(d + '|' + meal) >= 0 && !apart(x.id, m.id)).map((x) => {
+        const h = here(x.id); if (h) return h.t.ids.length >= 5 ? { x, from: h, cost: 1 } : null;
+        if (usedDay[x.id][d]) return null;
+        if (cap[x.id] > 0) return { x, from: null, cost: 0 };
+        const o = T.find(({ t }) => t.ids.indexOf(x.id) >= 0 && t.ids.length >= 5); return o ? { x, from: o, cost: 2 } : null;
+      }).filter(Boolean);
+      for (const kind of ['topic', 'kindred']) {
+        if (!kindOk(m, kind, cross)) continue;
+        const pool = C.filter((c) => kindOk(c.x, kind, cross)).sort((a, b) => (a.cost - b.cost) || ((a.x.school === m.school) - (b.x.school === m.school))), pick = [], gave = new Map();
+        for (const c of pool) {
+          if (pick.length >= 3 || (pick.length >= 2 && c.cost > 1)) break;
+          const left = c.from ? c.from.t.ids.length - (gave.get(c.from.t) || 0) : 9;
+          if (left <= 4 || pick.some((p) => apart(p.x.id, c.x.id))) continue;
+          if (c.from) { const out = new Set(pick.filter((p) => p.from && p.from.t === c.from.t).map((p) => p.x.id).concat([c.x.id])), rest = c.from.t.ids.filter((id) => !out.has(id)); if (mixFits(c.from.t.ids, 'strict') && !mixFits(rest, 'strict')) continue; } // the table they leave keeps its mix
+          pick.push(c); if (c.from) gave.set(c.from.t, (gave.get(c.from.t) || 0) + 1);
+        }
+        const ids = [m.id].concat(pick.map((p) => p.x.id));
+        if (pick.length < 2 || !mixFits(ids, level)) continue;
+        pick.forEach(({ x, from }) => { if (!from) return; const { t, e } = from; t.ids = t.ids.filter((id) => id !== x.id); delete db.seats[e.id][x.id]; cap[x.id]++; usedDay[x.id][e.date] = 0; had[x.id][e.type]--; refreshTable(t); });
+        let e = created.map((eid) => db.events[eid]).find((x) => x.date === d && x.type === kind);
+        if (!e) { e = mkEvent(kind, d, meal); e.status = 'draft'; e.draftedAt = new Date().toISOString(); created.push(e.id); }
+        const id = 't' + rid(5), no = tablesOf(e.id).reduce((n, x) => Math.max(n, x.no), 0) + 1, tc = {};
+        [m].concat(pick.map((p) => p.x)).forEach((y) => ((y.profile && y.profile.tracks) || []).forEach((x, j) => { tc[x] = (tc[x] || 0) + (j ? 1 : 2); }));
+        const t = db.tables[id] = { id, eventId: e.id, no, track: kind === 'kindred' ? null : Object.keys(tc).sort((a, b) => tc[b] - tc[a])[0] || null, ids: [], venue: null, published: false, attended: {}, createdAt: new Date().toISOString() };
+        seat(m, t, e, cross && !kindOk(m, kind) ? 'cross' : level); pick.forEach(({ x }) => seat(x, t, e, 'shift'));
+        return;
+      }
+    }
+  });
+  chairs('strict'); fresh('strict'); chairs('two'); fresh('two'); fresh('two', true); borrow('two'); chairs('two', true); borrow('two', true);
+  chairs('any'); fresh('any'); fresh('any', true); borrow('any'); chairs('any', true); borrow('any', true);
 }
 function publishWeek(b) {
   const week = (b && b.week) || pendingWeek() || targetWeek(), w = db.weeks[week]; if (!w) fail('build the week first');
@@ -328,7 +423,11 @@ function publishWeek(b) {
   w.events.forEach((eid) => { const e = db.events[eid]; if (e && e.status === 'draft') publish({ event: eid }, true); });
   w.published = true; w.publishedAt = new Date().toISOString(); resolveAlerts('week:' + week); resolveAlerts('autoweek:' + week);
   fillRounds(week);
-  w.unmatched.forEach((id) => { const m = db.members[id]; if (m && !Object.values(db.tables).some((t) => t.published && seatedIds(t).indexOf(id) >= 0 && (db.events[t.eventId] || {}).week === week)) { m.prio = (m.prio || 0) + 1; notify(id, 'unmatched'); } });
+  w.unmatched.forEach((id) => { const m = db.members[id]; if (m && !Object.values(db.tables).some((t) => t.published && seatedIds(t).indexOf(id) >= 0 && (db.events[t.eventId] || {}).week === week)) {
+    m.prio = (m.prio || 0) + 1; notify(id, 'unmatched');
+    const ds = ((m.avail && m.avail.week === week && m.avail.slots) || []).map((s) => s.split('|')[0]).filter((d) => tzMs(d, '19:00') > Date.now() + 6 * HOUR);
+    if (ds.length) (db.standby = db.standby || {})[id] = { kind: 'any', dates: ds, skip: null, until: ds.slice().sort().pop(), at: new Date(Date.now() - DAY).toISOString() };
+  } });
   return { ok: true, week };
 }
 
@@ -499,7 +598,7 @@ function stopStandby(me) { if (db.standby) delete db.standby[me.id]; return { ok
 // a chair just opened: the longest-waiting person on standby whose evenings fit gets it
 function fillChair(t, e) {
   pruneStandby();
-  const S = db.standby || {}, who = Object.keys(S).filter((id) => db.members[id] && !db.members[id].deleted && S[id].kind === e.type).sort((a, b) => (S[a].at < S[b].at ? -1 : 1));
+  const S = db.standby || {}, who = Object.keys(S).filter((id) => db.members[id] && !db.members[id].deleted && (S[id].kind === e.type || S[id].kind === 'any')).sort((a, b) => (S[a].at < S[b].at ? -1 : 1));
   for (const id of who) { const m = db.members[id]; if (chairFits(m, t, e, S[id].dates, S[id].skip)) { seatAt(m, t, e); return id; } }
   return null;
 }
@@ -594,14 +693,14 @@ function setVenue(b) {
   else if (was && t.venue && was.name !== t.venue.name) spotMoved(t, was);
   return adminEvent(t.eventId);
 }
-/* ---------- places: partner restaurants hold Sidetable tables ----------
+/* ---------- places: partner restaurants hold Hash Table tables ----------
    Members never book anything, and nothing is booked inside a restaurant's own system (OpenTable, Resy and the rest have no
    open booking API, and copying reservations into them breaks their rules). Instead a partner agrees to hold a few tables on
    certain weeknights, the way Timeleft's partner restaurants do. Charlie fills those holds, each table at a partner with room
    that evening (same area first, round two at its old spot when it has room, backup partners last). The restaurant hears
    the week's plan on Sunday night, the final count at noon the day before, and any change after that. */
-// a place is either a partner holding tables for Sidetable ('hold', 'ask'), or a spot captains book themselves ('captain'):
-// through OpenTable, Resy, Tock, the restaurant's site or a call, under their own name. Sidetable never contacts those.
+// a place is either a partner holding tables for Hash Table ('hold', 'ask'), or a spot captains book themselves ('captain'):
+// through OpenTable, Resy, Tock, the restaurant's site or a call, under their own name. Hash Table never contacts those.
 const isPartner = (v) => !!v && v.mode !== 'captain';
 const placeLoad = (v, date, not) => Object.values(db.tables).filter((x) => x.id !== not && x.published && !x.closed && x.venue && (x.venue.id === v.id || x.venue.pid === v.id) && (db.events[x.eventId] || {}).date === date && db.events[x.eventId].status !== 'cancelled').length;
 const placeUses = (v) => Object.values(db.tables).filter((x) => x.published && x.venue && x.venue.id === v.id).length;
@@ -615,7 +714,7 @@ function placeTable(t, prefer) {
   const v = (isPartner(pv) && placeFits(pv, t, e) ? pv : null)
     || P.filter((x) => placeFits(x, t, e)).sort((a, b) => (!!a.backup - !!b.backup) || ((b.area || '') === e.area) - ((a.area || '') === e.area) || placeLoad(a, e.date) - placeLoad(b, e.date) || placeUses(a) - placeUses(b) || (a.name < b.name ? -1 : 1))[0];
   if (!v) return null;
-  t.venue = { id: v.id, name: v.name, address: v.address, note: v.note || 'Ask for the Sidetable table' };
+  t.venue = { id: v.id, name: v.name, address: v.address, note: v.note || 'Ask for the Hash Table table' };
   syncBooking(v.id, e.date);
   resolveAlerts('noplace:' + t.id); revealNow(t);
   return t.venue;
@@ -700,7 +799,7 @@ function setLongSpot(b) {
 }
 
 /* ---------- bookings: each partner's evenings, and who has said what ----------
-   A standing hold is the normal case: the partner agreed to keep those tables for Sidetable, so an evening Charlie fills is
+   A standing hold is the normal case: the partner agreed to keep those tables for Hash Table, so an evening Charlie fills is
    set unless the restaurant says it can't (one tap on its private link, or a call to whoever is on duty). Some partners
    would rather say yes to each evening; for them Charlie asks and waits, with a deadline of noon two days before (or the
    morning before, for something set later), and members see the address only once they've said yes. If a restaurant can't
@@ -795,7 +894,7 @@ const placeByKey = (k) => (/^[a-f0-9]{24}$/.test(String(k || '')) ? Object.value
 function mailPlace(v, subject, text, undo) {
   log('place-mail', v.id, subject);
   const failed = (why) => { if (undo) undo(); log('place-mail-failed', v.id, subject); alertOps('mail:' + v.id, 'mail', `An email to ${v.name} didn’t go out (${why}): “${subject}”. It tries again every few minutes. If it keeps failing, call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''}.`); save(); };
-  if (!v.email) { if (/^Sidetable (tonight|tomorrow)/.test(subject)) alertOps('call:' + v.id + '|' + subject, 'mail', `${v.name} has no email on file, so call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''} with the final count: ${subject}. The tables are on the Places tab.`); return; }
+  if (!v.email) { if (/^Hash Table (tonight|tomorrow)/.test(subject)) alertOps('call:' + v.id + '|' + subject, 'mail', `${v.name} has no email on file, so call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''} with the final count: ${subject}. The tables are on the Places tab.`); return; }
   sendMail(v.email, subject, text).then((r) => { if (r.ok || r.show) resolveAlerts('mail:' + v.id); else failed(r.off ? 'email isn’t set up' : 'the mail service turned it down'); }).catch((e) => failed(e.message));
 }
 const snapOf = (n) => n.tables.map((r) => r.size + '@' + r.time + '@' + r.captain).sort().join(',');
@@ -823,7 +922,7 @@ function placeMail(now) {
     const needed = nights.some((d) => placeNight(v, d).tables.length);
     if (v.backup && !needed) return;
     const ask = v.mode === 'ask' && needed;
-    mailPlace(v, `Sidetable this week${needed ? '' : ': nothing needed'}`, `Hi ${v.contact || v.name},\n\nHere’s Sidetable for the week of ${dayLabel(tzMs(wk, '12:00'))}:\n\n${lines.join('\n')}\n\n${ask ? 'Please confirm each evening on your page' : 'Nothing to do unless something can’t work. If it can’t, tell us on your page'}: ${placeLink(v)}\nThe final count for each evening comes at noon the day before. Everyone pays their own check.\n\nThanks,\nSidetable`, () => { delete db.planSent[pk2]; nights.forEach((d) => { const b = (db.bookings || {})[bkey(v.id, d)]; if (b && b.told === iso) delete b.told; if (b && b.askMail === iso) delete b.askMail; }); });
+    mailPlace(v, `Hash Table this week${needed ? '' : ': nothing needed'}`, `Hi ${v.contact || v.name},\n\nHere’s Hash Table for the week of ${dayLabel(tzMs(wk, '12:00'))}:\n\n${lines.join('\n')}\n\n${ask ? 'Please confirm each evening on your page' : 'Nothing to do unless something can’t work. If it can’t, tell us on your page'}: ${placeLink(v)}\nThe final count for each evening comes at noon the day before. Everyone pays their own check.\n\nThanks,\nHash Table`, () => { delete db.planSent[pk2]; nights.forEach((d) => { const b = (db.bookings || {})[bkey(v.id, d)]; if (b && b.told === iso) delete b.told; if (b && b.askMail === iso) delete b.askMail; }); });
     nights.forEach((d) => { const b = (db.bookings || {})[bkey(v.id, d)]; if (b && b.state === 'asked') b.askMail = iso; });
   }));
   Object.values(db.bookings || {}).forEach((b) => {
@@ -832,25 +931,25 @@ function placeMail(now) {
     const planned = !!db.planSent[v.id + '|' + mondayOf(b.date)];
     if ((b.state === 'asked' ? !b.askMail : b.state === 'held' && !b.told) && planned && n.tables.length) {
       b.told = iso; if (b.state === 'asked') b.askMail = iso;
-      mailPlace(v, `Sidetable on ${day}${b.state === 'asked' ? ': can you confirm?' : ''}`, `${hi}Sidetable needs ${n.tables.length > 1 ? NUMW(n.tables.length) + ' tables' : 'a table'} on ${day}${b.more ? ' (one more than you confirmed)' : ''}:\n\n${tableLines(n)}\n\n${b.state === 'asked' ? `Please confirm, or tell us you can’t, by ${dayLabel(confirmBy(b))} at ${timeLabel(confirmBy(b))}` : 'It’s within your usual hold, so nothing to do unless it can’t work'}: ${link}\n\nThanks,\nSidetable`, () => { if (b.told === iso) delete b.told; if (b.askMail === iso) delete b.askMail; });
+      mailPlace(v, `Hash Table on ${day}${b.state === 'asked' ? ': can you confirm?' : ''}`, `${hi}Hash Table needs ${n.tables.length > 1 ? NUMW(n.tables.length) + ' tables' : 'a table'} on ${day}${b.more ? ' (one more than you confirmed)' : ''}:\n\n${tableLines(n)}\n\n${b.state === 'asked' ? `Please confirm, or tell us you can’t, by ${dayLabel(confirmBy(b))} at ${timeLabel(confirmBy(b))}` : 'It’s within your usual hold, so nothing to do unless it can’t work'}: ${link}\n\nThanks,\nHash Table`, () => { if (b.told === iso) delete b.told; if (b.askMail === iso) delete b.askMail; });
     }
     if (b.state === 'asked' && b.askMail && !b.remindAt && now >= confirmBy(b)) {
       b.remindAt = iso;
-      mailPlace(v, `Reminder: Sidetable on ${day}`, `${hi}We still need a yes or no for ${day} (${n.covers} people). One tap: ${link}\n\nThanks,\nSidetable`, () => { delete b.remindAt; });
+      mailPlace(v, `Reminder: Hash Table on ${day}`, `${hi}We still need a yes or no for ${day} (${n.covers} people). One tap: ${link}\n\nThanks,\nHash Table`, () => { delete b.remindAt; });
       alertOps('unconfirmed:' + bkey(v.id, b.date), 'unconfirmed', `${v.name} hasn’t confirmed ${day} (${n.tables.length} ${n.tables.length > 1 ? 'tables' : 'table'}, ${n.covers} people). Call ${v.contact || 'them'}${v.phone ? ' at ' + v.phone : ''}, then mark it on the Places tab.`);
     }
     const counted = b.state === 'held' || b.state === 'confirmed' || (b.state === 'asked' && b.more), started = tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= now);
     if (counted && !b.finalAt && now >= finalTime(v, b.date) && n.tables.length && !started) {
       b.finalAt = iso; b.final = snapOf(n); b.told = b.told || iso;
       const when = b.date === today ? 'tonight' : 'tomorrow';
-      mailPlace(v, `Sidetable ${when}: ${n.covers} people`, `${hi}Final count for ${when}, ${day}:\n\n${tableLines(n)}\n\nEach table asks for Sidetable and gives the captain’s first name. Separate checks, please.${b.more ? ' One table is new since you confirmed, so please confirm it on your page: ' + link + '.' : ''} If anything changes on our side, you’ll hear from us right away.\n\nThanks,\nSidetable`, () => { delete b.finalAt; delete b.final; });
+      mailPlace(v, `Hash Table ${when}: ${n.covers} people`, `${hi}Final count for ${when}, ${day}:\n\n${tableLines(n)}\n\nEach table asks for Hash Table and gives the captain’s first name. Separate checks, please.${b.more ? ' One table is new since you confirmed, so please confirm it on your page: ' + link + '.' : ''} If anything changes on our side, you’ll hear from us right away.\n\nThanks,\nHash Table`, () => { delete b.finalAt; delete b.final; });
     } else if (counted && b.finalAt && n.tables.length && b.final !== snapOf(n) && !started) {
       const was = b.final; b.final = snapOf(n); b.updates = (b.updates || 0) + 1;
-      mailPlace(v, `Update for Sidetable on ${day}`, `${hi}A change for ${day}. It’s now:\n\n${tableLines(n)}\n\n${n.covers} people in all.\n\nSidetable`, () => { b.final = was; });
+      mailPlace(v, `Update for Hash Table on ${day}`, `${hi}A change for ${day}. It’s now:\n\n${tableLines(n)}\n\n${n.covers} people in all.\n\nHash Table`, () => { b.final = was; });
     }
     if (b.state === 'released' && b.told && !b.releaseMail) {
       b.releaseMail = iso;
-      mailPlace(v, `No Sidetable tables on ${day} after all`, `${hi}Plans changed and we won’t need a table on ${day} after all. Please release it, and thank you for holding it.\n\nSidetable`, () => { delete b.releaseMail; });
+      mailPlace(v, `No Hash Table tables on ${day} after all`, `${hi}Plans changed and we won’t need a table on ${day} after all. Please release it, and thank you for holding it.\n\nHash Table`, () => { delete b.releaseMail; });
     }
   });
 }
@@ -867,7 +966,7 @@ function alertOps(key, kind, text) {
   const a = { id: 'a' + rid(4), key, kind, text: clip(text, 400), at: isoNow(), done: false };
   db.alerts.push(a); db.alerts = db.alerts.slice(-200);
   const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables', long: 'the long table count' }[kind] || 'needs a look';
-  const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Sidetable: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
+  const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Hash Table: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
   log('alert', kind, key);
 }
 function resolveAlerts(key) { arr(db.alerts).forEach((a) => { if (a.key === key && !a.done) { a.done = true; a.doneAt = isoNow(); } }); }
@@ -985,7 +1084,7 @@ function coolCheck(m) {
 }
 
 /* ---------- the captain ----------
-   One person at each table gets there first and gives the name at the door ("Sidetable, party of five"), asks for separate
+   One person at each table gets there first and gives the name at the door ("Hash Table, party of five"), asks for separate
    checks, and opens the deck once everyone's sat down. It rotates: whoever has done it least recently goes first, people who
    said they're happy to before people who didn't say, never someone who said no. Anyone can pass it on until two hours
    before. The restaurant hears only the captain's first name. */
@@ -1022,13 +1121,13 @@ function captainNote(t) {
   t.captainNoted = true;
   if (!t.captain || seatedIds(t).indexOf(t.captain) < 0) pickCaptain(t);
   const bk = capOf(t).booking, booked = bk && t.venue && t.venue.pid === bk.pid;
-  if (t.captain) charlie(t.id, booked ? `Tonight’s captain is ${firstOf(db.members[t.captain])}. The table is booked under ${bk.name} at ${timeLabel(tzMs(db.events[t.eventId].date, bk.time))}, so give that name at the door` : `Tonight’s captain is ${firstOf(db.members[t.captain])}: first one there, gives the name at the door (Sidetable, party of ${NUMW(seatedIds(t).length)}) and asks for separate checks`);
+  if (t.captain) charlie(t.id, booked ? `Tonight’s captain is ${firstOf(db.members[t.captain])}. The table is booked under ${bk.name} at ${timeLabel(tzMs(db.events[t.eventId].date, bk.time))}, so give that name at the door` : `Tonight’s captain is ${firstOf(db.members[t.captain])}: first one there, gives the name at the door (Hash Table, party of ${NUMW(seatedIds(t).length)}) and asks for separate checks`);
 }
 
 /* ---------- the captain's three missions ----------
    Each captain gets a brief with three missions:
    1. Book the spot: pick one from the list and book it under their own name (OpenTable, Resy, Tock, the site or a call),
-      then tell Charlie the time and the name. A partner that holds tables for Sidetable needs no booking, just a pick.
+      then tell Charlie the time and the name. A partner that holds tables for Hash Table needs no booking, just a pick.
       Book by the free-change cutoff; the table only finds out at noon on the day.
    2. Rally the vote: get at least three of every four at the table to vote on tonight's question (two nudges allowed).
    3. Settle up: ask for separate checks, and tick it off on the night.
@@ -1036,7 +1135,7 @@ function captainNote(t) {
    industry tables (dinner with a guest from the industry) open to captains first, and seat them first. */
 // the captain's booking still on this table, if there is one (who made it, under what name, for how many)
 const bookingOn = (t) => { const c = t && t.cap; return c && c.booking && t.venue && t.venue.pid === c.booking.pid ? c.booking : null; };
-const doorName = (t) => { const bk = bookingOn(t); return bk ? bk.name : `Sidetable, party of ${NUMW(seatedIds(t).length)}`; };
+const doorName = (t) => { const bk = bookingOn(t); return bk ? bk.name : `Hash Table, party of ${NUMW(seatedIds(t).length)}`; };
 const tableStart = (t) => { const e = db.events[t.eventId]; return t.time ? tzMs(e.date, t.time) : eventTimes(e).start; };
 const closeAt = (e) => eventTimes(e).reveal + 2 * HOUR; // a table with no spot by then is off
 const bookUntil = (t, e) => Math.min(Math.max(closeAt(e), (t.cap && t.cap.grace) || 0), eventTimes(e).start - HOUR);
@@ -1062,7 +1161,7 @@ function bookLink(v, date, time, size) {
   if (v.bookVia === 'tock') return u.replace(/\/$/, '') + `/search?date=${date}&size=${size}&time=${encodeURIComponent(time)}`;
   return u;
 }
-// where this table could go that evening: partners with a table held for Sidetable (nothing to book), then spots the captain
+// where this table could go that evening: partners with a table held for Hash Table (nothing to book), then spots the captain
 // books, same area first; the current spot stays on the list
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
@@ -1950,7 +2049,7 @@ const PUSH_TEXT = {
   captain: (o) => ({ body: `You’re the captain for ${o.day}: get there five minutes early and give the name at the door.`, url: './#home' }),
   longin: (o) => ({ body: `A seat opened at the long table on ${o.day}, and it’s yours.`, url: './#home' }),
   again: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} is booked: your table again, ${o.day} two weeks from now.`, url: './#home' }),
-  unmatched: () => ({ body: 'No table fit your evenings this week, so you’re first in line next week. Hangs are open any day.', url: './#home' }),
+  unmatched: () => ({ body: 'Nobody else picked your evenings this week, so there’s no table yet. If a chair opens on one of them, it’s yours, and you’re first in line next week', url: './#home' }),
   popjoin: (o) => ({ body: `${o.other || 'Someone'} is in for your hang: ${o.title || ''}`, url: './#hangs' }),
   popcancel: (o) => ({ body: `${o.other || 'The host'} called off “${o.title || 'the hang'}”.`, url: './#hangs' })
 };
@@ -1964,7 +2063,7 @@ function notify(id, kind, o) {
   if (!urgent && m.pushLog.filter((x) => URGENT.indexOf(x.kind) < 0).length >= PUSH_DAY) return Promise.resolve(0);
   m.pushLog.push({ day, kind });
   const t = PUSH_TEXT[kind](o || {});
-  return Promise.all(m.push.map((sub) => PUSH.send(sub, { title: 'Sidetable', body: t.body, url: t.url, tag: kind }, { topic: kind })
+  return Promise.all(m.push.map((sub) => PUSH.send(sub, { title: 'Hash Table', body: t.body, url: t.url, tag: kind }, { topic: kind })
     .then((r) => { if (r.gone) m.push = (m.push || []).filter((x) => x.endpoint !== sub.endpoint); return r.ok ? 1 : 0; })))
     .then((a) => { save(); return a.reduce((x, y) => x + y, 0); });
 }
@@ -2252,7 +2351,7 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/remove') { const m = db.members[b.id]; if (!m) fail('no such member'); erase(m); out = { ok: true }; }
       else if (p === '/api/admin/match-week') out = matchWeek(b);
       else if (p === '/api/admin/publish-week') out = publishWeek(b);
-      else if (p === '/api/admin/pop-cancel') { const x = db.pops[b.id]; if (!x) fail('no such hang'); if (!x.cancelled) { x.cancelled = true; if (popTimes(x).start > Date.now()) x.joined.concat([x.host]).forEach((id) => notify(id, 'popcancel', { title: x.title, other: 'Sidetable' })); } out = { ok: true }; }
+      else if (p === '/api/admin/pop-cancel') { const x = db.pops[b.id]; if (!x) fail('no such hang'); if (!x.cancelled) { x.cancelled = true; if (popTimes(x).start > Date.now()) x.joined.concat([x.host]).forEach((id) => notify(id, 'popcancel', { title: x.title, other: 'Hash Table' })); } out = { ok: true }; }
       else if (p === '/api/admin/job') out = postJob(null, b);
       else if (p === '/api/admin/job-close') { const j = db.jobs[b.id]; if (!j) fail('no such role'); j.closed = !j.closed; out = { ok: true }; }
       else if (p === '/api/admin/post-remove') { const x = db.posts.find((q) => q.id === b.id); if (!x) fail('no such post'); x.removed = !x.removed; out = { ok: true }; }
@@ -2370,7 +2469,7 @@ function start(port) {
   const t = setInterval(() => { try { tick(); } catch (e) { console.error(e); } }, 5 * 60 * 1000); if (t.unref) t.unref();
   process.on('SIGINT', () => { save(true); process.exit(0); });
   process.on('SIGTERM', () => { save(true); process.exit(0); });
-  return server.listen(port || PORT, () => console.log('Sidetable beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
+  return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
 module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, setLongSpot, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, promoteLong, setVenue, fillRounds, monthView, setLong, longDate, monthNow,

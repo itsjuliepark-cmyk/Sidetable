@@ -1,4 +1,4 @@
-/* Sidetable demo controls: a way in from the start screen, a "Demo" tab to switch people, and two skip-ahead buttons
+/* Hash Table demo controls: a way in from the start screen, a "Demo" tab to switch people, and two skip-ahead buttons
    (Charlie sets next week's tables, and the morning after) so a whole week fits in a few minutes. */
 (function () {
   'use strict';
@@ -123,10 +123,10 @@
       .sort(function (a, b) { return S.eventTimes(db().events[a.eventId]).start - S.eventTimes(db().events[b.eventId]).start; })[0];
   }
   var PLACE = null;
-  var PSTATE = { held: 'Held for Sidetable', asked: 'Waiting for their yes', confirmed: 'Confirmed', declined: 'Can’t host', released: 'Not needed after all' };
+  var PSTATE = { held: 'Held for Hash Table', asked: 'Waiting for their yes', confirmed: 'Confirmed', declined: 'Can’t host', released: 'Not needed after all' };
   function drawPlace(v) {
     var diets = function (d) { return Object.keys(d || {}).map(function (k) { return d[k] + ' ' + k.toLowerCase(); }).join(', '); };
-    $('sheet').innerHTML = '<div class="grab"></div><h3>' + esc(v.name) + '</h3><div class="sub2" style="line-height:1.5">This is the restaurant’s private page. No login, no names: sizes, times, dietary notes and the captain’s first name. ' + (v.mode === 'ask' ? 'They confirm each evening.' : 'Their tables are held for Sidetable, so there’s nothing to do unless an evening can’t work.') + ' They get this week’s plan on Sunday night and the final count at noon the day before.</div>'
+    $('sheet').innerHTML = '<div class="grab"></div><h3>' + esc(v.name) + '</h3><div class="sub2" style="line-height:1.5">This is the restaurant’s private page. No login, no names: sizes, times, dietary notes and the captain’s first name. ' + (v.mode === 'ask' ? 'They confirm each evening.' : 'Their tables are held for Hash Table, so there’s nothing to do unless an evening can’t work.') + ' They get this week’s plan on Sunday night and the final count at noon the day before.</div>'
       + (v.evenings.length ? v.evenings.map(function (e) {
         var act = !e.started && e.state === 'asked' ? '<button class="btn sm" data-pl="' + e.date + '|1">Confirm</button>' : '';
         if (!e.started && (e.state === 'held' || e.state === 'asked' || e.state === 'confirmed')) act += '<button class="btn sm ghost" data-pl="' + e.date + '|0">We can’t host this one</button>';
@@ -190,7 +190,7 @@
   };
   D.menu = function () {
     var f = friend(), who = me();
-    $('sheet').innerHTML = '<div class="grab"></div><h3>Demo</h3><div class="sub2" style="line-height:1.5">The real Sidetable app, with 40 sample members. It runs on this phone only, and nothing is sent anywhere.' + (who ? ' You’re ' + esc(who.name) + '.' : '') + '</div>'
+    $('sheet').innerHTML = '<div class="grab"></div><h3>Demo</h3><div class="sub2" style="line-height:1.5">The real Hash Table app, with 40 sample members. It runs on this phone only, and nothing is sent anywhere.' + (who ? ' You’re ' + esc(who.name) + '.' : '') + '</div>'
       + '<div class="label">Be someone</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'jordan\')">Jordan Park, Harvard<small>Two sealed invitations, round two with last week’s table, and two friends</small></button>'
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')

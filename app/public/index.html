@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Sidetable</title>
+<title>Hash Table</title>
 <meta name="description" content="Private invitations to small dinners, and spur-of-the-moment hangs anyone can start." />
 <meta name="theme-color" content="#F4F5F4" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-title" content="Sidetable" />
+<meta name="apple-mobile-web-app-title" content="Hash Table" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="apple-touch-icon" href="/icons/icon-180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,11 +33,11 @@
         <i class="leak" id="filmLeak"></i>
         <div class="film-grain"></div>
       </div>
-      <p class="land-brand"><span class="pearl"></span>Sidetable</p>
+      <p class="land-brand"><span class="pearl"></span>Hash Table</p>
       <div class="land-say">
         <h1 class="land-line" id="landLine">Come for the tech talk, stay for the <span class="it">friends</span></h1>
       </div>
-      <p class="land-word" id="landWord" aria-hidden="true"><span>Passion,</span> <span>innovation,</span> <span>synergy</span></p>
+      <p class="land-word" id="landWord" aria-hidden="true"><span>Late nights,</span> <span>big ideas,</span> <span>new friends</span></p>
       <div class="land-entry">
         <div class="land-note" id="landNote"></div>
         <div class="land-btns">
@@ -466,7 +466,7 @@ function refresh() { if (!A.token) return Promise.resolve(); return api('GET', '
 /* ---------------- start, join ---------------- */
 // msg is a notice for this visit (an old link, no connection): it sits above the buttons on the film
 function renderStart(msg) {
-  $('startBox').innerHTML = `<div class="ls-note">Sidetable is invite-only for now. Open the link from your club or the organizer, and you’re in.</div>
+  $('startBox').innerHTML = `<div class="ls-note">Hash Table is invite-only for now. Open the link from your club or the organizer, and you’re in.</div>
     <button class="btn ghost" onclick="openVerify('signin')">Already a member? Sign in</button>`;
   $('landNote').textContent = msg || ''; $('landNote').classList.toggle('on', !!msg);
 }
@@ -474,7 +474,7 @@ function openJoin(code) {
   fetch('/api/join?code=' + encodeURIComponent(code)).then((r) => r.json().then((j) => ({ ok: r.ok, j }))).then(({ ok, j }) => {
     if (!ok) { renderStart('This join link isn’t active anymore. Ask the organizer for a new one.'); go('start', { noHist: true }); return; }
     openVerify('join', { club: code, clubName: j.club });
-  }).catch(() => { renderStart('Couldn’t reach Sidetable. Check your connection and open the link again.'); go('start', { noHist: true }); });
+  }).catch(() => { renderStart('Couldn’t reach Hash Table. Check your connection and open the link again.'); go('start', { noHist: true }); });
 }
 // every member proves a Harvard or MIT email with a 6-digit code
 function openVerify(mode, extra) { A.ver = Object.assign({ mode, step: 'email', email: '', name: '', code: '', devCode: '' }, extra || {}); hist.length = 0; go('verify', { noHist: true }); }
@@ -482,7 +482,7 @@ function openVerify(mode, extra) { A.ver = Object.assign({ mode, step: 'email', 
 function leaveVerify() { if (A.token && A.view && !A.view.me.verified) { store.clear(); A.token = ''; A.view = null; } A.ver = null; hist.length = 0; renderStart(); go('start', { noHist: true }); }
 function renderVerify() {
   const V = A.ver; if (!V) return;
-  const head = { join: ['Join with ' + (V.clubName || 'your club'), 'Let’s get you a <span class="it">seat</span>', 'For now Sidetable is open to anyone at Harvard or MIT. I’ll send a 6-digit code to your school email, and nobody else sees it.'],
+  const head = { join: ['Join with ' + (V.clubName || 'your club'), 'Let’s get you a <span class="it">seat</span>', 'For now Hash Table is open to anyone at Harvard or MIT. I’ll send a 6-digit code to your school email, and nobody else sees it.'],
     member: ['One quick step', 'Confirm your <span class="it">school email</span>', 'Everyone here is verified with a school email. I’ll send you a 6-digit code.'],
     signin: ['Welcome back', 'Sign in with your <span class="it">school email</span>', 'I’ll send a 6-digit code to the email you joined with.'] }[V.mode];
   if (V.step === 'email') {
@@ -490,7 +490,7 @@ function renderVerify() {
       ${V.mode === 'join' ? `<div class="label">Full name</div><input class="field" id="vName" maxlength="80" autocomplete="name" placeholder="e.g. Jordan Park" value="${esc(V.name)}" />` : ''}
       <div class="label">School email</div><input class="field" id="vEmail" type="email" maxlength="120" autocomplete="email" inputmode="email" placeholder="you@harvard.edu or you@mit.edu" value="${esc(V.email)}" />
       <p class="hint">Any Harvard or MIT address: harvard.edu, hbs.edu, mit.edu, and ones like you@college.harvard.edu</p>
-      ${V.mode === 'join' ? '<label class="check"><input type="checkbox" id="vOk" /> <span>I’m 18 or older. I’ll show up, keep it kind, and never pitch. Sidetable is not a dating app.</span></label>' : ''}
+      ${V.mode === 'join' ? '<label class="check"><input type="checkbox" id="vOk" /> <span>I’m 18 or older. I’ll show up, keep it kind, and never pitch. Hash Table is not a dating app.</span></label>' : ''}
       ${V.mode === 'signin' ? '' : `<button class="link" style="margin-top:18px" onclick="openVerify('signin')">Already a member? Sign in instead</button>`}
       <div class="err" id="vErr"></div>`;
     $('vGo').textContent = 'Send my code';
@@ -526,7 +526,7 @@ function checkVerify() {
   const V = A.ver; if ((V.code || '').length !== 6) { $('vErr').textContent = 'Type the 6 digits from the email.'; return; }
   $('vGo').disabled = true; $('vErr').textContent = '';
   api('POST', '/api/verify/finish', { email: V.email, code: V.code }).then((r) => {
-    A.token = r.token; store.set(r.token); A.ver = null; history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Sidetable.'); return boot();
+    A.token = r.token; store.set(r.token); A.ver = null; history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();
   }).catch((e) => { $('vGo').disabled = false; V.code = ''; const el = $('vCode'); if (el) el.value = ''; $('vErr').textContent = cap(e.message) + '.'; });
 }
 
@@ -1032,7 +1032,7 @@ function seenOff(id) { api('POST', '/api/seen', { key: 'off:' + id }).then(() =>
 function stopStandby(b) { api('POST', '/api/standby-stop', {}).then(() => refresh()).then(() => { if (cur === 'home') renderHome(); }).catch(oops); }
 function standbyHTML(s) {
   const days = s.days.length ? s.days.slice(0, -1).join(', ') + (s.days.length > 1 ? ' or ' : '') + s.days[s.days.length - 1] : 'an evening this week';
-  return `<div class="cardg standby"><span class="orb md"></span><div class="grow"><b>Looking for another evening</b><div class="sub2">The moment a chair opens at a ${s.kind === 'kindred' ? 'social' : 'tech'} table on ${esc(days)}, it’s yours. I’ll send the invitation right away.</div><button class="link" style="margin:6px 0 0;text-align:left" onclick="stopStandby(this)">Stop looking</button></div></div>`;
+  return `<div class="cardg standby"><span class="orb md"></span><div class="grow"><b>${s.kind === 'any' ? 'Looking for a chair on your evenings' : 'Looking for another evening'}</b><div class="sub2">The moment a chair opens at a ${s.kind === 'any' ? '' : s.kind === 'kindred' ? 'social ' : 'tech '}table on ${esc(days)}, it’s yours. I’ll send the invitation right away</div><button class="link" style="margin:6px 0 0;text-align:left" onclick="stopStandby(this)">Stop looking</button></div></div>`;
 }
 
 /* ---------------- a table ---------------- */
@@ -1098,18 +1098,18 @@ const VIA = { opentable: 'Book on OpenTable', resy: 'Book on Resy', tock: 'Book 
 const VIATAG = { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock', web: 'Their site', phone: 'Call' };
 function missionSpot(S) {
   const cur = (S.options || []).find((o) => o.mine), B = S.booking;
-  if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. The Sidetable team knows');
+  if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. The Hash Table team knows');
   if (S.state === 'open') return missionRow(1, false, 'Book the spot', `Pick a place for ${nw(S.size)} and book it under your name. Book by ${esc(S.by)}`, `<button class="btn sm" onclick="openSpot()">Choose</button>`);
   if (S.state === 'late') return missionRow(1, false, 'Book the spot', `Still no spot. Book one now: with nothing by ${esc(S.by)}, the table is off`, S.options.length ? `<button class="btn sm" onclick="openSpot()">Choose</button>` : '');
-  if (S.state === 'held') return missionRow(1, false, 'Book the spot', `${esc(S.at)} is holding a table for Sidetable, so there’s nothing to book. Keep it, or pick another`, `<span class="mbtns">${cur ? `<button class="btn sm" onclick="pickSpot('${cur.id}', this)">Keep</button>` : ''}<button class="link" style="margin:0" onclick="openSpot()">Change</button></span>`);
-  if (S.state === 'picked') return missionRow(1, true, 'Book the spot', `${esc(S.at)}, held for Sidetable. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
+  if (S.state === 'held') return missionRow(1, false, 'Book the spot', `${esc(S.at)} is holding a table for Hash Table, so there’s nothing to book. Keep it, or pick another`, `<span class="mbtns">${cur ? `<button class="btn sm" onclick="pickSpot('${cur.id}', this)">Keep</button>` : ''}<button class="link" style="margin:0" onclick="openSpot()">Change</button></span>`);
+  if (S.state === 'picked') return missionRow(1, true, 'Book the spot', `${esc(S.at)}, held for Hash Table. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
   if (S.state === 'booked') {
     const off = B.now !== B.size;
     if (!B.mine) return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, booked by ${esc(B.byFirst || 'someone at your table')} under ${esc(B.name)}. They hold the reservation, so changes go through them`);
     return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, under ${esc(B.name)}${B.code ? ', confirmation ' + esc(B.code) : ''}. A secret until noon on the day`
       + (off ? `<span class="bookwarn">Booked for ${nw(B.size)}, and you’re ${nw(B.now)} now. Update the booking so they hold the right table</span><span class="mbtns" style="margin-top:6px">${B.link ? `<a class="btn sm" href="${esc(B.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">Update it</a>` : ''}<button class="btn sm ghost" onclick="bookResize(this)">Done</button></span>` : `<button class="link" style="margin:4px 0 0;text-align:left;font-size:12.5px" onclick="unbook(this)">It fell through</button>`));
   }
-  if (S.state === 'set') return missionRow(1, true, 'Book the spot', 'Set for you by the Sidetable team');
+  if (S.state === 'set') return missionRow(1, true, 'Book the spot', 'Set for you by the Hash Table team');
   return missionRow(1, false, 'Book the spot', 'Charlie’s pick stands this time');
 }
 function missionVote(V) {
@@ -1129,9 +1129,9 @@ function captainHTML(t) {
     <div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div>${stripesHTML(K.stripes)}</div>
     ${capBar(K.done)}
     ${missionSpot(K.spot)}${missionVote(K.vote)}${missionChecks(K.checks)}
-    <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Sidetable, party of ${nw(t.size)}”</b>`}</div>
+    <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
-  if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Sidetable, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
+  if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   const p = (t.people || []).find((x) => x.id === c.id) || { first: c.first };
   return `<div class="sp"></div><div class="cardg capcard row">${av(p, 's')}<div class="grow"><b>${esc(c.first)} is the captain</b><div class="sub2">Picks the spot, rallies the vote and settles the checks. It rotates, so your turn comes too</div></div></div>`;
 }
@@ -1741,7 +1741,7 @@ function openCompose() {
 function drawCompose() {
   const C = A.cp, el = $('composeSheet'); if (!el) return;
   const text = $('cpText') ? $('cpText').value : C.text || '', link = $('cpLink') ? $('cpLink').value : C.link || '';
-  el.innerHTML = `<h3>Post to the Board</h3><div class="sub2" style="margin-bottom:12px">Everyone at Harvard and MIT on Sidetable can see it</div>
+  el.innerHTML = `<h3>Post to the Board</h3><div class="sub2" style="margin-bottom:12px">Everyone at Harvard and MIT on Hash Table can see it</div>
     <div class="chips" style="gap:6px">${Object.keys(SX.POSTS).map((k) => `<button class="chip ${C.kind === k ? 'sel' : ''}" onclick="A.cp.kind='${k}';drawCompose()">${BICON[k]}${esc(SX.POSTS[k].t)}</button>`).join('')}</div>
     <div class="sub2" style="margin:8px 2px 10px">${esc(SX.POSTS[C.kind].hint)}</div>
     <textarea class="field" id="cpText" rows="4" maxlength="400" oninput="A.cp.text=this.value" placeholder="${C.kind === 'take' ? 'Say it like you mean it' : C.kind === 'ask' ? 'What do you need, and who could help?' : C.kind === 'event' ? 'What, where and when' : C.kind === 'ship' ? 'What you shipped, and what was hard' : 'What it is, and why it’s worth 20 minutes'}">${esc(text)}</textarea>
@@ -1942,10 +1942,10 @@ const devicePush = () => { try { return localStorage.getItem('sixtopPush') === '
 const setDevicePush = (on) => { try { if (on) localStorage.setItem('sixtopPush', '1'); else localStorage.removeItem('sixtopPush'); } catch (e) {} };
 const sameKey = (a, b) => { const x = new Uint8Array(a); if (x.length !== b.length) return false; for (let i = 0; i < x.length; i++) if (x[i] !== b[i]) return false; return true; };
 function enablePush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { toast('Notifications', /iPhone|iPad/.test(navigator.userAgent) ? 'On iPhone, add Sidetable to your Home Screen first (Share → Add to Home Screen), open it from there, sign in with your school email once more, then turn this on.' : 'This browser can’t do notifications.'); return; }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { toast('Notifications', /iPhone|iPad/.test(navigator.userAgent) ? 'On iPhone, add Hash Table to your Home Screen first (Share → Add to Home Screen), open it from there, sign in with your school email once more, then turn this on.' : 'This browser can’t do notifications.'); return; }
   const key = b64ToBytes(A.view.pushKey || '');
   Promise.resolve(Notification.permission === 'granted' ? 'granted' : Notification.requestPermission()).then((perm) => {
-    if (perm !== 'granted') throw new Error('notifications are off for Sidetable in this browser’s settings');
+    if (perm !== 'granted') throw new Error('notifications are off for Hash Table in this browser’s settings');
     return navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready);
   }).then((reg) => reg.pushManager.getSubscription().then((s) => {
     if (s && s.options && s.options.applicationServerKey && !sameKey(s.options.applicationServerKey, key)) return s.unsubscribe().then(() => reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
@@ -1964,10 +1964,10 @@ function disablePush() {
    building something together, then laughing too hard over beers and glasses meeting across a dinner table. Charlie's
    lines type themselves over it in time with the acts, the way Amie opens. Act times come from public/video/film.json. */
 const FILM_SRC = '/video/film.mp4';
-const FILM_T = { tech: 5.65, build: 10.98, friends: 16.58, end: 25.38 };
+const FILM_T = { tech: 5.8, build: 10.75, friends: 15, end: 24.15 };
 const FILM = {
   // each word joins the sentence on a cut inside the tech act; the sentence leaves just before the build line
-  words: { at: [FILM_T.tech + 0.15, 7.46, 9.24], until: FILM_T.build - 0.35 },
+  words: { at: [FILM_T.tech + 0.15, 7.57, 9.03], until: FILM_T.build - 0.35 },
   lines: [[0.45, FILM_T.tech - 0.35, 'A small group of builders, one table, *deeper connection*'], [FILM_T.build + 0.25, FILM_T.friends - 0.3, 'Talk AI, bio and robots until they *stack the chairs*'], [FILM_T.friends + 0.15, FILM_T.end - 0.35, 'Come for the tech talk, stay for the *friends*']]
 };
 const film = { v: null, raf: 0, li: -2, wi: -2, last: 0, leaked: false, typing: 0, live: false, tried: false };
@@ -2061,7 +2061,7 @@ const RENDER = { start: startFilm, verify: renderVerify, school: renderSchool, t
   profile: renderProfileStep, card: renderCard, result: renderResult, home: renderHome, popups: renderPopups, board: renderBoard, people: renderPeople, me: renderMe,
   table: () => {}, invite: () => {}, pop: () => {}, host: () => {}, chat: () => {}, deck: () => {}, after: () => {}, dm: () => {} };
 document.querySelectorAll('.scr[data-step]').forEach((s) => {
-  s.insertAdjacentHTML('afterbegin', `<div class="topbar"><button class="back" onclick="back()" aria-label="Back">${ICON.back}</button><div class="tb-title"><span class="orb sm"></span>Sidetable</div><div class="tb-step"></div></div><div class="pbar"><div class="pfill"></div></div>`);
+  s.insertAdjacentHTML('afterbegin', `<div class="topbar"><button class="back" onclick="back()" aria-label="Back">${ICON.back}</button><div class="tb-title"><span class="orb sm"></span>Hash Table</div><div class="tb-step"></div></div><div class="pbar"><div class="pfill"></div></div>`);
 });
 function route() {
   const h = (location.hash || '').slice(1);
@@ -2078,7 +2078,7 @@ function boot() {
   }).catch((e) => {
     if (e.status === 401 && A.joinCode) { store.clear(); A.token = ''; openJoin(A.joinCode); return; }
     if (e.status === 401) { store.clear(); A.token = ''; renderStart('This link isn’t active anymore. Sign in with your school email instead.'); }
-    else renderStart('Couldn’t reach Sidetable. Check your connection and try again.');
+    else renderStart('Couldn’t reach Hash Table. Check your connection and try again.');
     go('start', { noHist: true });
   });
 }

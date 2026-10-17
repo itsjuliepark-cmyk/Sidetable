@@ -1,7 +1,7 @@
-/* Sidetable service worker (same shape as Amie's). The page: network first, so a new version shows up at once, and the
+/* Hash Table service worker (same shape as Amie's). The page: network first, so a new version shows up at once, and the
    cached copy when offline. Styles, icons and the manifest: network first too, with the cached copy as the fallback. Anything under /api/ is never cached, and the film streams straight from the server (byte ranges can't be cached).
-   It also shows Sidetable's notifications, and a tap opens the app where the notification points. */
-var CACHE = 'sixtop-v3';
+   It also shows Hash Table's notifications, and a tap opens the app where the notification points. */
+var CACHE = 'sixtop-v4';
 var ASSETS = ['./', './app.css', './shared.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).catch(function () {})); self.skipWaiting(); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); })); self.clients.claim(); });
@@ -13,7 +13,7 @@ self.addEventListener('fetch', function (e) {
 });
 self.addEventListener('push', function (e) {
   var d = {}; try { d = e.data ? e.data.json() : {}; } catch (er) { d = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Sidetable', { body: d.body || 'Something new at your table.', icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', tag: d.tag || 'sixtop', renotify: d.tag === 'mutual' || d.tag === 'table', data: { url: d.url || './' } }));
+  e.waitUntil(self.registration.showNotification(d.title || 'Hash Table', { body: d.body || 'Something new at your table.', icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', tag: d.tag || 'sixtop', renotify: d.tag === 'mutual' || d.tag === 'table', data: { url: d.url || './' } }));
 });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();

@@ -1,4 +1,4 @@
-/* Sidetable demo runtime. It runs the real server code (server/server.js, server/tables.js, scripts/seed.js) inside the
+/* Hash Table demo runtime. It runs the real server code (server/server.js, server/tables.js, scripts/seed.js) inside the
    page, with an in-memory file system saved to this browser, and answers the app's /api/ calls itself. So the demo is
    the real app with 40 sample members and no server. Built into one page by scripts/build-demo.js. */
 (function () {

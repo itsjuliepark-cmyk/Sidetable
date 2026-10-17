@@ -1,4 +1,4 @@
-// Demo data for trying Sidetable locally: 40 members (20 from across Harvard, 20 from MIT), a past dinner with picks already in,
+// Demo data for trying Hash Table locally: 40 members (20 from across Harvard, 20 from MIT), a past dinner with picks already in,
 // a career dinner and a social dinner this week (Charlie's invitations, still sealed), next week's evenings marked,
 // and a few hangs.
 // Never run this on real data.
@@ -80,7 +80,7 @@ const venues = [['Demo Bistro', 'Massachusetts Ave, Central Square', 'Cozy booth
 // placed at them automatically when they're published.
 // the people who run it: an ops lead and a campus lead take turns being on duty (made up)
 S.saveOps({ team: [{ name: 'Demo Ops Lead', role: 'ops lead' }, { name: 'Demo Campus Lead', role: 'campus lead (MIT)' }], rota: {} });
-venues.forEach(([name, address, vibe, bookVia, bookUrl, price, card], k) => S.savePlace({ name, address, vibe, mode: 'captain', bookVia, bookUrl, price, card, phone: bookVia === 'phone' ? '(617) 555-01' + (40 + k) : '', area: address.split(', ')[1], nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, contact: 'the host stand', note: 'Ask for the Sidetable table' }));
+venues.forEach(([name, address, vibe, bookVia, bookUrl, price, card], k) => S.savePlace({ name, address, vibe, mode: 'captain', bookVia, bookUrl, price, card, phone: bookVia === 'phone' ? '(617) 555-01' + (40 + k) : '', area: address.split(', ')[1], nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, contact: 'the host stand', note: 'Ask for the Hash Table table' }));
 
 const ago = (h) => new Date(Date.now() - h * 36e5).toISOString();
 const firstWith = (tr, not) => members.find((m) => m.profile.tracks[0] === tr && m !== demo && (!not || not.indexOf(m) < 0));

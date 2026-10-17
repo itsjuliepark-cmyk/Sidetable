@@ -1,4 +1,4 @@
-// Web Push for Sidetable (copied from Amie beta), with no dependencies: VAPID (RFC 8292) and aes128gcm payload encryption (RFC 8291, RFC 8188).
+// Web Push for Hash Table (copied from Amie beta), with no dependencies: VAPID (RFC 8292) and aes128gcm payload encryption (RFC 8291, RFC 8188).
 // Works with any standard push service (Chrome/FCM, Firefox, Safari/Apple for home-screen web apps).
 //
 //   const push = require('./push.js')({ dir, subject });

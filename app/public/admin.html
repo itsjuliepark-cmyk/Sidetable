@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sidetable Admin</title>
+<title>Hash Table Admin</title>
 <meta name="robots" content="noindex">
 <style>
 :root{--bg:#f4f5f4;--card:#fff;--ink:#1c2024;--soft:#5b626b;--line:#e1e4e6;--acc:#9f4d5a;--ok:#2f6f4f;--warn:#8e3b3b;--harvard:#c7848c;--mit:#8da3b8}
@@ -56,7 +56,7 @@ textarea{width:100%;min-height:60px}
 </style>
 </head>
 <body><main>
-<h1>Sidetable beta</h1>
+<h1>Hash Table beta</h1>
 <p class="soft">Invite people, build each week’s tables, watch hangs and the numbers. Members never see this page.</p>
 <div class="card row" id="keyrow"><input type="password" class="grow" id="key" placeholder="Admin key" aria-label="Admin key"><button id="go">Open</button></div>
 <div id="app" hidden>
@@ -83,7 +83,7 @@ textarea{width:100%;min-height:60px}
 
   <section id="v-places" hidden>
     <h2>Partner restaurants</h2>
-    <p class="soft">Two kinds of places. Spots for captains: restaurants the table’s captain books under their own name, through OpenTable, Resy, Tock, the restaurant’s site or a call, then tells Charlie the time and the name. Sidetable never contacts them, so add a booking link or a phone number and one line about what it’s like. Partners: restaurants that agreed to hold tables for Sidetable, so nothing needs booking. Nothing is booked in a restaurant’s own system by the app itself: OpenTable, Resy and the rest have no open booking API. Each partner agrees to hold a few tables on certain evenings. A standing hold is set unless the restaurant says it can’t; a partner that confirms each evening has to say yes first. Restaurants get the week’s plan on Sunday at 10 PM (with what to release), the final count at noon the day before (the same moment members stop changing plans for free), and any change after that. They see sizes, times, dietary notes and the captain’s first name, never who’s coming. Backup partners are used last.</p>
+    <p class="soft">Two kinds of places. Spots for captains: restaurants the table’s captain books under their own name, through OpenTable, Resy, Tock, the restaurant’s site or a call, then tells Charlie the time and the name. Hash Table never contacts them, so add a booking link or a phone number and one line about what it’s like. Partners: restaurants that agreed to hold tables for Hash Table, so nothing needs booking. Nothing is booked in a restaurant’s own system by the app itself: OpenTable, Resy and the rest have no open booking API. Each partner agrees to hold a few tables on certain evenings. A standing hold is set unless the restaurant says it can’t; a partner that confirms each evening has to say yes first. Restaurants get the week’s plan on Sunday at 10 PM (with what to release), the final count at noon the day before (the same moment members stop changing plans for free), and any change after that. They see sizes, times, dietary notes and the captain’s first name, never who’s coming. Backup partners are used last.</p>
     <div class="card tbl"><table id="placesT"></table></div>
     <h2 id="plHead">Add a place</h2>
     <div class="card"><input type="hidden" id="plId">
@@ -91,7 +91,7 @@ textarea{width:100%;min-height:60px}
       <div class="row" style="margin-top:8px"><span class="soft">Evenings</span><label class="soft"><input type="checkbox" data-night="1" checked> Mon</label><label class="soft"><input type="checkbox" data-night="2" checked> Tue</label><label class="soft"><input type="checkbox" data-night="3" checked> Wed</label><label class="soft"><input type="checkbox" data-night="4" checked> Thu</label><label class="soft"><input type="checkbox" data-night="5"> Fri</label><label class="soft"><input type="checkbox" data-night="6"> Sat</label><label class="soft"><input type="checkbox" data-night="0"> Sun</label>
         <label class="soft">Tables a night <input type="number" id="plTables" min="1" max="12" value="2" style="width:64px"></label><label class="soft">Seats a table <input type="number" id="plSeats" min="4" max="8" value="6" style="width:64px"></label></div>
       <div class="row" style="margin-top:8px"><select id="plMode" aria-label="How tables get there"><option value="captain">Captains book it themselves</option><option value="hold">Partner, standing hold: set unless they say no</option><option value="ask">Partner, confirms each evening</option></select><label class="soft"><input type="checkbox" id="plBackup"> Backup (used last, hears only when needed)</label><input type="text" id="plClosed" placeholder="Closed on, e.g. 2026-11-26, 2026-12-24" aria-label="Closed on" class="grow"></div>
-      <div class="row" style="margin-top:8px"><input type="email" class="grow" id="plEmail" placeholder="Email for the plan and counts" aria-label="Email"><input type="text" id="plContact" placeholder="Contact name" aria-label="Contact" style="width:150px"><input type="text" id="plPhone" placeholder="Phone" aria-label="Phone" style="width:140px"><input type="text" class="grow" id="plVibe" placeholder="What it’s like, for captains picking a spot (e.g. cozy booths, great dumplings)" aria-label="What it’s like"><input type="text" class="grow" id="plNote" placeholder="Note for members, e.g. ask for the Sidetable table" aria-label="Note"></div>
+      <div class="row" style="margin-top:8px"><input type="email" class="grow" id="plEmail" placeholder="Email for the plan and counts" aria-label="Email"><input type="text" id="plContact" placeholder="Contact name" aria-label="Contact" style="width:150px"><input type="text" id="plPhone" placeholder="Phone" aria-label="Phone" style="width:140px"><input type="text" class="grow" id="plVibe" placeholder="What it’s like, for captains picking a spot (e.g. cozy booths, great dumplings)" aria-label="What it’s like"><input type="text" class="grow" id="plNote" placeholder="Note for members, e.g. ask for the Hash Table table" aria-label="Note"></div>
       <div class="row" style="margin-top:8px"><select id="plVia" aria-label="Booked through"><option value="opentable">OpenTable</option><option value="resy">Resy</option><option value="tock">Tock</option><option value="web">Their site</option><option value="phone">A call</option></select><input type="url" class="grow" id="plBook" placeholder="Booking link (their OpenTable, Resy or Tock page, or their site)" aria-label="Booking link"><select id="plPrice" aria-label="Price"><option value="">Price</option><option>$</option><option>$$</option><option>$$$</option></select><label class="soft"><input type="checkbox" id="plCard"> Holds a card for six</label></div>
       <div class="row" style="margin-top:8px"><textarea id="plTerms" placeholder="Our agreement, in their words: release deadline, any fee for empty chairs, separate checks, auto-gratuity for six" aria-label="Terms"></textarea></div>
       <div class="row" style="margin-top:8px"><button id="plGo">Save partner</button><button class="ghost" id="plNew">Clear</button></div>
@@ -131,7 +131,7 @@ textarea{width:100%;min-height:60px}
   </section>
 
   <section id="v-board" hidden>
-    <h2>Post a role as Sidetable</h2>
+    <h2>Post a role as Hash Table</h2>
     <div class="card"><div class="row"><input type="text" class="grow" id="jT" placeholder="Role title" aria-label="Role title"><input type="text" class="grow" id="jC" placeholder="Company" aria-label="Company">
       <select id="jTr" aria-label="Track"></select>
       <select id="jK" aria-label="Type"><option>Full-time</option><option>Internship</option><option>Founding team</option><option>Fellowship</option><option>Part-time</option></select></div>
@@ -273,7 +273,7 @@ function drawEvent() {
         + '<ul class="why">' + t.why.map(function (w) { return '<li>' + esc(w).replace(/\*([^*]+)\*/g, '<b>$1</b>') + '</li>'; }).join('') + '</ul>'
         + (t.game ? '<p class=soft style="margin:8px 0 0"><b>Tonight’s question:</b> ' + (t.game.pick ? esc(t.game.pick) + ' <span class=soft>(' + (t.game.by === 'charlie' ? 'Charlie picked, no votes' : 'voted') + (t.game.a + t.game.b ? ', sides ' + t.game.a + '–' + t.game.b : '') + (t.game.moved ? ', ' + t.game.moved + ' changed their mind' : '') + ')</span>' : 'voting: ' + t.game.menu.map(function (m) { return esc(m.q) + ' <b>' + m.votes + '</b>'; }).join(', ')) + '</p>' : '')
         + '<div class="row" style="margin-top:10px"><input type=text placeholder="Venue" data-vn="' + t.id + '" value="' + esc(t.venue ? t.venue.name : '') + '" style="flex:1"><input type=text placeholder="Address" data-va="' + t.id + '" value="' + esc(t.venue ? t.venue.address : '') + '" style="flex:1.4"></div>'
-        + '<div class="row" style="margin-top:6px"><input type=text placeholder="Note, e.g. ask for the Sidetable group" data-vt="' + t.id + '" value="' + esc(t.venue ? t.venue.note : '') + '" style="flex:1"><button class="ghost small" data-vs="' + t.id + '">Save venue</button></div>'
+        + '<div class="row" style="margin-top:6px"><input type=text placeholder="Note, e.g. ask for the Hash Table group" data-vt="' + t.id + '" value="' + esc(t.venue ? t.venue.note : '') + '" style="flex:1"><button class="ghost small" data-vs="' + t.id + '">Save venue</button></div>'
         + (pub ? '<div class=soft style="margin-top:8px">' + t.messages + ' chat messages' + (avg ? ', rating ' + avg : '') + (t.again ? ', ' + t.again + ' want the same table' : '') + (t.mutual.length ? ', mutual: ' + t.mutual.map(function (m) { return esc(m.join(' + ')); }).join(', ') : '') + '</div>' : '')
         + '</div>';
     }).join('') + '</div>'

@@ -1,4 +1,4 @@
-# Sidetable
+# Hash Table
 
 MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 
@@ -17,6 +17,7 @@ MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 
 - 하버드 3명 + MIT 3명의 테크 테이블, 매주 두 차례 초대장 발송
 - 생성형 AI, 로보틱스, 바이오테크, 헬스케어 등 관심 분야별 소그룹 연결
+- 저녁을 고른 사람은 한 명도 빠짐없이 그 주 디너 배정, 그날 혼자인 경우만 예외
 - 그 주 이슈로 만든 밸런스 게임과 토론 주제 사전 제공
 - 테이블마다 돌아가며 맡는 캡틴: 장소를 골라 OpenTable, Resy, 전화로 직접 예약, 토론 주제 투표 독려, 각자 계산 리드
 - 캡틴이 예약을 못 하면 다른 회원에게 자동으로 넘어가고, 당일까지 장소가 없으면 테이블 취소
@@ -31,7 +32,7 @@ MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 ## 데모
 
 - 폰 데모 링크: https://claude.ai/artifact/P8rAwZFR773s1wuQcWjDqd (공유가 켜진 경우에만 열림)
-- 설치 없이 보기: 저장소를 내려받아(Code → Download ZIP) [demo/sidetable-demo.html](demo/sidetable-demo.html)을 브라우저로 열기
+- 설치 없이 보기: 저장소를 내려받아(Code → Download ZIP) [demo/hash-table-demo.html](demo/hash-table-demo.html)을 브라우저로 열기
 - Join → Try it as Jordan으로 샘플 회원 40명이 있는 상태에서 시작, 입력한 내용은 내 브라우저에만 저장
 
 ## 실행

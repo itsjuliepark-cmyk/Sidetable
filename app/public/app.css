@@ -1,4 +1,4 @@
-/* Sidetable: Amie design C (soft light). Rose = Harvard, mist = MIT. Base from the prototype, app pieces below. */
+/* Hash Table: Amie design C (soft light). Rose = Harvard, mist = MIT. Base from the prototype, app pieces below. */
   :root{
     --paper:#F4F5F4;--ink:#1C2024;--ink-2:#343A41;--ink-soft:#5B626B;--ink-faint:#8A9097;
     --accent:#9F4D5A;--accent-fill:#C7848C;
@@ -721,43 +721,41 @@ h1.big{text-wrap:balance}
 .ttile .tag{position:absolute;top:15px;right:40px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:rgba(226,178,113,.22);color:#7A5320}
 
 /* ---------- the opening film (first screen) ----------
-   Amie's landing, cut tighter: real footage full screen under a night-violet shade, a haze of light from above, film
-   grain, Charlie's lines typing over it. Join opens a sheet
-   of night glass; everything after it is the soft light app. */
-.land{background:#0E0B16;color:#fff;transform:none}
+   Real footage full screen, warm like late-afternoon light through a dorm window: a honey wash, sun coming in from the
+   top, film grain, Charlie's lines typing over it. Join opens a sheet of warm glass; everything after it is the soft light app. */
+.land{background:#1C140F;color:#fff;transform:none}
 .land.out{transform:none}
-.film{position:absolute;inset:0;overflow:hidden;background:#0E0B16 url(/img/film.jpg) center/cover no-repeat}
+.film{position:absolute;inset:0;overflow:hidden;background:#1C140F url(/img/film.jpg) center/cover no-repeat}
 .film-v,.film-v video{position:absolute;inset:0;width:100%;height:100%}
 .film-v video{object-fit:cover;opacity:0;transition:opacity 1.2s ease,filter .7s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}
-.film-v video.on{opacity:1;filter:brightness(.94) saturate(.9) contrast(.94)}
-/* light enough that the footage comes through; just a soft band behind the words and some weight under the buttons */
-/* dusk over the film: a violet wash, a darker band where the words sit, and the bottom sinking into night */
-.film-shade{position:absolute;inset:0;background:radial-gradient(88% 24% at 36% 42%,rgba(24,12,42,.5),rgba(24,12,42,0) 100%),linear-gradient(180deg,rgba(20,10,36,.36) 0%,rgba(20,10,36,.12) 20%,rgba(20,10,36,.14) 62%,rgba(18,9,32,.5) 82%,rgba(14,7,26,.76) 100%)}
-.film-shade::after{content:"";position:absolute;inset:0;mix-blend-mode:soft-light;background:linear-gradient(165deg,rgba(150,118,236,.55),rgba(236,146,182,.4) 55%,rgba(255,188,150,.3))}
+.film-v video.on{opacity:1;filter:brightness(.99) saturate(1.02) contrast(.95)}
+/* golden hour over the film: a honey wash, a soft warm band where the words sit, and the bottom settling into an espresso shadow */
+.film-shade{position:absolute;inset:0;background:radial-gradient(88% 24% at 36% 42%,rgba(46,24,12,.42),rgba(46,24,12,0) 100%),linear-gradient(180deg,rgba(40,22,12,.26) 0%,rgba(40,22,12,.06) 20%,rgba(40,22,12,.1) 60%,rgba(36,20,11,.46) 82%,rgba(28,16,9,.74) 100%)}
+.film-shade::after{content:"";position:absolute;inset:0;mix-blend-mode:soft-light;background:linear-gradient(165deg,rgba(255,206,150,.5),rgba(255,172,140,.34) 55%,rgba(255,228,176,.32))}
 /* soft focus where the words are and along the bottom, so the film goes dreamy behind the text */
-.film-veil{position:absolute;inset:0;pointer-events:none;-webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1);
+.film-veil{position:absolute;inset:0;pointer-events:none;-webkit-backdrop-filter:blur(9px) saturate(1.08);backdrop-filter:blur(9px) saturate(1.08);
   -webkit-mask-image:radial-gradient(78% 17% at 38% 42%,#000 0%,rgba(0,0,0,.55) 50%,transparent 100%),linear-gradient(180deg,transparent 72%,rgba(0,0,0,.85) 100%);mask-image:radial-gradient(78% 17% at 38% 42%,#000 0%,rgba(0,0,0,.55) 50%,transparent 100%),linear-gradient(180deg,transparent 72%,rgba(0,0,0,.85) 100%)}
-.film-haze{position:absolute;inset:-12%;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(60% 26% at 50% 0%,rgba(205,190,255,.3),rgba(205,190,255,0) 75%),radial-gradient(40% 22% at 88% 20%,rgba(255,196,206,.2),rgba(255,196,206,0) 72%),radial-gradient(44% 24% at 8% 30%,rgba(170,214,255,.16),rgba(170,214,255,0) 72%),radial-gradient(50% 20% at 70% 78%,rgba(230,170,255,.14),rgba(230,170,255,0) 72%);animation:haze 18s ease-in-out infinite alternate}
+.film-haze{position:absolute;inset:-12%;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(64% 28% at 62% 0%,rgba(255,214,160,.34),rgba(255,214,160,0) 75%),radial-gradient(40% 24% at 92% 18%,rgba(255,184,150,.22),rgba(255,184,150,0) 72%),radial-gradient(44% 24% at 6% 34%,rgba(255,236,196,.16),rgba(255,236,196,0) 72%),radial-gradient(50% 20% at 70% 80%,rgba(255,196,160,.12),rgba(255,196,160,0) 72%);animation:haze 18s ease-in-out infinite alternate}
 @keyframes haze{from{transform:translate3d(-4%,0,0)}to{transform:translate3d(4%,-2%,0)}}
-.film-grain{position:absolute;inset:-60px;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");background-size:180px 180px;animation:grain .9s steps(1) infinite}
+.film-grain{position:absolute;inset:-60px;pointer-events:none;opacity:.11;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");background-size:180px 180px;animation:grain .9s steps(1) infinite}
 @keyframes grain{0%{transform:translate3d(0,0,0)}20%{transform:translate3d(-22px,14px,0)}40%{transform:translate3d(16px,-26px,0)}60%{transform:translate3d(-12px,-8px,0)}80%{transform:translate3d(24px,18px,0)}}
-.leak{position:absolute;inset:-25%;pointer-events:none;opacity:0;background:linear-gradient(112deg,transparent 32%,rgba(255,170,108,.5) 46%,rgba(255,112,138,.32) 53%,transparent 66%);mix-blend-mode:screen;transform:translateX(-60%)}
+.leak{position:absolute;inset:-25%;pointer-events:none;opacity:0;background:linear-gradient(112deg,transparent 32%,rgba(255,196,120,.55) 46%,rgba(255,150,110,.3) 53%,transparent 66%);mix-blend-mode:screen;transform:translateX(-60%)}
 .leak.go{animation:leakSweep 1.5s cubic-bezier(.3,.6,.3,1)}
 @keyframes leakSweep{0%{opacity:0;transform:translateX(-60%)}30%{opacity:1}100%{opacity:0;transform:translateX(60%)}}
 
 /* the words */
-.land-brand{position:absolute;top:calc(22px + env(safe-area-inset-top,0px));left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:center;gap:9px;margin:0;font-size:19px;font-weight:600;letter-spacing:-.035em;color:#fff;text-shadow:0 1px 18px rgba(0,0,0,.3)}
-.pearl{display:inline-block;width:15px;height:15px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 30%,#fff 0 18%,#F3C6D3 46%,#B9A8E6 100%);box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 14px rgba(243,198,211,.8),0 0 30px rgba(185,168,230,.5);animation:pearl 4s ease-in-out infinite}
-@keyframes pearl{50%{box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 20px rgba(243,198,211,.95),0 0 40px rgba(185,168,230,.7)}}
+.land-brand{position:absolute;top:calc(22px + env(safe-area-inset-top,0px));left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:center;gap:9px;margin:0;font-size:19px;font-weight:600;letter-spacing:-.035em;color:#fff;text-shadow:0 1px 16px rgba(40,18,6,.35)}
+.pearl{display:inline-block;width:15px;height:15px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 30%,#fff 0 18%,#FFD9A8 46%,#F2A48E 100%);box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 14px rgba(255,210,160,.85),0 0 30px rgba(242,164,142,.5);animation:pearl 4s ease-in-out infinite}
+@keyframes pearl{50%{box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 20px rgba(255,210,160,.95),0 0 40px rgba(242,164,142,.7)}}
 .land-say{position:absolute;left:28px;right:28px;top:41%;z-index:3;transform:translateY(-50%);transition:opacity .45s ease,filter .45s ease}
-.land-k{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:12.5px;font-weight:600;letter-spacing:-.003em;color:rgba(255,255,255,.84);text-shadow:0 1px 10px rgba(20,8,24,.6)}
+.land-k{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:12.5px;font-weight:600;letter-spacing:-.003em;color:rgba(255,255,255,.84);text-shadow:0 1px 10px rgba(40,18,6,.6)}
 .land-k{transition:opacity .3s ease}
 .land.f-tech .land-say{opacity:0}
 .land-k::before{content:"";width:18px;height:1px;background:rgba(255,255,255,.5)}
-.land-line{margin:0;min-height:2.7em;font-size:25px;line-height:1.3;font-weight:500;letter-spacing:-.02em;color:#fff;text-wrap:balance;text-shadow:0 1px 2px rgba(20,8,24,.5),0 2px 18px rgba(20,8,24,.6),0 0 44px rgba(56,26,92,.55);transition:opacity .5s ease,filter .5s ease}
+.land-line{margin:0;min-height:2.7em;font-size:25px;line-height:1.3;font-weight:500;letter-spacing:-.02em;color:#fff;text-wrap:balance;text-shadow:0 1px 2px rgba(40,18,6,.45),0 2px 18px rgba(40,18,6,.55),0 0 44px rgba(110,52,20,.45);transition:opacity .5s ease,filter .5s ease}
 .land-line .it{font-size:1.16em;letter-spacing:-.01em;font-weight:300}
 .land-line.fade{opacity:0;filter:blur(6px)}
-.land-line .caret{display:inline-block;width:.42em;height:.42em;margin-left:.16em;border-radius:50%;vertical-align:.08em;background:radial-gradient(circle at 35% 30%,#fff,#F3C6D3 45%,#B9A8E6 100%);box-shadow:0 0 12px rgba(243,198,211,.9),0 0 26px rgba(185,168,230,.6);animation:caretP 1.1s ease-in-out infinite}
+.land-line .caret{display:inline-block;width:.42em;height:.42em;margin-left:.16em;border-radius:50%;vertical-align:.08em;background:radial-gradient(circle at 35% 30%,#fff,#FFD9A8 45%,#F2A48E 100%);box-shadow:0 0 12px rgba(255,210,160,.9),0 0 26px rgba(242,164,142,.6);animation:caretP 1.1s ease-in-out infinite}
 @keyframes caretP{50%{opacity:.35;transform:scale(.8)}}
 /* bottom: a notice if there is one, then Sign in and Join */
 .land-entry{position:absolute;left:22px;right:22px;bottom:calc(26px + env(safe-area-inset-bottom,0px));z-index:3;transition:opacity .45s ease}
@@ -767,14 +765,14 @@ h1.big{text-wrap:balance}
 .lbtn{flex:1;display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;font-size:16px;font-weight:500;letter-spacing:-.01em;transition:transform .2s,background .25s}
 .lbtn:active{transform:scale(.98)}
 .lbtn.ghost{color:#fff;background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.lbtn.solid{color:#1C2024;background:#fff;box-shadow:0 14px 34px -14px rgba(243,160,190,.6)}
-.land-foot{margin:14px 0 0;text-align:center;text-wrap:balance;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.72);text-shadow:0 1px 8px rgba(20,8,24,.5)}
-/* Join: a sheet of night glass rises, the words step back, the film sinks and softens */
+.lbtn.solid{color:#2A1C14;background:#FFFBF5;box-shadow:0 14px 34px -14px rgba(255,180,120,.65)}
+.land-foot{margin:14px 0 0;text-align:center;text-wrap:balance;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.76);text-shadow:0 1px 8px rgba(40,18,6,.5)}
+/* Join: a sheet of warm glass rises, the words step back, the film sinks and softens */
 .land-sheet{position:absolute;inset:0;z-index:20;visibility:hidden;pointer-events:none}
 .land-sheet.on{visibility:visible;pointer-events:auto}
-.ls-bg{position:absolute;inset:0;opacity:0;background:radial-gradient(120% 70% at 50% 100%,rgba(16,9,20,.62),rgba(16,9,20,.2));transition:opacity .35s ease}
+.ls-bg{position:absolute;inset:0;opacity:0;background:radial-gradient(120% 70% at 50% 100%,rgba(34,20,12,.6),rgba(34,20,12,.18));transition:opacity .35s ease}
 .land-sheet.on .ls-bg{opacity:1}
-.ls-card{position:absolute;left:0;right:0;bottom:0;padding:10px 22px calc(18px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;color:#fff;background:linear-gradient(180deg,rgba(46,30,56,.72) 0%,rgba(24,15,32,.92) 60%,rgba(18,11,24,.96) 100%);border-top:1px solid rgba(255,255,255,.16);box-shadow:0 -20px 60px -20px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(24px) saturate(1.2);backdrop-filter:blur(24px) saturate(1.2);transform:translateY(105%);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.ls-card{position:absolute;left:0;right:0;bottom:0;padding:10px 22px calc(18px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;color:#fff;background:linear-gradient(180deg,rgba(78,50,34,.7) 0%,rgba(44,28,19,.92) 60%,rgba(32,20,13,.96) 100%);border-top:1px solid rgba(255,255,255,.16);box-shadow:0 -20px 60px -20px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(24px) saturate(1.2);backdrop-filter:blur(24px) saturate(1.2);transform:translateY(105%);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .land-sheet.on .ls-card{transform:none}
 .ls-card .grab{width:38px;height:4px;border-radius:4px;margin:0 auto 16px;background:rgba(255,255,255,.28)}
 .ls-k{margin:0 0 6px;font-size:12.5px;font-weight:600;letter-spacing:-.003em;color:rgba(255,255,255,.6)}
@@ -782,12 +780,12 @@ h1.big{text-wrap:balance}
 .ls-t .it{font-size:1.1em}
 .ls-p{margin:0 0 16px;font-size:14.5px;line-height:1.55;color:rgba(255,255,255,.76);text-wrap:pretty}
 .ls-note{margin:0 0 14px;padding:13px 15px;border-radius:18px;font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.88);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
-.ls-card .btn{background:#fff;color:#1C2024;box-shadow:0 14px 34px -16px rgba(243,160,190,.55)}
+.ls-card .btn{background:#FFFBF5;color:#2A1C14;box-shadow:0 14px 34px -16px rgba(255,180,120,.6)}
 .ls-card .btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:none}
 .ls-x{display:block;margin:12px auto 0;padding:8px 14px;font-size:14px;font-weight:500;color:rgba(255,255,255,.6)}
 .land.sheet-open .land-say{opacity:0;filter:blur(6px)}
 .land.sheet-open .land-entry{opacity:0;pointer-events:none}
-.land.sheet-open .film-v video{filter:brightness(.45) saturate(.85) blur(3px);transform:scale(1.04)}
+.land.sheet-open .film-v video{filter:brightness(.5) saturate(.9) blur(3px);transform:scale(1.04)}
 @media (max-height:700px){.land-say{top:37%}.land-line{font-size:22px}.ls-t{font-size:26px}}
 @media (prefers-reduced-motion:reduce){.film-haze,.film-grain,.pearl,.land-line .caret{animation:none}.leak{display:none}}
 
@@ -832,7 +830,7 @@ h1.big{text-wrap:balance}
   .world{display:block;position:fixed;inset:-8%;width:116%;height:116%;z-index:0;pointer-events:none;filter:blur(60px) saturate(1.25) brightness(.9);opacity:0;transition:opacity 1.4s ease}
   body.on-film .world{opacity:.9}
   body{transition:background-color 1.4s ease}
-  body.on-film{background:#17121F}
+  body.on-film{background:#1E1611}
   .stage{position:relative;z-index:1}
   body.on-film .phone{box-shadow:0 60px 130px -50px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12) inset}
 }
@@ -1127,7 +1125,7 @@ textarea.field{font-family:inherit;font-size:16px;line-height:1.5;resize:none;pa
 /* the words over the tech shots: the same size as the lines, one sentence that fills in slowly, word by word */
 .land-word{position:absolute;left:28px;right:28px;top:41%;z-index:3;margin:0;transform:translateY(-50%);pointer-events:none;opacity:0;transition:opacity 1.1s ease;
   font-family:var(--italic);font-style:italic;font-weight:400;font-size:28px;line-height:1.3;letter-spacing:-.005em;color:#fff;text-wrap:balance;
-  text-shadow:0 1px 2px rgba(20,8,24,.5),0 2px 18px rgba(20,8,24,.6),0 0 40px rgba(56,26,92,.5)}
+  text-shadow:0 1px 2px rgba(40,18,6,.45),0 2px 18px rgba(40,18,6,.55),0 0 40px rgba(110,52,20,.42)}
 .land-word.on{opacity:1}
 .land-word span{opacity:0;filter:blur(3px);transition:opacity 1.4s ease,filter 1.4s ease}
 .land-word span.in{opacity:1;filter:blur(0)}

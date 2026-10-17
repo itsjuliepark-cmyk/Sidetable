@@ -353,6 +353,23 @@ test('The week: people pick evenings and how many dinners (1 to 5), Charlie mixe
   assert.throws(() => S.setAvail(ms[0], { slots: [] }), /already set/);
 });
 
+test('nobody who marked an evening goes without a dinner: a lopsided evening, someone alone on their kind, someone alone on their evening', () => {
+  const W = S.addDays(S.targetWeek(), 21), d = (n) => S.addDays(W, n) + '|dinner', at = new Date().toISOString();
+  const mk = (tag, schools, mix, slots) => people(schools.length, tag).map((m, i) => { m.school = schools[i]; m.profile.mix = mix; m.avail = { week: W, slots, max: 1, at }; return m; });
+  const lop = mk('Lop', ['harvard', 'harvard', 'harvard', 'harvard', 'mit'], 'both', [d(0)]);           // four from one school, one from the other
+  const tech = mk('Tch', ['harvard', 'harvard', 'mit'], 'topic', [d(1)]), solo = mk('Solo', ['mit'], 'social', [d(1)]); // one social-only person among tech people
+  const six = mk('Six', ['harvard', 'mit', 'harvard', 'mit', 'harvard', 'mit'], 'both', [d(2), d(3)]), alone = mk('Alone', ['harvard'], 'both', [d(3)]);
+  const all = lop.concat(tech, solo, six, alone), r = S.matchWeek({ week: W });
+  const tablesFor = (m) => Object.values(db().tables).filter((t) => (db().events[t.eventId] || {}).week === W && t.ids.indexOf(m.id) >= 0);
+  all.forEach((m) => assert.strictEqual(tablesFor(m).length, 1, m.name + ' has one dinner'));
+  assert.strictEqual(r.unmatched, 0);
+  Object.values(db().tables).filter((t) => (db().events[t.eventId] || {}).week === W).forEach((t) => {
+    assert.ok(t.ids.length >= 3 && t.ids.length <= 6, 'three to six at a table');
+    assert.ok(new Set(t.ids.map((id) => db().members[id].school)).size === 2, 'both schools at every table');
+  });
+  assert.ok(Object.values(db().seats).some((x) => x[solo[0].id] && x[solo[0].id].rescued), 'the one alone on their kind was placed by the second pass');
+});
+
 test('mostly-social members can skip the tech questions; everyone else answers them', () => {
   const [a] = people(1, 'Soc');
   const social = Object.assign(fullProfile(0), { mix: 'social', tracks: [], interests: [], lens: null, takes: {} });
@@ -587,13 +604,13 @@ test('a standing hold: the week’s plan on Sunday night (with what to release),
   db().weeks[mondayOf(date)] = db().weeks[mondayOf(date)] || { published: true, events: [], unmatched: [] }; // the week is out, so the plan goes Sunday night
   const sunday = S.addDays(mondayOf(date), -1), at = Math.max(Date.now(), S.tzMs(sunday, '22:30'));
   S.tick(at); S.tick(at + 60000);
-  assert.strictEqual(mails(v, /^Sidetable this week/), 1, 'one plan for the week');
+  assert.strictEqual(mails(v, /^Hash Table this week/), 1, 'one plan for the week');
   // noon the day before: the final count; someone drops out after it: an update
   S.tick(S.tzMs(S.addDays(date, -1), '12:30'));
-  assert.strictEqual(mails(v, /^Sidetable tomorrow/), 1, 'the final count');
+  assert.strictEqual(mails(v, /^Hash Table tomorrow/), 1, 'the final count');
   S.cancelSeat(db().members[t.ids.find((id) => id !== t.captain)], { event: e.id });
   S.tick(S.tzMs(S.addDays(date, -1), '13:30'));
-  assert.strictEqual(mails(v, /^Update for Sidetable/), 1, 'an update after the count');
+  assert.strictEqual(mails(v, /^Update for Hash Table/), 1, 'an update after the count');
   // the whole table drops out: the restaurant is told to release it
   t.ids.filter((id) => !(t.out || {})[id]).forEach((id) => S.cancelSeat(db().members[id], { event: e.id }));
   S.tick(S.tzMs(S.addDays(date, -1), '14:30'));
@@ -882,7 +899,7 @@ test('the captain books it: a spot from the list, booked under their name, a nud
   assert.ok(t.venue.pid === sp && !t.venue.id && t.time === '19:30', 'booked under the captain’s name, at the time they got');
   assert.ok(S.missions(t).spot.done, 'mission one done');
   assert.strictEqual(S.view(cap).tables.find((x) => x.id === t.id).time, '7:30 PM', 'the table shows the booked time');
-  assert.ok(!Object.values(db().bookings || {}).some((b) => b.vid === sp), 'Sidetable never contacts a spot the captain booked');
+  assert.ok(!Object.values(db().bookings || {}).some((b) => b.vid === sp), 'Hash Table never contacts a spot the captain booked');
   const out = db().members[t.ids.find((id) => id !== cap.id)];
   S.cancelSeat(out, { event: n.e.id }); S.tick();
   assert.strictEqual(t.cap.booking.warned, t.ids.filter((id) => !(t.out || {})[id]).length, 'a size change after booking nudges the captain once');
