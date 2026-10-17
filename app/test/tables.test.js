@@ -88,3 +88,24 @@ test('Topic tables keep at most two investors when there are enough others', () 
   const out = T.assemble(ms, { type: 'topic', seed: 5 });
   out.tables.forEach((t) => assert.ok(t.ids.filter((id) => ms.find((m) => m.id === id).profile.lens === 'fund').length <= 2, 'pitch night'));
 });
+
+test('separating a blocked pair never leaves a table over half one school', () => {
+  const ms = people(5, { track: 'genai' }); ['harvard', 'harvard', 'harvard', 'mit', 'mit'].forEach((s, i) => { ms[i].school = s; });
+  ['kindred', 'topic'].forEach((type) => {
+    const out = T.assemble(ms, { type, blocked: [T.pk(ms[0].id, ms[3].id)], seed: 1 });
+    checkRules(out, ms);
+    out.tables.forEach((t) => assert.ok(!(t.ids.indexOf(ms[0].id) >= 0 && t.ids.indexOf(ms[3].id) >= 0), 'the blocked pair apart'));
+  });
+});
+
+test('a small second school still gets its tables: twenty from one school and two from the other seat five', () => {
+  const ms = people(22, { track: 'genai' }); ms.forEach((m, i) => { m.school = i < 20 ? 'harvard' : 'mit'; });
+  ['kindred', 'topic'].forEach((type) => { const out = T.assemble(ms, { type, seed: 1 }); checkRules(out, ms); assert.ok(out.tables.length >= 1, type + ': one table, not none'); });
+});
+
+test('people left over from different tracks can still share a table', () => {
+  const tr = ['genai', 'genai', 'genai', 'climate', 'climate', 'founders', 'founders', 'hcai', 'hcai', 'bio'];
+  const ms = people(tr.length); ms.forEach((m, i) => { m.profile.tracks = [tr[i]]; m.school = i % 2 ? 'mit' : 'harvard'; });
+  const out = T.assemble(ms, { type: 'topic', seed: 2 }); checkRules(out, ms);
+  assert.ok(out.wait.length < 4, 'four or more waiting would make a table: ' + out.wait.length);
+});

@@ -132,6 +132,7 @@ function assembleGroup(ps, type, trackId, ctx) {
   if (N < 4) return { tables: [], wait: ps.map((p) => p.id) };
   let k = Math.max(1, Math.min(Math.floor(N / 4), Math.round(N / 6) || 1));
   k = Math.max(k, Math.min(Math.floor(N / 4), Math.ceil(N / 6)));
+  if (ctx.mix) { const c0 = {}; ps.forEach((p) => { c0[p.school] = (c0[p.school] || 0) + 1; }); k = Math.max(1, Math.min(k, Math.floor((N - Math.max.apply(null, Object.values(c0))) / 2))); }
   const tables = Array.from({ length: k }, () => []);
   const order = ps.slice().sort((a, b) => (b.prio - a.prio) || (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
   const cnt = (t, s) => t.filter((p) => p.school === s).length;
@@ -177,7 +178,7 @@ function assembleGroup(ps, type, trackId, ctx) {
   // local search: swap two people from the same school (the mix never changes), or move one where the sizes allow
   const live = tables.filter((t) => t.length);
   const sc = live.map((t) => scoreTable(t, type, trackId, ctx).total);
-  const iters = live.length > 1 ? 2500 * live.length : 0;
+  const iters = live.length > 1 ? Math.min(20000, 2500 * live.length) : 0;
   for (let it = 0; it < iters; it++) {
     const i = Math.floor(ctx.rng() * live.length); let j = Math.floor(ctx.rng() * (live.length - 1)); if (j >= i) j++;
     const A = live[i], B = live[j], a = A[Math.floor(ctx.rng() * A.length)];
@@ -201,9 +202,16 @@ function assembleGroup(ps, type, trackId, ctx) {
   const clash = (t, p) => t.some((q) => q !== p && ctx.blocked.has(pk(p.id, q.id)));
   for (let guard = 0; guard < 50; guard++) {
     const ti = live.findIndex((t) => t.some((p) => clash(t, p))); if (ti < 0) break;
-    const t = live[ti], mv = t.filter((p) => clash(t, p)).sort((a, b) => (!!ctx.lockOf[a.id] - !!ctx.lockOf[b.id]) || (a.prio - b.prio) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
+    const t = live[ti], keeps = (p) => (balanced(t.filter((q) => q !== p), ctx.mix) ? 0 : 1);
+    const mv = t.filter((p) => clash(t, p)).sort((a, b) => (keeps(a) - keeps(b)) || (!!ctx.lockOf[a.id] - !!ctx.lockOf[b.id]) || (a.prio - b.prio) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
     live[ti] = t.filter((p) => p !== mv);
     const to = live.find((o, j) => j !== ti && o.length < 6 && !clash(o.concat([mv]), mv) && balanced(o.concat([mv]), ctx.mix)); if (to) to.push(mv); else wait.push(mv);
+  }
+  for (let guard = 0; guard < 50; guard++) {
+    const bad = live.find((t) => t.length >= 4 && !balanced(t, ctx.mix)); if (!bad) break;
+    const c = {}; bad.forEach((p) => { c[p.school] = (c[p.school] || 0) + 1; }); const maj = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+    const cand = bad.filter((p) => p.school === maj && !ctx.lockOf[p.id]).pop() || bad.filter((p) => p.school === maj).pop(); bad.splice(bad.indexOf(cand), 1);
+    const to = live.find((o) => o !== bad && o.length >= 4 && o.length < 6 && !clash(o.concat([cand]), cand) && balanced(o.concat([cand]), ctx.mix)); if (to) to.push(cand); else wait.push(cand);
   }
   for (let i = live.length - 1; i >= 0; i--) if (live[i].length < 4) { live[i].forEach((p) => wait.push(p)); live.splice(i, 1); }
   return {
@@ -249,7 +257,7 @@ function assemble(members, opt) {
     // when most people's tracks are too small for a table that evening, one pool beats merging into whichever track is
     // biggest: the scorer then seats people who share a track together, and each table is named for what it shares
     const viable = Object.keys(groups).filter((t) => canForm(groups[t])).reduce((n, t) => n + groups[t].length, 0);
-    if (viable < 0.6 * ps.length && !ctx.locks.length) groups = { pool: ps };
+    if (viable < 0.6 * ps.length) groups = { pool: ps };
     for (let guard = 0; guard < 40 && !groups.pool; guard++) {
       const small = Object.keys(groups).filter((t) => !canForm(groups[t])).sort((a, b) => groups[a].length - groups[b].length)[0];
       const others = Object.keys(groups).filter((t) => t !== small);
@@ -268,6 +276,14 @@ function assemble(members, opt) {
     });
     wait.push.apply(wait, r.wait);
   });
+  if (type !== 'kindred' && wait.length >= 4 && Object.keys(groups).length > 1) {
+    const W = wait.map((id) => byId[id]), inW = new Set(wait);
+    const r = assembleGroup(W, type, 'pool', Object.assign({}, ctx, { locks: ctx.locks.filter((g) => g.every((id) => inW.has(id))) }));
+    if (r.tables.length) {
+      wait.length = 0; wait.push.apply(wait, r.wait);
+      r.tables.forEach((t) => { const people = t.ids.map((id) => byId[id]); t.track = sharedTrack(people, people[0].track); tables.push(Object.assign(t, { why: whyLines(people, type, t.track, ctx), split: splits(people, t.track)[0] })); });
+    }
+  }
   return { tables, wait, merged };
 }
 

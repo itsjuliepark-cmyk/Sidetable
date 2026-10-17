@@ -2208,7 +2208,7 @@ a.btn.sm{display:inline-flex}
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var KEY = 'sixtop-demo-a78006a2c9', MAX_AGE = 3 * 864e5;
+  var KEY = 'sixtop-demo-c624a2ca59', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -2389,6 +2389,7 @@ function assembleGroup(ps, type, trackId, ctx) {
   if (N < 4) return { tables: [], wait: ps.map((p) => p.id) };
   let k = Math.max(1, Math.min(Math.floor(N / 4), Math.round(N / 6) || 1));
   k = Math.max(k, Math.min(Math.floor(N / 4), Math.ceil(N / 6)));
+  if (ctx.mix) { const c0 = {}; ps.forEach((p) => { c0[p.school] = (c0[p.school] || 0) + 1; }); k = Math.max(1, Math.min(k, Math.floor((N - Math.max.apply(null, Object.values(c0))) / 2))); }
   const tables = Array.from({ length: k }, () => []);
   const order = ps.slice().sort((a, b) => (b.prio - a.prio) || (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
   const cnt = (t, s) => t.filter((p) => p.school === s).length;
@@ -2434,7 +2435,7 @@ function assembleGroup(ps, type, trackId, ctx) {
   // local search: swap two people from the same school (the mix never changes), or move one where the sizes allow
   const live = tables.filter((t) => t.length);
   const sc = live.map((t) => scoreTable(t, type, trackId, ctx).total);
-  const iters = live.length > 1 ? 2500 * live.length : 0;
+  const iters = live.length > 1 ? Math.min(20000, 2500 * live.length) : 0;
   for (let it = 0; it < iters; it++) {
     const i = Math.floor(ctx.rng() * live.length); let j = Math.floor(ctx.rng() * (live.length - 1)); if (j >= i) j++;
     const A = live[i], B = live[j], a = A[Math.floor(ctx.rng() * A.length)];
@@ -2458,9 +2459,16 @@ function assembleGroup(ps, type, trackId, ctx) {
   const clash = (t, p) => t.some((q) => q !== p && ctx.blocked.has(pk(p.id, q.id)));
   for (let guard = 0; guard < 50; guard++) {
     const ti = live.findIndex((t) => t.some((p) => clash(t, p))); if (ti < 0) break;
-    const t = live[ti], mv = t.filter((p) => clash(t, p)).sort((a, b) => (!!ctx.lockOf[a.id] - !!ctx.lockOf[b.id]) || (a.prio - b.prio) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
+    const t = live[ti], keeps = (p) => (balanced(t.filter((q) => q !== p), ctx.mix) ? 0 : 1);
+    const mv = t.filter((p) => clash(t, p)).sort((a, b) => (keeps(a) - keeps(b)) || (!!ctx.lockOf[a.id] - !!ctx.lockOf[b.id]) || (a.prio - b.prio) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
     live[ti] = t.filter((p) => p !== mv);
     const to = live.find((o, j) => j !== ti && o.length < 6 && !clash(o.concat([mv]), mv) && balanced(o.concat([mv]), ctx.mix)); if (to) to.push(mv); else wait.push(mv);
+  }
+  for (let guard = 0; guard < 50; guard++) {
+    const bad = live.find((t) => t.length >= 4 && !balanced(t, ctx.mix)); if (!bad) break;
+    const c = {}; bad.forEach((p) => { c[p.school] = (c[p.school] || 0) + 1; }); const maj = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+    const cand = bad.filter((p) => p.school === maj && !ctx.lockOf[p.id]).pop() || bad.filter((p) => p.school === maj).pop(); bad.splice(bad.indexOf(cand), 1);
+    const to = live.find((o) => o !== bad && o.length >= 4 && o.length < 6 && !clash(o.concat([cand]), cand) && balanced(o.concat([cand]), ctx.mix)); if (to) to.push(cand); else wait.push(cand);
   }
   for (let i = live.length - 1; i >= 0; i--) if (live[i].length < 4) { live[i].forEach((p) => wait.push(p)); live.splice(i, 1); }
   return {
@@ -2506,7 +2514,7 @@ function assemble(members, opt) {
     // when most people's tracks are too small for a table that evening, one pool beats merging into whichever track is
     // biggest: the scorer then seats people who share a track together, and each table is named for what it shares
     const viable = Object.keys(groups).filter((t) => canForm(groups[t])).reduce((n, t) => n + groups[t].length, 0);
-    if (viable < 0.6 * ps.length && !ctx.locks.length) groups = { pool: ps };
+    if (viable < 0.6 * ps.length) groups = { pool: ps };
     for (let guard = 0; guard < 40 && !groups.pool; guard++) {
       const small = Object.keys(groups).filter((t) => !canForm(groups[t])).sort((a, b) => groups[a].length - groups[b].length)[0];
       const others = Object.keys(groups).filter((t) => t !== small);
@@ -2525,6 +2533,14 @@ function assemble(members, opt) {
     });
     wait.push.apply(wait, r.wait);
   });
+  if (type !== 'kindred' && wait.length >= 4 && Object.keys(groups).length > 1) {
+    const W = wait.map((id) => byId[id]), inW = new Set(wait);
+    const r = assembleGroup(W, type, 'pool', Object.assign({}, ctx, { locks: ctx.locks.filter((g) => g.every((id) => inW.has(id))) }));
+    if (r.tables.length) {
+      wait.length = 0; wait.push.apply(wait, r.wait);
+      r.tables.forEach((t) => { const people = t.ids.map((id) => byId[id]); t.track = sharedTrack(people, people[0].track); tables.push(Object.assign(t, { why: whyLines(people, type, t.track, ctx), split: splits(people, t.track)[0] })); });
+    }
+  }
   return { tables, wait, merged };
 }
 
@@ -2827,7 +2843,8 @@ function matchWeek(b) {
     // school mix (never someone with a reunion that evening, and never leaving the other side unable to make a table)
     const inEdge = (m) => edges.some(([a, c]) => a === m.id || c === m.id), cnt = (L, sch) => L.filter((m) => m.school === sch).length;
     for (let guard = 0; guard < 24; guard++) {
-      const move = [[career, social], [social, career]].map(([A, B]) => { const h = cnt(A, 'harvard'), mi = A.length - h; if (Math.abs(h - mi) <= 1 || A.length + 1 < 4) return null; const need = h < mi ? 'harvard' : 'mit', x = B.find((m) => m.school === need && pref(m) === 'both' && !inEdge(m)); if (!x) return null; const rest = B.filter((m) => m !== x); return !mixOk(B) || mixOk(rest) ? [A, B, x] : null; }).find(Boolean);
+      const seatsOf = (L) => { const h = cnt(L, 'harvard'), mi = L.length - h, T = Math.floor(Math.min(h, mi) / 2); return Math.min(h, 3 * T) + Math.min(mi, 3 * T); };
+      const move = [[career, social], [social, career]].map(([A, B]) => { const h = cnt(A, 'harvard'), mi = A.length - h; if (Math.abs(h - mi) <= 1 || A.length + 1 < 4) return null; const need = h < mi ? 'harvard' : 'mit', x = B.find((m) => m.school === need && pref(m) === 'both' && !inEdge(m)); if (!x) return null; const rest = B.filter((m) => m !== x); return seatsOf(A.concat([x])) + seatsOf(rest) > seatsOf(A) + seatsOf(B) ? [A, B, x] : null; }).find(Boolean);
       if (!move) break;
       const [A, B, x] = move; B.splice(B.indexOf(x), 1); A.push(x); side[x.id] = A;
     }
@@ -2988,7 +3005,7 @@ function chairFits(m, t, e, dates, skip) {
   if (Object.keys(db.seats).some((eid) => eid !== e.id && ((db.seats[eid] || {})[m.id] || {}).status === 'held' && (db.events[eid] || {}).date === e.date)) return false;
   if (e.date === skip || eventTimes(e).start < Date.now() + 6 * HOUR || eventTimes(e).start > Date.now() + 8 * DAY) return false;
   const ids = seatedIds(t); if (ids.length >= tableCap(t) || t.ids.indexOf(m.id) >= 0) return false;
-  if (ids.some((id) => blockedEither(m.id, id))) return false;
+  if (ids.some((id) => apart(m.id, id))) return false;
   if (Object.values(db.tables).some((x) => x !== t && x.published && seatedIds(x).indexOf(m.id) >= 0 && (db.events[x.eventId] || {}).date === e.date)) return false;
   const same = ids.filter((id) => (db.members[id] || {}).school === m.school).length;
   return same + 1 <= Math.ceil((ids.length + 1) / 2);

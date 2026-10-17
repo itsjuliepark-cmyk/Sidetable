@@ -960,6 +960,18 @@ test('late on the day: a captain can still book until 2 PM, a booking that falls
   } finally { Date.now = real; back(); }
 });
 
+test('a report outlasts lifting the block: asking for another evening never seats you with someone you reported', () => {
+  const a = people(4, 'RepA'), b = people(4, 'RepB'), first = night(a, 'kindred', day(3)), second = night(b, 'kindred', day(4));
+  const A = a[0], B = b.find((m) => second.t.ids.indexOf(m.id) >= 0);
+  S.report(A, { id: B.id, reason: 'test' }); A.never = {};
+  S.cancelSeat(A, { event: first.e.id });
+  const others = Object.values(db().events).filter((e) => e !== second.e && e.date === second.e.date && e.status === 'published'); others.forEach((e) => { e.status = 'test-hold'; });
+  const r = S.reinvite(A, { table: first.t.id, dates: [second.e.date] });
+  others.forEach((e) => { e.status = 'published'; });
+  assert.ok(r.standby || r.table !== second.t.id, 'not the reported person’s table');
+  assert.ok(!(second.t.ids.indexOf(A.id) >= 0 && !(second.t.out || {})[A.id]), 'never at the table of someone they reported');
+});
+
 test('an unbooked table passes to another captain a day and a half out, and with no spot by 2 PM on the day it’s off', () => {
   Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = true; }); // only spots captains book
   const ms = people(5, 'Hand'); ms.forEach((m) => { m.captain = 'maybe'; });

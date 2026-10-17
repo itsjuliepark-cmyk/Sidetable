@@ -293,7 +293,8 @@ function matchWeek(b) {
     // school mix (never someone with a reunion that evening, and never leaving the other side unable to make a table)
     const inEdge = (m) => edges.some(([a, c]) => a === m.id || c === m.id), cnt = (L, sch) => L.filter((m) => m.school === sch).length;
     for (let guard = 0; guard < 24; guard++) {
-      const move = [[career, social], [social, career]].map(([A, B]) => { const h = cnt(A, 'harvard'), mi = A.length - h; if (Math.abs(h - mi) <= 1 || A.length + 1 < 4) return null; const need = h < mi ? 'harvard' : 'mit', x = B.find((m) => m.school === need && pref(m) === 'both' && !inEdge(m)); if (!x) return null; const rest = B.filter((m) => m !== x); return !mixOk(B) || mixOk(rest) ? [A, B, x] : null; }).find(Boolean);
+      const seatsOf = (L) => { const h = cnt(L, 'harvard'), mi = L.length - h, T = Math.floor(Math.min(h, mi) / 2); return Math.min(h, 3 * T) + Math.min(mi, 3 * T); };
+      const move = [[career, social], [social, career]].map(([A, B]) => { const h = cnt(A, 'harvard'), mi = A.length - h; if (Math.abs(h - mi) <= 1 || A.length + 1 < 4) return null; const need = h < mi ? 'harvard' : 'mit', x = B.find((m) => m.school === need && pref(m) === 'both' && !inEdge(m)); if (!x) return null; const rest = B.filter((m) => m !== x); return seatsOf(A.concat([x])) + seatsOf(rest) > seatsOf(A) + seatsOf(B) ? [A, B, x] : null; }).find(Boolean);
       if (!move) break;
       const [A, B, x] = move; B.splice(B.indexOf(x), 1); A.push(x); side[x.id] = A;
     }
@@ -454,7 +455,7 @@ function chairFits(m, t, e, dates, skip) {
   if (Object.keys(db.seats).some((eid) => eid !== e.id && ((db.seats[eid] || {})[m.id] || {}).status === 'held' && (db.events[eid] || {}).date === e.date)) return false;
   if (e.date === skip || eventTimes(e).start < Date.now() + 6 * HOUR || eventTimes(e).start > Date.now() + 8 * DAY) return false;
   const ids = seatedIds(t); if (ids.length >= tableCap(t) || t.ids.indexOf(m.id) >= 0) return false;
-  if (ids.some((id) => blockedEither(m.id, id))) return false;
+  if (ids.some((id) => apart(m.id, id))) return false;
   if (Object.values(db.tables).some((x) => x !== t && x.published && seatedIds(x).indexOf(m.id) >= 0 && (db.events[x.eventId] || {}).date === e.date)) return false;
   const same = ids.filter((id) => (db.members[id] || {}).school === m.school).length;
   return same + 1 <= Math.ceil((ids.length + 1) / 2);
