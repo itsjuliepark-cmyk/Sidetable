@@ -167,7 +167,6 @@
     t.captain = m.id; m.captainAt = new Date().toISOString(); if (t.cap) { t.cap.briefed = m.id; delete t.cap.booking; t.cap.spot = null; }
     if (t.venue && t.venue.pid) t.venue = null;
     S.save(true);
-    toast('Charlie', 'You’re captain now. Three missions: book the spot, rally the vote, settle up');
     refresh().then(function () { openTable(t.id); });
   };
   D.dropOuts = function () {

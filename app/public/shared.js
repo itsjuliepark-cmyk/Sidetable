@@ -484,7 +484,7 @@
       last];
     const sp = split && split.a && split.d ? `You split ${split.a}–${split.d} on “${split.t}”` : 'Pick the take you disagree on most';
     return [
-      ['Round 1', '10 min', 'Origins', 'What did you almost do instead of business school?', 'Go around once. Everyone answers, nobody follows up yet.'],
+      ['Round 1', '10 min', 'Origins', 'What did you almost study instead?', 'Go around once. Everyone answers, nobody follows up yet.'],
       big || ['Round 2', '20 min', 'The split', sp, 'Switch sides. Argue the position you disagree with, then vote again. Changing your mind counts as winning.'],
       ['Round 3', '25 min', 'Napkin startup', `Build one ${track(trackId).t} company together before dessert.`, 'Half the table: what it does and how it works. The other half: who pays and how much. Pitch it in one sentence when the check comes.'],
       last];

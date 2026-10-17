@@ -25,7 +25,7 @@ function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>>
 function prep(m) {
   const p = m.profile || {}, ax = SX.axes(p.answers);
   return {
-    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', tracks: (p.tracks || []).length ? p.tracks.slice(0, 3) : ['genai'], ints: new Set(p.interests || []), lens: p.lens || 'build',
+    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', tracks: (p.tracks || []).length ? p.tracks.slice(0, 3) : ['genai'], ints: new Set(p.interests || []), lens: p.lens || 'build', lensSet: !!p.lens,
     ax, code: SX.codeOf(ax), rhythm: p.rhythm || '', look: p.look || '', life: new Set(p.life || []), acts: new Set(p.acts || []), takes: p.takes || {}, next: new Set([].concat(p.next || [])),
     size: m.size || 'either', prio: m.prio || 0, at: m.at || ''
   };
@@ -116,9 +116,9 @@ function whyLines(ps, type, trackId, ctx) {
     out.push(!top || top[1] < 2 ? `${cap(NUMW[n] || String(n))} different angles on *${tr.t}*` : top[1] === n ? `All of you are into *${SX.INTNAME[top[0]]}*` : `${cap(NUMW[top[1]] || String(top[1]))} of you are hooked on *${SX.INTNAME[top[0]]}*`);
     const sp = splits(ps, trackId)[0];
     if (sp && sp.a && sp.d && sp.a + sp.d >= 3) out.push(`“${sp.t}”: *${sp.a} yes, ${sp.d} no*`);
-    const lc = {}; ps.forEach((p) => { lc[p.lens] = (lc[p.lens] || 0) + 1; });
+    const lc = {}; ps.filter((p) => p.lensSet).forEach((p) => { lc[p.lens] = (lc[p.lens] || 0) + 1; });
     const kinds = ['build', 'fund', 'run', 'study', 'pivot'].filter((k) => lc[k]).sort((x, y) => lc[y] - lc[x]);
-    if (kinds.length > 1) { const names = kinds.slice(0, 3).map((k) => ROLE[k][lc[k] > 1 ? 1 : 0]); out.push(`At the table: *${listOf(kinds.length > 3 ? names.concat('more') : names)}*`); }
+    if (kinds.length > 1) { const names = kinds.slice(0, 3).map((k) => ROLE[k][lc[k] > 1 ? 1 : 0]); out.push(`At the table: *${listOf(names)}*`); }
     else if (kinds.length) out.push(`All *${ROLE[kinds[0]][1]}*, so skip the basics`);
     if (next) out.push(next);
   }

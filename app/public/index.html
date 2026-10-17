@@ -33,7 +33,7 @@
         <i class="leak" id="filmLeak"></i>
         <div class="film-grain"></div>
       </div>
-      <p class="land-brand"><span class="pearl"></span>Hash Table</p>
+      <p class="land-brand"><svg class="hashmark" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 3.4 7.6 20.6M16.4 3.4l-2.2 17.2M4.2 8.7h16.2M3.4 15.3h16.2" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" fill="none"/></svg>Hash Table</p>
       <div class="land-say">
         <h1 class="land-line" id="landLine">Come for the tech talk, stay for the <span class="it">friends</span></h1>
       </div>
@@ -303,7 +303,7 @@
       </div>
       <div class="pd" id="pd" onclick="phonesDown(false)">
         <div class="candle"><div class="fl"></div><div class="wax"></div></div>
-        <h2>Phones down.</h2>
+        <h2>Phones down</h2>
         <p>Round one is ten minutes. Enjoy the table.</p>
         <small>Tap anywhere to come back</small>
       </div>
@@ -438,6 +438,8 @@ function back(fromPop) {
   if (p === 'table' && A.table) api('GET', '/api/table?id=' + encodeURIComponent(A.table.id)).then((t) => { A.table = t; if (cur === 'table') drawTable(); }).catch(() => {});
   if (p === 'pop' && A.pop) openPopRefresh();
 }
+// a screen knows when its page has scrolled, so its top bar can get a backing (see .scrolled in app.css)
+document.addEventListener('scroll', (e) => { const el = e.target; if (!el.classList || !el.classList.contains('scroll')) return; const s = el.closest('.scr'); if (s) s.classList.toggle('scrolled', el.scrollTop > 4); }, true);
 function tab(id) { hist.length = 0; go(id, { noHist: true }); }
 // social-only people skip the detailed tech steps, so their path is shorter
 const socialOnly = () => !!(A.P && A.P.mix === 'social');
@@ -573,7 +575,7 @@ function renderTables() {
   $('mixList').innerHTML = SX.MIX.map((o) => `<button class="opt ${A.P.mix === o.id ? 'sel' : ''}" onclick="pickMix('${o.id}')">${esc(o.t)}<small>${esc(o.s)}</small></button>`).join('');
   $('perWeekSeg').innerHTML = [1, 2, 3, 4, 5].map((n) => `<button class="${A.P.perWeek === n ? 'sel' : ''}" onclick="A.P.perWeek=${n};renderTables()">${n}</button>`).join('');
   const n = A.P.perWeek;
-  $('perWeekNote').textContent = n === 1 ? 'One a week. A gentle start.' : n === 2 ? 'Two a week is the sweet spot for most people.' : n === 3 ? 'Three a week. You’ll be a regular by November.' : 'That’s a lot of dinners, and I love it. You can skip any week.';
+  $('perWeekNote').textContent = n === 1 ? 'One a week. A gentle start.' : n === 2 ? 'Two a week is the sweet spot for most people.' : n === 3 ? 'Three a week. You’ll be a regular in no time.' : 'That’s a lot of dinners, and I love it. You can skip any week.';
   gate('tablesNext', A.P.mix ? null : ['mixList', 'Pick the kind of dinners']);
 }
 function pickMix(id) { const first = A.P.mix !== id; A.P.mix = id; renderTables(); if (first) note('mixNote', SX.MIX.find((x) => x.id === id).note); }
@@ -762,9 +764,9 @@ function myHangs() { return (A.view.pops || []).filter((u) => u.mine || u.joined
 const tableKind = (t) => (t.type === 'kindred' ? 'social' : 'career');
 const nw = (n) => NUMW[n] || String(n);
 function tableWho(t) {
-  if (t.round > 1) return `Your ${t.type === 'kindred' ? 'social' : 'tech'} table again, two weeks on${t.same ? ' and in the same spot' : ', at a new spot'}, ${nw(t.size)} of you this time.`;
-  if (t.type !== 'kindred') return `A tech table of ${nw(t.size)} who love ${t.trackName}.`;
-  return t.theme ? `A social table of ${nw(t.size)}. ${cap(nw(t.theme.n))} of you want to ${SX.ACTV[t.theme.act] || t.theme.act.toLowerCase()}.` : `A social table of ${nw(t.size)}, seated for how you click, not what you do.`;
+  if (t.round > 1) return `Your ${t.type === 'kindred' ? 'social' : 'tech'} table again, two weeks on${t.same ? ' and in the same spot' : ', at a new spot'}, ${nw(t.size)} of you this time`;
+  if (t.type !== 'kindred') return `A tech table of ${nw(t.size)} who love ${t.trackName}`;
+  return t.theme ? `A social table of ${nw(t.size)}, and ${nw(t.theme.n)} of you want to ${SX.ACTV[t.theme.act] || t.theme.act.toLowerCase()}` : `A social table of ${nw(t.size)}, seated for how you click, not what you do`;
 }
 function envHTML(t) {
   return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation"><i class="fold"></i><span class="seal">${tableKind(t) === 'social' ? 'S' : 'T'}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social table' : 'Tech table'}, ${esc(t.day)} evening</small></span></button>`;
@@ -785,7 +787,7 @@ const KICON = {
   social: SV('<circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="3.8" r="1.6"/><circle cx="12" cy="20.2" r="1.6"/><circle cx="4.9" cy="7.9" r="1.6"/><circle cx="19.1" cy="7.9" r="1.6"/><circle cx="4.9" cy="16.1" r="1.6"/><circle cx="19.1" cy="16.1" r="1.6"/>', 13)
 };
 function invMiniHTML(t) {
-  const k = tableKind(t), tech = k !== 'social', badge = t.unread ? `<span class="nbadge">${t.unread}</span>` : '';
+  const k = tableKind(t), tech = k !== 'social', badge = t.unread ? `<span class="nbadge">${t.unread} new</span>` : '';
   const pill = `<span class="ikind">${KICON[k]}${tech ? 'Tech table' : 'Social table'}${t.round > 1 ? `, round ${nw(t.round)}` : ''}</span>`, kn = knownHTML(t, 'iw known');
   if (tech) return `<button class="invm career" onclick="openInvite('${t.id}')"><span class="invart" aria-hidden="true"></span><span class="invtrack" aria-hidden="true">${trackIcon(t.track)}</span>${pill}<h4>${esc(t.trackName || 'Tech')}</h4>
     <div class="iw"><b>${esc(t.label)}</b> at ${esc(t.time)}</div><div class="iw">${esc(t.area)}, ${nw(t.size)} of you</div>${kn}${badge}</button>`;
@@ -803,12 +805,12 @@ function firstTableHTML() {
   const a = A.view.avail || {}, p = A.view.me.profile || {}, social = p.mix === 'social', picked = a.count > 0;
   const kind = social ? 'social table' : 'tech table', tr = (p.tracks || [])[0];
   const steps = [['Pick your evenings', picked ? `${cap(nw(a.count))} ${a.count > 1 ? 'evenings' : 'evening'} picked. Nice.` : 'Right below. Takes ten seconds.'],
-    ['Charlie sets the tables', `Sunday night, after picks close ${a.closes ? a.closes.replace(/^Sunday /, 'Sunday ') : 'Sunday at 6 PM'}`],
+    ['Charlie sets the tables', `Sunday night, after picks close ${a.closes || 'Sunday at 6 PM'}`],
     ['Your invitation arrives', 'Sealed, with who’s coming and the question your table will argue about']];
   return `<div class="cardg firsttable"><div class="ctitle">${GICON.spark} Your first ${kind}</div>
     <h3>${social ? 'Dinner with four or five people you’d click with' : `Dinner with four or five people who love ${esc(tr ? SX.track(tr).t : 'tech')}`}</h3>
     <ol class="fsteps">${steps.map(([t, s], i) => `<li class="${i === 0 ? (picked ? 'done' : 'now') : i === 1 && picked ? 'now' : ''}"><i>${i === 0 && picked ? ICON.check : i + 1}</i><div><b>${t}</b><span>${esc(s)}</span></div></li>`).join('')}</ol>
-    ${a.count >= (a.max || 1) ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal">${social ? 'S' : 'T'}</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
+    ${a.count >= (a.max || 1) && !A.view.me.paused && !A.view.me.cool ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal">${social ? 'S' : 'T'}</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
     ${picked ? '' : `<button class="btn sm" onclick="$('availCard').scrollIntoView({behavior:'smooth',block:'center'})">Pick my evenings</button>`}</div>`;
 }
 function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
@@ -826,7 +828,7 @@ function renderHome() {
   // tables first: your invitations, or how your first one happens; then next week's plan; then hangs
   out.push(`<div class="sechead"><h3>Your tables</h3></div>`);
   out.push(I.length ? I.map((t) => (t.opened ? invMiniHTML(t) + gameNudgeHTML(t) : envHTML(t))).join('<div class="sp"></div>') : v.standby ? '' : firstTableHTML());
-  v.tables.filter((t) => t.capDone != null && (t.phase === 'set' || t.phase === 'tonight') && !t.left).forEach((t) => out.push(`<div class="sp"></div><button class="cardg capmini" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>Captain on ${esc(t.day)}</b><small>${t.capDone === 3 ? 'All three missions done' : t.capDone ? `${cap(nw(t.capDone))} of three missions done` : 'Three missions, one stripe'}</small></div>${capBar(t.capDone, true)}</button>`));
+  v.tables.filter((t) => t.capDone != null && (t.phase === 'set' || t.phase === 'tonight') && !t.left).forEach((t) => out.push(`<div class="sp"></div><button class="cardg capmini" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>Captain on ${esc(t.day)}</b><small>${t.capDone === 3 ? 'All three missions done' : t.capDone ? `${cap(nw(t.capDone))} of three missions done` : 'Three missions, one stripe'}</small></div>${t.capDone ? capBar(t.capDone, true) : ''}</button>`));
   if (v.standby) out.push(`<div class="sp"></div>${standbyHTML(v.standby)}`);
   if (v.month) out.push(`<div class="sp"></div>${monthHTML()}`);
   out.push(`<div class="sp"></div><div class="cardg plan-card" id="availCard">${availHTML()}</div>`);
@@ -837,7 +839,7 @@ function renderHome() {
   out.push(`<button class="btn ghost" style="margin-top:4px" onclick="openHost()">${ICON.bolt} Start a hang</button>`);
   const evs = v.events.filter((e) => e.bookable || e.seat || e.table || e.waitlisted);
   if (evs.length) {
-    out.push(`<div class="label" style="margin-top:26px">Special nights</div>`);
+    out.push(`<div class="sechead"><h3>Special nights</h3></div>`);
     evs.forEach((e) => {
       let st;
       if (e.table) st = `<div class="status">You’re seated. <button class="link" style="display:inline;margin:0" onclick="openTable('${e.table}')">See your table</button></div>`;
@@ -846,7 +848,7 @@ function renderHome() {
       else st = `<div class="status soft">Seats close ${esc(e.closes)}</div><div class="evrow"><button class="btn sm" onclick="openSeat('${e.id}')">Save me a seat</button></div>`;
       const I = e.industry;
       if (I && !e.table && !e.waitlisted && !e.seat && e.bookable && I.early && !I.you) st = `<div class="status soft">Captains with a stripe get the first 48 hours. Open to everyone ${esc(I.opens)}</div>`;
-      if (I) out.push(`<div class="cardg industry"><div class="indhead"><span class="ti">${trackIcon((me.profile.tracks || [])[0])}</span><div class="grow"><b>Industry table</b><small>${esc(e.label)} at ${esc(e.time)}, ${esc(e.area)}</small></div>${I.early ? `<span class="pill gold">${FLAG}Captains first</span>` : ''}</div><div class="guest"><b>${esc(I.guest)}</b>${I.role ? `<small>${esc(I.role)}</small>` : ''}${I.about ? `<p>${esc(I.about)}</p>` : ''}</div>${I.early && I.you && e.bookable && !e.seat && !e.table ? '<div class="status">You’re a captain, so you’re in the first 48 hours</div>' : ''}${st}</div><div class="sp"></div>`);
+      if (I) out.push(`<div class="cardg industry"><div class="indhead"><span class="ti">${trackIcon((me.profile.tracks || [])[0])}</span><div class="grow"><b>Industry table</b><small>${esc(e.label)} at ${esc(e.time)}, ${esc(e.area)}</small>${I.early ? `<span class="pill gold">${FLAG}Captains first</span>` : ''}</div></div><div class="guest"><b>${esc(I.guest)}</b>${I.role ? `<small>${esc(I.role)}</small>` : ''}${I.about ? `<p>${esc(I.about)}</p>` : ''}</div>${I.early && I.you && e.bookable && !e.seat && !e.table ? '<div class="status">You’re a captain, so you’re in the first 48 hours</div>' : ''}${st}</div><div class="sp"></div>`);
       else out.push(`<div class="cardg"><div class="evhead"><span class="ti">${trackIcon((me.profile.tracks || [])[0])}</span><div><b>${esc(e.type === 'kindred' ? 'Social table' : 'Tech tables')}</b><small>${esc(e.label)} at ${esc(e.time)}, ${esc(e.area)}</small></div></div>${st}</div><div class="sp"></div>`);
     });
   }
@@ -892,15 +894,15 @@ function availHTML() {
   const cool = (A.view.me || {}).cool, locked = !a.open || !!cool, n = a.max, short = a.count && a.count < n, mix = (A.view.me.profile || {}).mix || 'both';
   const career = Math.ceil(n / 2), social = n - career, pals = [], has = a.days.filter((d) => d.has);
   a.days.forEach((d) => (d.pals || []).forEach((p) => { if (pals.indexOf(p.first) < 0) pals.push(p.first); }));
-  const status = A.view.me.paused ? 'You’re taking a break, so no invitations for now. Turn it off in Me when you’re back.' : cool ? `Your invitations are paused until ${cool}, after a few late changes. Hangs are open as always.` : a.set ? 'Your invitations for that week are out. They’re above, under Your tables.' : !a.open ? 'Charlie is writing that week’s invitations now.'
+  const status = A.view.me.paused ? 'You’re taking a break, so no invitations for now. Turn it off in Me when you’re back.' : cool ? `Your invitations are paused until ${cool}, after a few late changes. Hangs are open as always.` : a.set ? (a.days.some((d) => d.has) ? 'Your invitations for that week are out. They’re above, under Your tables.' : 'Nobody else picked your evenings this time, so there’s no table yet. If a chair opens on one of them it’s yours, and you’re first in line next week.') : !a.open ? 'Charlie is writing that week’s invitations now.'
     : !a.count ? 'Tap the evenings that work. Charlie sends invitations Sunday night.'
-    : short ? `Mark at least ${nw(n)} evenings so Charlie can fit ${nw(n)} dinners.` : `Saved. Charlie sends your invitations Sunday night.`;
+    : short ? `Mark at least ${nw(n)} evenings so Charlie can fit ${nw(n)} dinners.` : `Saved. Invitations go out Sunday night.`;
   return `<div class="row" style="align-items:flex-start"><div class="grow"><div class="ctitle" style="margin-bottom:6px">Next week, ${esc(a.label)}</div><h3 class="plh">How many dinners with <span class="it">Charlie</span>?</h3></div><span class="saved" id="availSaved">Saved</span></div>
     <div class="seg five">${[1, 2, 3, 4, 5].map((k) => `<button class="${n === k ? 'sel' : ''}" ${locked ? 'disabled' : ''} onclick="setMax(${k})">${k}</button>`).join('')}</div>
     <div class="mixline">${mix === 'topic' ? 'All <b>tech</b> tables, around your corner of tech, since that’s what you asked for.' : mix === 'social' ? 'All <b>social</b> tables, seated for how you click, since that’s what you asked for.' : n === 1 ? 'One dinner. Charlie picks tech or social, whichever you’ve had less of lately.' : `About <b>${nw(career)} tech</b> (your corner of tech) and <b>${nw(social)} social</b> (people you’d click with).`}</div>
     <div class="label" style="margin:16px 0 8px">Which evenings work?</div>
     <div class="days ${pals.length ? 'haspals' : ''}">${a.days.map((d) => { const s = d.slots[0], P = d.pals || [], H = d.has; if (H) return `<button class="dayp has ${H.kind}" disabled aria-label="${esc(d.dow)} ${d.day}, you already have a table"><span class="dhas">${H.kind === 'social' ? 'S' : 'T'}${H.round > 1 ? `<sup>${H.round}</sup>` : ''}</span>${esc(d.dow)}<b>${d.day}</b></button>`; return `<button class="dayp ${s.on ? 'on' : ''}" ${locked ? 'disabled' : ''} aria-pressed="${s.on}" onclick="toggleSlot('${s.id}')">${P.length ? `<span class="dpals" aria-label="${esc(andList(P.map((p) => p.first)))} marked it too">${P.slice(0, 2).map((p) => av(p, 'xs')).join('')}</span>` : ''}${esc(d.dow)}<b>${d.day}</b></button>`; }).join('')}</div>
-    ${has.length ? `<div class="palhint">Already set: ${esc(andList(has.map((d) => `${DAYN[d.dow] || d.dow} (${d.has.round > 1 ? 'round ' + nw(d.has.round) : d.has.kind + ' table'})`)))}.</div>` : ''}
+    
     ${pals.length && !a.set ? `<div class="palhint">${esc(andList(pals.slice(0, 3)))} ${pals.length > 1 ? 'marked evenings too' : 'marked an evening too'}. Pick the same one and I’ll seat you together.</div>` : ''}
     <div class="sub2" style="margin-top:12px;line-height:1.5${short ? ';color:#8E5A2B' : ''}">${esc(status)}${a.free > 1 && !a.set ? ` ${a.free} people have planned their week so far.` : ''}</div>`;
 }
@@ -927,8 +929,8 @@ function openInvite(id) {
   if (!t.opened) { t.opened = true; api('POST', '/api/invite-open', { table: id }).catch(() => {}); }
 }
 function drawInvite(already) {
-  const t = A.inv, k = tableKind(t), me = A.view.me;
-  const lines = (t.why || []).slice(0, 2);
+  const t = A.inv, k = tableKind(t), me = A.view.me, who = tableWho(t).toLowerCase();
+  const lines = (t.why || []).filter((l) => who.indexOf(l.replace(/\*/g, '').toLowerCase()) < 0 && l.replace(/\*/g, '').toLowerCase().indexOf(who.split(', and ').pop()) < 0).slice(0, 2);
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
       <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${k === 'social' ? 'S' : 'T'}</span></div>
       <article class="invite ${k}">
@@ -938,7 +940,7 @@ function drawInvite(already) {
         <div class="rule"></div>
         <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? (t.spotIn ? 'Tonight. The spot is on your table.' : 'Tonight. The exact spot arrives at noon.') : 'The exact spot arrives on the day, at noon.'}</small></div>
         <div class="rule"></div>
-        <p class="who">${esc(tableWho(t))}</p>
+        <p class="who">${esc(tableWho(t))}</p>${t.cross ? `<p class="crossnote">Your ${k === 'social' ? 'tech' : 'social'} evenings were quiet this week, so this one’s a ${k === 'social' ? 'social' : 'tech'} table. Stepping out is free</p>` : ''}
         ${knownHTML(t, 'known')}
         <p class="why">${lines.map(hl).join('<br>')}</p>
         <div class="sign">Charlie</div>
@@ -1000,7 +1002,7 @@ function openDecline(id, mode) {
   const t = A.view.tables.find((x) => x.id === id) || (A.table && A.table.id === id ? A.table : null); if (!t) return;
   const skip = t.date || ymdLocal(new Date(t.start)), taken = A.view.tables.filter((x) => !x.left && x.phase !== 'past').map((x) => x.date || ymdLocal(new Date(x.start)));
   const days = (A.view.days || []).filter((d) => d.date !== skip && taken.indexOf(d.date) < 0).map((d) => ({ ymd: d.date, dow: d.dow, day: d.day }));
-  A.dec = { id, eventId: t.eventId, days, on: [], late: mode !== 'off' && (t.freeUntil ? Date.now() > Date.parse(t.freeUntil) : new Date(t.start) - Date.now() < 864e5), freeLabel: t.freeLabel || '', kind: t.type === 'kindred' ? 'social' : 'tech', mode: mode || '' };
+  A.dec = { id, eventId: t.eventId, days, on: [], late: mode !== 'off' && !t.freeOut && (t.freeUntil ? Date.now() > Date.parse(t.freeUntil) : new Date(t.start) - Date.now() < 864e5), freeLabel: t.freeLabel || '', kind: t.type === 'kindred' ? 'social' : 'tech', mode: mode || '' };
   openSheet('<div id="decSheet"></div>'); drawDecline(t);
 }
 function drawDecline(t) {
@@ -1045,7 +1047,7 @@ function openTable(id) {
 }
 function seatsOf(people) {
   const top = people.filter((p) => p.school === 'mit'), bottom = people.filter((p) => p.school !== 'mit');
-  const xs = (n) => (n === 1 ? [50] : n === 2 ? [30, 70] : n === 3 ? [19, 50, 81] : [12, 37, 63, 88]);
+  const xs = (n) => (n === 1 ? [50] : n === 2 ? [30, 70] : n === 3 ? [19, 50, 81] : n === 4 ? [12, 37, 63, 88] : n === 5 ? [10, 30, 50, 70, 90] : [8, 25, 42, 58, 75, 92]);
   return top.map((p, i) => ({ p, x: xs(top.length)[i], y: 21.4, up: true })).concat(bottom.map((p, i) => ({ p, x: xs(bottom.length)[i], y: 78.6 })));
 }
 const tagsOf = (p) => (A.table.type === 'kindred' ? p.acts : p.ints);
@@ -1059,10 +1061,10 @@ function drawTable() {
   const chips = Object.keys(counts).filter((k) => counts[k] >= 2).sort((a, b) => (own(b) - own(a)) || (counts[b] - counts[a]));
   const before = t.phase === 'set' || t.phase === 'tonight';
   const venue = t.venue ? `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.venue.name)}</b><br><span class="sub2">${esc(t.venue.address)}</span>${t.venue.note ? `<br><span class="sub2">${esc(t.venue.note)}</span>` : ''}${t.venue.address ? `<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.venue.name + ' ' + t.venue.address)}" target="_blank" rel="noopener">Open in Maps</a>` : ''}</div></div>`
-    : `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.area)}</b><br><span class="sub2">${t.spotPending ? 'I’m confirming the spot with the restaurant. It shows up here, with a notification, the moment it’s set.' : `The exact spot is revealed ${esc(t.revealLabel)}.`}</span></div></div>`;
+    : `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.area)}</b><br><span class="sub2">${t.spotPending ? (t.spotByCaptain ? 'Your captain is still booking tonight’s spot. It shows up here, with a notification, the moment it’s set' : 'I’m confirming the spot with the restaurant. It shows up here, with a notification, the moment it’s set') : `The exact spot is revealed ${esc(t.revealLabel)}.`}</span></div></div>`;
   $('tableBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
     <div class="kick">${t.type === 'kindred' ? 'Social dinner' : 'Tech dinner'} on ${esc(t.short)} at ${esc(t.time)}</div>
-    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>.' : t.round > 1 ? `Round ${nw(t.round)}, <span class="it">set</span>.` : `${esc(t.type === 'kindred' ? 'A social table' : t.trackName)}, <span class="it">set</span>.`}</h2>
+    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>' : t.round > 1 ? `Round ${nw(t.round)}, <span class="it">set</span>.` : `${esc(t.type === 'kindred' ? 'A social table' : t.trackName)}, <span class="it">set</span>.`}</h2>
     ${before ? venue : ''}
     ${before && !t.left ? captainHTML(t) : ''}
     ${gameSumHTML(t)}
@@ -1098,18 +1100,18 @@ const VIA = { opentable: 'Book on OpenTable', resy: 'Book on Resy', tock: 'Book 
 const VIATAG = { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock', web: 'Their site', phone: 'Call' };
 function missionSpot(S) {
   const cur = (S.options || []).find((o) => o.mine), B = S.booking;
-  if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. The Hash Table team knows');
+  if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. Charlie’s team is on it');
   if (S.state === 'open') return missionRow(1, false, 'Book the spot', `Pick a place for ${nw(S.size)} and book it under your name. Book by ${esc(S.by)}`, `<button class="btn sm" onclick="openSpot()">Choose</button>`);
   if (S.state === 'late') return missionRow(1, false, 'Book the spot', `Still no spot. Book one now: with nothing by ${esc(S.by)}, the table is off`, S.options.length ? `<button class="btn sm" onclick="openSpot()">Choose</button>` : '');
-  if (S.state === 'held') return missionRow(1, false, 'Book the spot', `${esc(S.at)} is holding a table for Hash Table, so there’s nothing to book. Keep it, or pick another`, `<span class="mbtns">${cur ? `<button class="btn sm" onclick="pickSpot('${cur.id}', this)">Keep</button>` : ''}<button class="link" style="margin:0" onclick="openSpot()">Change</button></span>`);
-  if (S.state === 'picked') return missionRow(1, true, 'Book the spot', `${esc(S.at)}, held for Hash Table. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
+  if (S.state === 'held') return missionRow(1, false, 'Book the spot', `${esc(S.at)} is holding a table for you, so there’s nothing to book. Keep it, or pick another`, `<span class="mbtns">${cur ? `<button class="btn sm" onclick="pickSpot('${cur.id}', this)">Keep</button>` : ''}<button class="link" style="margin:0" onclick="openSpot()">Change</button></span>`);
+  if (S.state === 'picked') return missionRow(1, true, 'Book the spot', `${esc(S.at)}, held for your table. A secret until noon on the day`, S.options.length > 1 ? `<button class="link" style="margin:0;flex:none" onclick="openSpot()">Change</button>` : '');
   if (S.state === 'booked') {
     const off = B.now !== B.size;
     if (!B.mine) return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, booked by ${esc(B.byFirst || 'someone at your table')} under ${esc(B.name)}. They hold the reservation, so changes go through them`);
     return missionRow(1, true, 'Book the spot', `${esc(S.at)} at ${esc(B.time)}, under ${esc(B.name)}${B.code ? ', confirmation ' + esc(B.code) : ''}. A secret until noon on the day`
       + (off ? `<span class="bookwarn">Booked for ${nw(B.size)}, and you’re ${nw(B.now)} now. Update the booking so they hold the right table</span><span class="mbtns" style="margin-top:6px">${B.link ? `<a class="btn sm" href="${esc(B.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">Update it</a>` : ''}<button class="btn sm ghost" onclick="bookResize(this)">Done</button></span>` : `<button class="link" style="margin:4px 0 0;text-align:left;font-size:12.5px" onclick="unbook(this)">It fell through</button>`));
   }
-  if (S.state === 'set') return missionRow(1, true, 'Book the spot', 'Set for you by the Hash Table team');
+  if (S.state === 'set') return missionRow(1, true, 'Book the spot', 'Set for you by Charlie’s team');
   return missionRow(1, false, 'Book the spot', 'Charlie’s pick stands this time');
 }
 function missionVote(V) {
@@ -1124,9 +1126,10 @@ function missionChecks(C) {
   return missionRow(3, false, 'Settle up', C.later ? 'On the night: ask for separate checks when you sit down' : 'This one slipped by');
 }
 function captainHTML(t) {
-  const c = t.captain, K = t.cap; if (!c) return '';
+  const c = t.captain, K = t.cap;
+  if (!c) return t.left || ['set', 'tonight'].indexOf(t.phase) < 0 ? '' : `<div class="sp"></div><div class="cardg capcard"><div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>This table needs a captain</b><small>Book the spot, rally the vote, settle up. Three missions, one stripe</small></div></div><button class="btn sm" style="margin-top:12px" onclick="captainTake('${t.id}', this)">I’ll be captain</button></div>`;
   if (c.me && K && K.spot) return `<div class="sp"></div><div class="cardg capbrief ${K.done === 3 ? 'won' : ''}" id="capBrief">
-    <div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div>${stripesHTML(K.stripes)}</div>
+    <div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div></div>
     ${capBar(K.done)}
     ${missionSpot(K.spot)}${missionVote(K.vote)}${missionChecks(K.checks)}
     <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
@@ -1145,7 +1148,7 @@ function capAfter(r, msg) {
 function openSpot() {
   const t = A.table, S = t.cap.spot;
   openSheet(`<h3>Book the spot</h3><div class="sub2">For ${nw(S.size)} on ${esc(S.when)}. Your table finds out at noon on the day, so it’s your secret till then</div>
-    <div class="spots">${S.options.map((o) => `<button class="spot ${o.mine ? 'sel' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(o.area)}${o.note ? ', ' + esc(o.note) : ''}</small>
+    <div class="spots">${S.options.map((o) => `<button class="spot ${o.mine ? 'sel' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(o.area)}</small>${o.note ? `<small class="spotnote">${esc(o.note)}</small>` : ''}
       <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`).join('')}</div>
     <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>`);
 }
@@ -1155,11 +1158,11 @@ function openBook(id) {
   const [h, m] = (S.time || '19:00').split(':').map(Number), base = h * 60 + m, hm = (x) => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'), lab = (x) => { const hh = Math.floor(x / 60), mm = x % 60; return ((hh + 11) % 12 + 1) + ':' + String(mm).padStart(2, '0') + (hh >= 12 ? ' PM' : ' AM'); };
   const tel = (o.link || '').indexOf('tel:') === 0, via = tel ? 'phone' : o.via;
   A.book = { id, time: S.time || '19:00', opened: false };
-  openSheet(`<h3>${esc(o.name)}</h3><div class="sub2">${esc(o.area)}${o.note ? ', ' + esc(o.note) : ''}</div>
+  openSheet(`<h3>${esc(o.name)}</h3><div class="sub2">${esc(o.area)}</div>${o.note ? `<div class="sub2 spotnote">${esc(o.note)}</div>` : ''}
     <div class="bookstep"><span class="mnum">1</span><div class="grow"><b>Book a table for ${nw(S.size)}</b><small>${esc(S.when)}, under your name. If ${lab(base)} is gone, anything from ${lab(base - 60)} to ${lab(base + 60)} works</small></div></div>
     ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
     ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
-    <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation policy before you confirm (for six it’s often a fee per person inside 24 to 48 hours), and book just this one spot</p>
+    <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation fee before you confirm (for six it’s often charged per person inside 24 to 48 hours), and book only this one place</p>
     <div class="bookstep"><span class="mnum">2</span><div class="grow"><b>Tell Charlie it’s booked</b><small>The time you got, and the name it’s under</small></div></div>
     <div class="chips" id="bookTimes">${[-60, -30, 0, 30, 60].map((d) => `<button class="chip ${hm(base + d) === A.book.time ? 'sel' : ''}" onclick="A.book.time='${hm(base + d)}';document.querySelectorAll('#bookTimes .chip').forEach((c) => c.classList.toggle('sel', c === this))">${lab(base + d)}</button>`).join('')}</div>
     <input class="field" id="bookName" maxlength="60" placeholder="Name on the booking" value="${esc(A.view.me.name)}" style="margin-top:10px" />
@@ -1203,6 +1206,7 @@ function capLogHTML(L) {
     <div class="capstats"><div><b>${L.tables}</b><small>tables captained</small></div><div><b>${L.missions}</b><small>missions done</small></div><div><b>${L.salutes}</b><small>thank-yous</small></div></div>
     <p class="hint" style="margin-top:12px">${perk}${L.next ? `. ${cap(nw(L.next - L.stripes))} more ${L.next - L.stripes === 1 ? 'stripe' : 'stripes'} to ${esc(RANK[L.next] || 'the next rank')}` : ''}</p></div><div class="sp"></div>`;
 }
+function captainTake(id, b) { b.disabled = true; api('POST', '/api/captain', { table: id, act: 'take' }).then(() => { toast('Charlie', 'You’re captain. First mission: book the spot'); return refresh(); }).then(() => openTable(id)).catch((e) => { b.disabled = false; oops(e); }); }
 function captainPass(id, b) {
   if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again to hand it to someone else'; return; }
   api('POST', '/api/captain', { table: id, act: 'pass' }).then(() => { toast('Charlie', 'Done. Someone else has it this time.'); openTable(id); }).catch(oops);
@@ -1269,7 +1273,7 @@ function renderPopups() {
   const end = new Date(); end.setHours(0, 0, 0, 0); end.setDate(end.getDate() + 2);
   const soon = L.filter((u) => new Date(u.start) < end), later = L.filter((u) => soon.indexOf(u) < 0);
   $('popBody').innerHTML = `<div class="flash"><div class="kick"><span class="boltb">${ICON.bolt}</span>Hangs</div>
-      <h2 class="q">Spur of the <span class="it">moment</span>.</h2>
+      <h2 class="q tabh">Spur of the <span class="it">moment</span></h2>
       <p class="sub">Coffee in an hour, a walk tonight, evals over dumplings. Anyone can start one. Say where, and see who’s in.</p>
       <button class="btn" onclick="openHost()">${ICON.bolt} Start a hang</button></div>
     <div class="seg four" style="margin:4px 0 6px">${[['all', 'All'], ['social', 'Social'], ['topic', 'Tech'], ['mine', 'Mine']].map(([k, l]) => `<button class="${f === k ? 'sel' : ''}" onclick="A.popSeg='${k}';renderPopups()">${l}</button>`).join('')}</div>
@@ -1293,7 +1297,7 @@ function drawPop() {
     <h2 class="q" style="margin-top:12px;font-size:30px">${esc(u.title)}</h2>
     <div class="sub2" style="margin-top:-2px">${esc(u.label)} at ${esc(u.timeLabel)}</div>
     <div class="cardg venuebox" style="margin-top:16px"><span style="flex:none">${ICON.pin}</span><div><b>${esc(u.place)}</b><br><span class="sub2">Meet somewhere public. Plans change? Say so in the chat.</span></div></div>
-    ${u.note ? `<div class="cnote"><span class="orb"></span><p><b>From ${u.mine ? 'you' : esc(u.host.first)}</b>${esc(u.note)}</p></div>` : ''}
+    ${u.note ? `<div class="cnote">${av(u.mine ? A.view.me : u.host, 's')}<p><b>From ${u.mine ? 'you' : esc(u.host.first)}</b>${esc(u.note)}</p></div>` : ''}
     ${popGameHTML(u)}
     <div class="seatsbar vb-${k}" style="margin-top:18px">${dots}</div><div class="seatsline"><span>${u.count} of ${u.size} in</span><span>${u.left ? `${u.left} ${u.left === 1 ? 'spot' : 'spots'} left` : 'Full'}</span></div>
     <div style="height:16px"></div>${cta}
@@ -1353,7 +1357,7 @@ function hostPreview() {
 }
 function drawHost() {
   const H = A.host, k = H.kind === 'topic' ? H.track : H.vibe, start = new Date(H.date + 'T' + H.time);
-  $('hostBody').innerHTML = `<div class="flash small"><div class="kick"><span class="boltb">${ICON.bolt}</span>New hang</div><h2 class="q">Let’s <span class="it">go</span>.</h2><p class="sub">Say what, when and where. People tap I’m in, and their cards show up.</p></div>
+  $('hostBody').innerHTML = `<div class="flash small"><div class="kick"><span class="boltb">${ICON.bolt}</span>New hang</div><h2 class="q">Let’s <span class="it">go</span></h2><p class="sub">Say what, when and where. People tap I’m in, and their cards show up.</p></div>
     <div class="label" style="margin-top:6px">What’s the plan?</div><input class="field" maxlength="70" placeholder="${esc(hintFor(H))}" value="${esc(H.title)}" oninput="A.host.title=this.value;drawHostPreview()" />
     <div class="label">Social or tech?</div>
     <div class="seg two">${[['social', 'Social'], ['topic', 'Tech']].map(([v, l]) => `<button class="${H.kind === v ? 'sel' : ''}" onclick="A.host.kind='${v}';drawHost()">${l}</button>`).join('')}</div>
@@ -1440,7 +1444,7 @@ function openChat(kind, id, withGame) {
   api('GET', (kind === 'pop' ? '/api/pop?id=' : '/api/table?id=') + encodeURIComponent(id)).then((x) => {
     const people = kind === 'pop' ? [x.host].concat(x.people) : x.people;
     A.chat.list = x.chat || []; A.chat.last = A.chat.list.length ? A.chat.list[A.chat.list.length - 1].at : ''; A.chat.people = people;
-    $('chatTitle').textContent = kind === 'pop' ? x.title : `Table ${x.no}`;
+    $('chatTitle').textContent = kind === 'pop' ? x.title : x.round > 1 ? `Round ${nw(x.round)}` : x.type === 'kindred' ? 'Social table' : (x.trackName || `Table ${x.no}`);
     $('chatSub').textContent = kind === 'pop' ? `${x.short} at ${x.timeLabel}, ${x.place}` : `${x.mealName || 'Dinner'} on ${x.short} at ${x.time}`;
     $('chatStack').innerHTML = people.slice(0, 6).map((p) => av(p, 's')).join('');
     A.chat.game = x.game && !x.peek ? x.game : null; drawGame(); if (kind === 'table') techRoom(x.type !== 'kindred');
@@ -1627,15 +1631,14 @@ function drawAfter() {
       : `<div class="cnote mutual"><span class="orb"></span><p><b>Charlie</b>${F.picks.size ? 'Nothing mutual yet. Your picks stay private, and if someone picks you later, I’ll tell you both.' : 'Thanks. I’m learning what makes a table work for you.'}</p></div>`;
   }
   $('afterBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
-    ${t.cap && t.cap.me && t.cap.spot && F.attended ? capReportHTML(t) : ''}
     <h2 class="q" style="font-size:30px">${F.done ? 'Your <span class="it">picks</span>' : 'How was the <span class="it">table</span>?'}</h2>
     <div class="seg two" style="margin-bottom:14px">${[[true, 'I made it'], [false, 'I couldn’t go']].map(([v, l]) => `<button class="${F.attended === v ? 'sel' : ''}" onclick="A.fb.attended=${v};drawAfter()">${l}</button>`).join('')}</div>
-    ${F.attended ? `<div class="rate">${labels.map((l, i) => `<button class="${F.rating === i + 1 ? 'sel' : ''}" onclick="A.fb.rating=${i + 1};drawAfter()"><i></i>${l}</button>`).join('')}</div>
+    ${F.attended ? `<div class="rate">${labels.map((l, i) => `<button class="${F.rating === i + 1 ? 'sel' : ''}" onclick="A.fb.rating=${i + 1};drawAfter()"><i style="--w:${(i + 1) * 18}%"></i>${l}</button>`).join('')}</div>
     <h2 class="q sm">Who would you like to see again?</h2>
     <p class="sub" style="font-size:14px">Only mutual picks are shared. Nobody learns who didn’t pick them.</p>
     ${others.map((p) => `<button class="pick ${F.picks.has(p.id) ? 'sel' : ''}" onclick="togglePick('${p.id}')">${av(p)}<div class="grow"><b>${esc(p.first)} ${esc(p.last)}</b><small>${SCH(p.school)}, ${esc(SX.persona(p.code).name)}</small></div><span class="box">${ICON.check}</span></button>`).join('')}
     ${t.cap && !t.cap.me && t.captain ? `<button class="pick salute ${F.salute ? 'sel' : ''}" onclick="A.fb.salute=!A.fb.salute;drawAfter()"><span class="capflag">${FLAG}</span><div class="grow"><b>Thank ${esc(t.captain.first)} for captaining</b><small>${t.cap.salutes ? `${cap(nw(t.cap.salutes))} ${t.cap.salutes === 1 ? 'thank-you' : 'thank-yous'} so far` : 'Got there first and kept the table on track'}</small></div><span class="box">${ICON.check}</span></button>` : ''}
-    <div class="sp"></div>${againHTML(t, F)}<div class="sp"></div>${looseHTML(t, F)}` : `<div class="cardg empty">No worries. Thanks for telling me.</div>`}
+    <div class="sp"></div>${t.cap && t.cap.me && t.cap.spot ? capReportHTML(t) : ''}${againHTML(t, F)}<div class="sp"></div>${looseHTML(t, F)}` : `<div class="cardg empty">No worries. Thanks for telling me.</div>`}
     <div style="height:18px"></div>
     <button class="btn" onclick="sendAfter(this)">${F.done ? 'Update my picks' : 'Send to Charlie'}</button>
     ${res}
@@ -1687,7 +1690,7 @@ function renderBoard() {
   const segs = [['all', 'All'], ['read', 'Reading'], ['ask', 'Asks'], ['take', 'Takes'], ['ship', 'Shipped'], ['event', 'Events'], ['roles', 'Roles']];
   const c = A.view.counts || {};
   $('boardBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
-    <h2 class="q" style="margin-top:4px;font-size:32px">Board</h2>
+    <h2 class="q tabh">What’s <span class="it">going around</span></h2>
     <button class="bcompose" onclick="openCompose()">${av(A.view.me, 's')}<span>Share something</span><i>${SV('<path d="M12 5v14M5 12h14"/>', 16)}</i></button>
     <div class="bsegs scrollx">${segs.map(([k, l]) => `<button class="${A.bseg === k ? 'sel' : ''}" onclick="A.bseg='${k}';renderBoard()">${l}${k === 'roles' && c.introsIn ? ` <span class="cnt">${c.introsIn}</span>` : ''}</button>`).join('')}</div>
     <div id="boardInner"></div>`;
@@ -1724,7 +1727,7 @@ function drawPostSheet(p) {
     <div class="label" style="margin-top:18px">Replies${p.replyN ? ` <span class="cnt">${p.replyN}</span>` : ''}</div>
     ${(p.replies || []).length ? p.replies.map((r) => `<div class="m">${av(r.by, 's')}<div><div class="who">${esc(r.by.first)} <span>${esc(r.age)}</span></div><div class="bub">${esc(r.text)}</div></div></div>`).join('') : '<div class="sub2" style="margin-bottom:6px">No replies yet. Start it off.</div>'}
     <div class="bp-reply"><input class="field" id="replyIn" maxlength="400" placeholder="Reply to ${esc(p.by.first)}" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendReply('${p.id}')" /><button class="btn sm" style="margin:0" onclick="sendReply('${p.id}')">Send</button></div>
-    ${p.mine ? `<button class="link" onclick="deletePost('${p.id}', this)">Delete my post</button>` : ''}`;
+    ${p.mine ? `<button class="link" onclick="deletePost('${p.id}', this)">Delete my post</button>` : p.by && p.by.id ? `<button class="link" style="color:var(--ink-faint)" onclick="openReport('${p.by.id}')">Report this post</button>` : ''}`;
 }
 function sendReply(id) {
   const v = $('replyIn').value.trim(); if (!v || sendReply.busy) return; sendReply.busy = true;
@@ -1760,8 +1763,8 @@ function sendPost(b) {
 function renderPeople() {
   const c = A.view.counts || {};
   const segs = [['people', 'People'], ['messages', 'Messages' + (c.dms ? ` <span class="cnt">${c.dms}</span>` : '')]];
-  $('peopleBody').innerHTML = `<div class="ph" aria-hidden="true"></div><div class="kick">People</div>
-    <h2 class="q" style="margin-top:10px;font-size:32px">Your <span class="it">people</span></h2>
+  $('peopleBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
+    <h2 class="q tabh">Your <span class="it">people</span></h2>
     <p class="sub" style="margin:6px 0 0">Everyone you’ve shared a table or a hang with. Only you see this list</p>
     <div class="seg" style="margin:14px 0 16px">${segs.map(([k, l]) => `<button class="${A.pseg === k ? 'sel' : ''}" onclick="A.pseg='${k}';renderPeople()">${l}</button>`).join('')}</div><div id="peopleInner"></div>`;
   if (A.pseg === 'messages') drawThreads(); else drawPeopleSeg();
@@ -1769,7 +1772,7 @@ function renderPeople() {
 function drawPeopleSeg() {
   $('peopleInner').innerHTML = `<input class="field" id="pq" placeholder="Search your people" value="${esc(A.pq)}" oninput="A.pq=this.value;drawPeopleList()" />
     <div class="cardg" style="margin-top:12px;padding-top:2px;padding-bottom:2px" id="peopleList"><div class="spin"></div></div>
-    <p class="hint" style="text-align:center">Casual friendship takes about 50 hours together. A table is three. That’s why I keep seating people who picked each other together again.</p>`;
+    <p class="hint" style="text-align:center">Friendship takes about 50 hours together, and a dinner is three. That’s why I keep seating people who picked each other</p>`;
   if (A.people) drawPeopleList();
   else api('GET', '/api/people').then((r) => { A.people = r.people; if (cur === 'people' && A.pseg === 'people') drawPeopleList(); }).catch(oops);
 }
@@ -1778,9 +1781,9 @@ function drawPeopleList() {
   const q = A.pq.toLowerCase().trim();
   const list = A.people.filter((c) => !q || [c.first, c.last, c.headline, c.building].concat(c.ints.map((i) => SX.INTNAME[i])).join(' ').toLowerCase().indexOf(q) >= 0);
   el.innerHTML = list.length ? list.map((c) => {
-    const rel = c.times ? `<span class="lad ${c.times >= 3 ? 'reg' : ''}">Met ${c.times}×</span>` : c.soon ? '<span class="lad">At your table</span>' : c.hang ? '<span class="lad">From a hang</span>' : '';
-    const act = c.canDm ? `<button class="btn sm ghost" style="margin-top:0" onclick="event.stopPropagation();openDm('${c.id}')">Message</button>` : `<button class="btn sm ${c.waved ? 'ghost' : ''}" style="margin-top:0" onclick="event.stopPropagation();quickWave('${c.id}', ${!c.waved})">${c.waved ? 'Waved' : 'Wave'}</button>`;
-    return `<div class="mrow" role="button" tabindex="0" onclick="openProfile('${c.id}')">${av(c)}<div class="grow"><b>${esc(c.first)} ${esc(c.last)} ${badge(c.school)} ${rel}</b><small>${esc(c.headline || c.building || '')}</small></div>${act}</div>`;
+    const rel = c.times ? `<em class="relt ${c.times >= 3 ? 'reg' : ''}">Met ${c.times === 1 ? 'once' : c.times === 2 ? 'twice' : nw(c.times) + ' times'}</em>` : c.soon ? '<em class="relt">At your table</em>' : c.hang ? '<em class="relt">From a hang</em>' : '';
+    const act = c.canDm ? `<button class="btn sm ghost" style="margin-top:0" onclick="event.stopPropagation();openDm('${c.id}')">Message</button>` : `<button class="btn sm soft ${c.waved ? 'ghost' : ''}" style="margin-top:0" onclick="event.stopPropagation();quickWave('${c.id}', ${!c.waved})">${c.waved ? 'Waved' : 'Wave'}</button>`;
+    return `<div class="mrow" role="button" tabindex="0" onclick="openProfile('${c.id}')">${av(c)}<div class="grow"><b>${esc(c.first)} ${esc(c.last)} ${badge(c.school)}</b><small>${rel}${esc(c.headline || c.building || '')}</small></div>${act}</div>`;
   }).join('') : `<div class="empty">${A.people.length ? 'Nobody matches that.' : 'After your first table or hang, the people you meet show up here.'}</div>`;
 }
 function quickWave(id, on) {
@@ -1817,7 +1820,7 @@ function openJob(id) {
   openSheet(`<div class="sub2">${esc(j.company)}${j.stage ? ', ' + esc(j.stage) : ''}</div><h3 style="margin-top:4px">${esc(j.title)}</h3>
     <div class="chips" style="gap:5px;margin-top:8px"><span class="chip mini">${esc(j.kind)}</span><span class="chip mini">${esc(j.role)}</span><span class="chip mini">${esc(j.location)}</span>${j.comp ? `<span class="chip mini">${esc(j.comp)}</span>` : ''}</div>
     ${j.about ? `<p style="font-size:15px;line-height:1.55;color:var(--ink-2);margin:14px 0 0">${esc(j.about)}</p>` : ''}
-    ${j.by && j.note ? `<div class="cnote"><span class="orb"></span><p><b>${esc(j.by.first)} ${esc(j.by.last)}</b>${esc(j.note)}</p></div>` : ''}
+    ${j.by && j.note ? `<div class="cnote">${av(j.by, 's')}<p><b>${esc(j.by.first)} ${esc(j.by.last)}</b>${esc(j.note)}</p></div>` : ''}
     <div style="height:16px"></div>${ask}
     <button class="btn ghost" onclick="saveJob('${j.id}', ${!j.saved})">${j.saved ? 'Saved' : 'Save'}</button>
     ${j.link ? `<a class="btn ghost" style="text-decoration:none" href="${esc(j.link)}" target="_blank" rel="noopener noreferrer">Apply on their site</a>` : ''}`);
@@ -1886,11 +1889,11 @@ function renderMe() {
   const neverPeople = me.never.map((id) => v.connections.find((x) => x.id === id) || (A.people || []).find((x) => x.id === id) || { id, first: 'Someone', last: '' });
   $('meBody').innerHTML = `
     <div class="ph" aria-hidden="true"></div>
-    <div class="mehead">${av({ first: me.first, school: me.school, photo: me.photo }, 'l')}<h2>${esc(me.name)}</h2><div class="sub2">${[SCH(me.school), affil(me)].filter(Boolean).map(esc).join(', ')}</div>${p.headline ? `<div class="sub2" style="color:var(--ink-2);margin-top:4px">${esc(p.headline)}</div>` : ''}</div>
+    <div class="mehead">${av({ first: me.first, school: me.school, photo: me.photo }, 'l')}<h2>${esc(me.name)}</h2><div class="sub2">${esc([[SCH(me.school), me.program].filter(Boolean).join(' '), me.year].filter(Boolean).join(', '))}</div>${p.headline ? `<div class="sub2" style="color:var(--ink-2);margin-top:4px">${esc(p.headline)}</div>` : ''}</div>
     <div class="sp"></div>
-    <div class="cardg row" style="cursor:pointer" onclick="go('result')"><span class="orb md picon">${personaIcon(A.view.me.persona.code, 30)}</span><div class="grow"><div class="ctitle" style="margin-bottom:2px">Friend Persona</div><div style="font-size:18px;font-weight:600">${personaHTML(c)}</div></div>${ICON.chev}</div>
+    <div class="cardg row" style="cursor:pointer" onclick="go('result')"><span class="orb md picon">${personaIcon(A.view.me.persona.code, 30)}</span><div class="grow"><div class="ctitle" style="margin-bottom:2px">Your friend persona</div><div style="font-size:18px;font-weight:600">${personaHTML(c)}</div></div>${ICON.chev}</div>
     ${(p.tracks || []).length ? `<div class="label">What you love</div>
-    <div class="chips">${(p.tracks || []).map((t) => `<span class="chip sel">${esc(SX.track(t).t)}</span>`).join('')}${(p.interests || []).map((i, k) => `<span class="chip">${esc(SX.INTNAME[i])}${k === 0 ? ' <span class="star">Anchor</span>' : ''}</span>`).join('')}</div>` : ''}
+    <div class="chips">${(p.tracks || []).map((t) => `<span class="chip mine">${esc(SX.track(t).t)}</span>`).join('')}${(p.interests || []).map((i, k) => `<span class="chip">${esc(SX.INTNAME[i])}${k === 0 ? ' <span class="star">Anchor</span>' : ''}</span>`).join('')}</div>` : ''}
     <div class="label">How you connect</div>
     <div class="chips">${[p.rhythm, look && look.t].concat(p.acts || []).filter(Boolean).map((x) => `<span class="chip">${esc(x)}</span>`).join('')}</div>
     <div class="label">Your tables</div>
@@ -1901,11 +1904,11 @@ function renderMe() {
     <div class="sp"></div>
     <div class="label">Table size</div>
     <div class="seg">${[['four', 'Four'], ['six', 'Six'], ['either', 'Either']].map(([k, l]) => `<button class="${(me.tableSize || 'either') === k ? 'sel' : ''}" onclick="setTableSize('${k}')">${l}</button>`).join('')}</div>
-    <p class="hint">Tables are four to six. Four is cozier; six brings more voices.</p>
+    <p class="hint">Tables are usually four to six. Four is cozier; six brings more voices.</p>
     <div class="label">Table captain</div>
-    ${capLogHTML(me.captainLog)}
     <div class="seg">${[['yes', 'Happy to'], ['maybe', 'Sometimes'], ['no', 'Rather not']].map(([k, l]) => `<button class="${(me.captain || 'maybe') === k ? 'sel' : ''}" onclick="setCaptainPref('${k}')">${l}</button>`).join('')}</div>
-    <p class="hint">Each table has a captain with three missions: pick the spot, rally the vote, settle the checks. All three earn a stripe. It rotates, and you can always pass it on</p>
+    <p class="hint">Each table has a captain with three missions: book the spot, rally the vote, settle the checks. All three earn a stripe. It rotates, and you can always pass it on</p>
+    ${capLogHTML(me.captainLog)}
     <div class="sp"></div>
     <div class="cardg" style="padding-top:2px;padding-bottom:2px">
       <div class="setrow"><div class="grow">Notifications<small>Invitations, people joining your hangs, mutual picks, messages</small></div><button class="tog ${me.push && devicePush() ? 'on' : ''}" aria-pressed="${!!(me.push && devicePush())}" onclick="${me.push && devicePush() ? 'disablePush()' : 'enablePush()'}" aria-label="Notifications"></button></div>
@@ -1964,10 +1967,10 @@ function disablePush() {
    building something together, then laughing too hard over beers and glasses meeting across a dinner table. Charlie's
    lines type themselves over it in time with the acts, the way Amie opens. Act times come from public/video/film.json. */
 const FILM_SRC = '/video/film.mp4';
-const FILM_T = { tech: 5.8, build: 10.75, friends: 15, end: 24.15 };
+const FILM_T = { tech: 4.5, build: 10.86, friends: 16.21, end: 22.31 };
 const FILM = {
   // each word joins the sentence on a cut inside the tech act; the sentence leaves just before the build line
-  words: { at: [FILM_T.tech + 0.15, 7.57, 9.03], until: FILM_T.build - 0.35 },
+  words: { at: [FILM_T.tech + 0.15, 6.69, 8.6], until: FILM_T.build - 0.35 },
   lines: [[0.45, FILM_T.tech - 0.35, 'A small group of builders, one table, *deeper connection*'], [FILM_T.build + 0.25, FILM_T.friends - 0.3, 'Talk AI, bio and robots until they *stack the chairs*'], [FILM_T.friends + 0.15, FILM_T.end - 0.35, 'Come for the tech talk, stay for the *friends*']]
 };
 const film = { v: null, raf: 0, li: -2, wi: -2, last: 0, leaked: false, typing: 0, live: false, tried: false };
@@ -2044,8 +2047,9 @@ function typeLine(txt) {
     i = Math.min(txt.length, i + 1); if (txt[i - 1] === '*') i = Math.min(txt.length, i + 1);
     // close an open italic run so the half-typed word already leans
     const part = txt.slice(0, i), open = (part.match(/\*/g) || []).length % 2;
-    el.innerHTML = filmHTML(open ? part + '*' : part) + (i < txt.length ? '<span class="caret" aria-hidden="true"></span>' : '');
+    if (i < txt.length) el.innerHTML = filmHTML(open ? part + '*' : part) + '<span class="caret" aria-hidden="true"></span>';
     if (i < txt.length) setTimeout(step, 24 + Math.random() * 22);
+    else { el.innerHTML = filmHTML(txt) + '<span class="caret" aria-hidden="true"></span>'; setTimeout(() => { if (token === film.typing) { const c = el.querySelector('.caret'); if (c) c.classList.add('gone'); } }, 1300); }
   };
   step();
 }
@@ -2061,11 +2065,15 @@ const RENDER = { start: startFilm, verify: renderVerify, school: renderSchool, t
   profile: renderProfileStep, card: renderCard, result: renderResult, home: renderHome, popups: renderPopups, board: renderBoard, people: renderPeople, me: renderMe,
   table: () => {}, invite: () => {}, pop: () => {}, host: () => {}, chat: () => {}, deck: () => {}, after: () => {}, dm: () => {} };
 document.querySelectorAll('.scr[data-step]').forEach((s) => {
-  s.insertAdjacentHTML('afterbegin', `<div class="topbar"><button class="back" onclick="back()" aria-label="Back">${ICON.back}</button><div class="tb-title"><span class="orb sm"></span>Hash Table</div><div class="tb-step"></div></div><div class="pbar"><div class="pfill"></div></div>`);
+  s.insertAdjacentHTML('afterbegin', `<div class="topbar"><button class="back" onclick="back()" aria-label="Back">${ICON.back}</button><div class="tb-title"><svg class="hashmark sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 3.4 7.6 20.6M16.4 3.4l-2.2 17.2M4.2 8.7h16.2M3.4 15.3h16.2" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" fill="none"/></svg>Hash Table</div><div class="tb-step"></div></div><div class="pbar"><div class="pfill"></div></div>`);
 });
 function route() {
   const h = (location.hash || '').slice(1);
-  if (h === 'popups' || h === 'hangs') tab('popups'); else if (h === 'roles') { A.bseg = 'roles'; tab('board'); } else if (h === 'board' || h === 'pulse') { A.bseg = 'all'; tab('board'); } else if (h === 'messages') { A.pseg = 'messages'; tab('people'); } else if (h === 'people' || h === 'friends') tab('people'); else if (h === 'me') tab('me'); else if (h === 'table') { tab('home'); const ts = ((A.view && A.view.tables) || []).filter((x) => !x.left && !x.closed), t = ts.find((x) => x.phase === 'tonight') || ts[0]; if (t) openTable(t.id); } else tab('home');
+  if (h === 'popups' || h === 'hangs') tab('popups'); else if (h === 'roles') { A.bseg = 'roles'; tab('board'); } else if (h === 'board' || h === 'pulse') { A.bseg = 'all'; tab('board'); } else if (h === 'messages') { A.pseg = 'messages'; tab('people'); } else if (h === 'people' || h === 'friends') tab('people'); else if (h === 'me') tab('me'); else if (/^(table|after)(=|$)/.test(h)) {
+    tab('home'); const id = h.split('=')[1], ts = ((A.view && A.view.tables) || []).filter((x) => !x.left && !x.closed), now = Date.now();
+    const t = (id && ts.find((x) => x.id === id)) || ts.find((x) => x.phase === 'tonight') || ts.filter((x) => new Date(x.start) > now).sort((a, b) => new Date(a.start) - new Date(b.start))[0] || ts.find((x) => x.feedbackOpen && !x.feedbackDone);
+    if (t) { if (h.indexOf('after') === 0 && t.feedbackOpen) openAfter(t.id); else openTable(t.id); }
+  } else tab('home');
 }
 let loops = false;
 function boot() {

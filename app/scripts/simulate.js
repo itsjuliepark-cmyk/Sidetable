@@ -85,8 +85,10 @@ function check(label) {
     apartPairs.forEach(([a, b]) => { if (ids.indexOf(a) >= 0 && ids.indexOf(b) >= 0) problem('apart', `${label}: a reported or blocked pair shares table ${t.id}`); });
     // a captain-booked spot is always backed by the booking that made it (round two never inherits last time's)
     if (t.venue && t.venue.pid && !(t.cap && t.cap.booking && t.cap.booking.pid === t.venue.pid)) problem('ghost', `${label}: table ${t.id} shows a booked spot nobody booked`);
+    // nobody sits at a kind of table they didn't ask for, unless the second pass said so (and made stepping out free)
+    ids.forEach((id) => { const mx = ((db().members[id] || {}).profile || {}).mix || 'both', st = (db().seats[e.id] || {})[id] || {}; if ((t.round || 1) === 1 && mx !== 'both' && (mx === 'topic') !== (e.type === 'topic') && st.rescued !== 'cross') problem('choice', `${label}: someone who asked for ${mx} tables sits at a ${e.type} table${process.env.SIM_DEBUG ? ' ' + JSON.stringify(st) : ''}`); });
     if (!past && (!t.captain || ids.indexOf(t.captain) < 0)) problem('captain', `${label}: table ${t.id} has no seated captain`);
-    else if (!past && db().members[t.captain].captain === 'no' && ids.some((id) => (db().members[id].captain || 'maybe') !== 'no')) problem('captain', `${label}: a captain who said no, with others willing`);
+    else if (!past && db().members[t.captain].captain === 'no' && ids.some((id) => (db().members[id].captain || 'maybe') !== 'no' && (t.passed || []).indexOf(id) < 0 && (t.cap || {}).handedFrom !== id)) problem('captain', `${label}: a captain who said no, with others willing`);
   });
 }
 // dinners per member in a week, against what they asked for (round twos and reinvites are on top, by their own choice)

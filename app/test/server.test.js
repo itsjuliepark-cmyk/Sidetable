@@ -901,7 +901,7 @@ test('the captain books it: a spot from the list, booked under their name, a nud
   assert.strictEqual(S.view(cap).tables.find((x) => x.id === t.id).time, '7:30 PM', 'the table shows the booked time');
   assert.ok(!Object.values(db().bookings || {}).some((b) => b.vid === sp), 'Hash Table never contacts a spot the captain booked');
   const out = db().members[t.ids.find((id) => id !== cap.id)];
-  S.cancelSeat(out, { event: n.e.id }); S.tick();
+  S.cancelSeat(out, { event: n.e.id }); S.tick(S.tzMs(S.ymdTz(Date.now()), '12:00')); // booking nudges wait for a decent hour
   assert.strictEqual(t.cap.booking.warned, t.ids.filter((id) => !(t.out || {})[id]).length, 'a size change after booking nudges the captain once');
   assert.ok(S.tableView(cap, t.id).cap.spot.booking.now !== S.tableView(cap, t.id).cap.spot.booking.size, 'the brief says the booking needs an update');
   S.captainBook(cap, { table: t.id, resize: true });
@@ -987,6 +987,68 @@ test('a report outlasts lifting the block: asking for another evening never seat
   others.forEach((e) => { e.status = 'published'; });
   assert.ok(r.standby || r.table !== second.t.id, 'not the reported person’s table');
   assert.ok(!(second.t.ids.indexOf(A.id) >= 0 && !(second.t.out || {})[A.id]), 'never at the table of someone they reported');
+});
+
+test('after the noon reveal, a booking that falls through and a new one are both told to the table, with the new time', () => {
+  const sp = bookSpot('Noon'), sp2 = bookSpot('Later Noon'), back = only([sp, sp2]), ms = people(5, 'Noon'), n = night(ms, 'topic', day(35)), t = n.t, cap = db().members[t.captain];
+  const tm = S.eventTimes(n.e), H = 36e5, real = Date.now;
+  try {
+    S.captainBook(cap, { table: t.id, place: sp, name: cap.name });
+    Date.now = () => tm.reveal + H; S.tick(Date.now());
+    const other = db().members[t.ids.find((id) => id !== cap.id)]; ear(other);
+    S.captainBook(cap, { table: t.id, cancel: true });
+    assert.ok(db().chats[t.id].some((x) => /fell through/.test(x.text)), 'the table hears it fell through');
+    assert.ok(heard(other, 'spot'), 'and gets a push');
+    S.captainBook(cap, { table: t.id, place: sp2, time: '19:30', name: cap.name });
+    const last = db().chats[t.id].filter((x) => x.from === 'charlie').pop().text;
+    assert.ok(/Later Noon Bistro at 7:30 PM/.test(last) && !/secret until noon/.test(last), 'the new spot and time go out, and nothing says it is a secret: ' + last);
+  } finally { Date.now = real; back(); }
+});
+
+test('Monday tables say their real free cutoff, and every table has a captain even when nobody volunteered', () => {
+  const ms = people(4, 'Nocap'); ms.forEach((m) => { m.captain = 'no'; });
+  const n = night(ms, 'topic', day(37));
+  assert.ok(n.t.captain, 'someone who would rather not still beats no captain');
+  const mon = '2026-11-02', e = { id: 'x', date: mon, time: '19:00', publishedAt: new Date(S.tzMs('2026-11-01', '20:00')).toISOString() };
+  assert.strictEqual(S.freeUntil(e), S.tzMs(mon, '10:00'));
+});
+
+test('a captain gets a reminder before anyone takes the job, and hears when it moves on', () => {
+  Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = true; });
+  const sp = bookSpot('Remind'), ms = people(5, 'Remind'); ms.forEach((m) => { m.captain = 'maybe'; });
+  const n = night(ms, 'topic', day(39)), t = n.t, st = S.eventTimes(n.e).start, H = 36e5;
+  if (t.venue && t.venue.id) { const vid = t.venue.id; t.venue = null; S.syncBooking(vid, n.e.date); }
+  const first = db().members[t.captain]; ear(first);
+  t.cap.since = new Date(st - 40 * H).toISOString(); delete t.cap.remind;
+  S.tick(st - 34 * H);
+  assert.ok(t.cap.remind && !t.cap.handed && t.captain === first.id, 'a reminder first, no handover in the same moment');
+  S.tick(st - 27 * H);
+  assert.ok(t.cap.handed && t.captain !== first.id, 'six hours later, someone else has it');
+  assert.ok(heard(first, 'captainoff'), 'and the first captain is told');
+  Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = false; });
+  void sp;
+});
+
+test('whoever booked deleting their account close to dinner leaves the booking in place, and a table of three that loses one early takes someone who marked that evening', () => {
+  const sp = bookSpot('Erase'), back = only([sp]), ms = people(5, 'Erase'), n = night(ms, 'topic', day(41)), t = n.t, cap = db().members[t.captain];
+  const real = Date.now;
+  try {
+    S.captainBook(cap, { table: t.id, place: sp, name: 'Booker Name' });
+    Date.now = () => S.freeUntil(n.e) + 36e5;
+    S.erase(cap);
+    assert.ok(t.venue && t.venue.pid === sp && t.cap.booking.name === 'Booker Name' && !t.cap.booking.by, 'the table keeps the reservation');
+    assert.ok(db().alerts.some((a) => a.key === 'booker:' + t.id && !a.done), 'ops is asked to confirm it');
+  } finally { Date.now = real; back(); }
+  // a table of three in a built week, someone free that evening with room for a dinner
+  const W = S.addDays(S.targetWeek(), 35), d = day(4), at = new Date().toISOString(); // chairs open up to eight days out
+  const trio = people(4, 'Trio'), spare = people(2, 'Spare');
+  trio.concat(spare).forEach((m) => { m.profile.mix = 'both'; m.avail = { week: W, slots: [d + '|dinner'], max: 1, at }; });
+  const e = S.createEvent({ type: 'topic', date: d, time: '19:00' }); e.week = W; e.generated = true;
+  db().seats[e.id] = {}; trio.forEach((m) => { db().seats[e.id][m.id] = { at, size: 'either', diet: [], status: 'held' }; });
+  const dr = S.draft({ event: e.id }); S.publish({ event: e.id }); const tt = db().tables[dr.tables[0] ? dr.tables[0].id : Object.values(db().tables).find((x) => x.eventId === e.id).id];
+  assert.ok(tt && tt.ids.length === 4);
+  S.cancelSeat(trio[0], { event: e.id }); S.cancelSeat(trio[1], { event: e.id });
+  assert.ok(!tt.closed && tt.ids.filter((id) => !(tt.out || {})[id]).length === 3, 'someone who marked the evening takes the chair, so the table stays');
 });
 
 test('an unbooked table passes to another captain a day and a half out, and with no spot by 2 PM on the day it’s off', () => {

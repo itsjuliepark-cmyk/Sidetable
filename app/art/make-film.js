@@ -1,8 +1,7 @@
-// The opening film for the first screen: about 24 seconds of real footage, vertical, warm like late-afternoon light.
-// A campus in autumn and someone opening a laptop under a tree, then late nights speeding up (code, a 3D model, a circuit
-// board, a whiteboard, a microscope), a flash, and people building it together: high fives over a laptop, cheering at
-// the screen. Then the friends part (pizza, a kitchen full of people, a Jenga tower falling, marshmallows over a fire, a
-// guitar in the park) and the table at the end, candles and all.
+// The opening film for the first screen: about 22 seconds of real footage, vertical, warm like late-afternoon light.
+// A campus in autumn and coffee with a laptop on the lawn, then late nights speeding up through things young people
+// actually build (code, a 3D printer, a drone, an Arduino, a robot arm, a prosthetic hand, a microscope, equations on glass),
+// a flash, and people building it together around one laptop and a glass board. Then a short friends part, and the table.
 //
 // Footage is from Mixkit (only clips under the Mixkit Stock Video Free License: commercial use, no attribution, can't be
 // resold on their own; never the Restricted ones, which are personal use only) and Pexels (Pexels License: commercial
@@ -57,55 +56,58 @@ const P = (id, t, d, xc, extra) => Object.assign({ id, t, d, xc, z: 0.05, g: 'su
 // across and top to bottom, in: how the shot arrives (cut, dissolve, white), act: the first shot of each act (the app
 // times its lines to these)
 const SHOTS = [
-  // I. something starts: a campus by the river in autumn, walking to class, friends on a bench, a laptop under a tree, studying outside in the leaves
-  P('P3288313', 17.0, 1.7, 0.5, { fps: 30, sp: 0.9, z: 0.05, zs: 1.4, yc: 0.82, in: 'black' }),
-  P(4519, 4.0, 1.2, 0.5, { in: 'dissolve' }),
-  P(4566, 1.0, 1.0, 0.42, { in: 'dissolve' }),
+  // I. something starts: a campus by the river in autumn, coffee and a laptop on the lawn, walking to class, a laptop under a tree
+  P('P3288313', 17.0, 1.5, 0.5, { fps: 30, sp: 0.9, z: 0.05, zs: 1.4, yc: 0.82, in: 'black' }),
+  P('P6146483', 4.0, 1.1, 0.5, { fps: 24, url: 'https://videos.pexels.com/video-files/6146483/6146483-hd_1080_1920_24fps.mp4', in: 'dissolve' }),
+  P(4519, 4.0, 1.0, 0.5, { in: 'dissolve' }),
   P(4865, 4.0, 0.9, 0.34, { in: 'dissolve' }),
-  P('P6145425', 2.0, 1.0, 0.36, { fps: 24, in: 'dissolve' }),
-  // II. late nights, speeding up: code, a desk lamp, a 3D model, a whiteboard, a circuit board, VR, a microscope, the workshop
-  T2(41653, 3.5, 0.62, 0.5, { act: 'tech' }),
-  T2(41646, 4.0, 0.55, 0.5, { in: 'white' }),
-  T2(50126, 6.0, 0.6, 0.45, { g: 'lamp' }),
-  T2(29997, 6.0, 0.5, 0.5, { in: 'white' }),
-  T2(29981, 4.0, 0.5, 0.3),
-  T2(29994, 7.4, 0.46, 0.32, { in: 'white' }),
-  T2(40453, 8.0, 0.44, 0.3),
-  T2(4773, 9.0, 0.42, 0.28, { in: 'white' }),
-  T2(29998, 6.0, 0.4, 0.5),
-  T2(29989, 4.0, 0.46, 0.5, { z: 0.16 }),
-  // III. a flash, and then building it together: high fives in the library, a plan at the cafe table, cheering at the laptop,
-  // a group hug
-  P('P8199334', 5.4, 1.1, 0.5, { fps: 25, in: 'white', act: 'build' }),
-  P(4794, 5.8, 0.95, 0.5),
-  P('P6104301', 4.9, 1.0, 0.36, { fps: 25 }),
-  P(4709, 3.6, 1.2, 0.5),
-  // IV. and then the friends part: pizza, a kitchen full of people, the Jenga tower falls, marshmallows over a fire, a guitar
-  // in the park, laughing on the bus home
-  P(42487, 2.2, 0.6, 0.5, { g: 'lamp', act: 'friends' }),
-  P('P8757809', 5.0, 0.9, 0.45, { fps: 30, g: 'lamp' }),
-  P(5323, 4.6, 0.9, 0.3),
-  P(42758, 2.2, 0.85, 0.5, { g: 'lamp', sp: 0.85 }),
+  // II. late nights, speeding up, all of it built by people: code on two screens, a 3D printer beside its CAD model, a drone
+  // coming together, solder on an Arduino, a robot arm, a prosthetic hand, a microscope, equations on glass, the maker bench
+  T2(41642, 2.0, 0.62, 0.3, { act: 'tech' }),
+  T2('P30648311', 2.5, 0.55, 0.5, { fps: 25, url: 'https://videos.pexels.com/video-files/30648311/13117144_3840_2160_25fps.mp4', in: 'white' }),
+  T2(44727, 2.0, 0.52, 0.5),
+  T2('P4709394', 8.0, 0.5, 0.6, { fps: 25, url: 'https://videos.pexels.com/video-files/4709394/4709394-uhd_4096_2160_25fps.mp4', in: 'white' }),
+  T2('P34279721', 4.0, 0.46, 0.4, { fps: 25, url: 'https://videos.pexels.com/video-files/34279721/14522339_3840_2160_25fps.mp4' }),
+  T2('P8328051', 9.4, 0.55, 0.5, { fps: 25, url: 'https://videos.pexels.com/video-files/8328051/8328051-hd_1920_1080_25fps.mp4' }),
+  T2('P6153727', 4.0, 0.46, 0.5, { fps: 25, url: 'https://videos.pexels.com/video-files/6153727/6153727-uhd_2160_4096_25fps.mp4', in: 'white' }),
+  T2('P30712717', 8.0, 0.44, 0.45, { fps: 25, url: 'https://videos.pexels.com/video-files/30712717/13139737_3840_2160_25fps.mp4' }),
+  T2(2381, 7.0, 0.44, 0.5, { in: 'white' }),
+  T2(41643, 2.5, 0.42, 0.55),
+  T2('P31076271', 8.6, 0.44, 0.5, { fps: 25, url: 'https://videos.pexels.com/video-files/31076271/13279771_3840_2160_25fps.mp4', in: 'white' }),
+  T2(44707, 5.0, 0.46, 0.5),
+  T2('P8566725', 2.0, 0.5, 0.5, { fps: 30, g: 'sun' }),
+  // III. a flash, and then building it together: five of them around one laptop, a team over a table in the sun, a printed
+  // prototype passed around, two in goggles talking it through, a glass board of diagrams, high fives when it works
+  P('P7437509', 9.0, 1.0, 0.55, { fps: 25, url: 'https://videos.pexels.com/video-files/7437509/7437509-uhd_4096_2160_25fps.mp4', in: 'white', act: 'build' }),
+  P('P9305616', 14.0, 0.9, 0.5, { fps: 30, url: 'https://videos.pexels.com/video-files/9305616/9305616-uhd_4096_2160_30fps.mp4' }),
+  P('P7180368', 9.0, 0.85, 0.55, { fps: 25 }),
+  P('P9373137', 10.0, 0.8, 0.45, { fps: 25 }),
+  P('P9365668', 8.0, 0.8, 0.64, { fps: 25 }),
+  P('P8199334', 5.4, 1.0, 0.5, { fps: 25 }),
+  // IV. and then the friends part: a kitchen full of people, the Jenga tower falls, a guitar in the park
+  P('P8757809', 5.0, 0.9, 0.45, { fps: 30, g: 'lamp', act: 'friends' }),
+  P(5323, 4.6, 0.8, 0.3),
   P('P8379051', 4.8, 0.9, 0.45, { fps: 25 }),
-  P(42583, 5.5, 0.8, 0.4, { g: 'lamp' }),
-  // V. the table: setting it together, then candles and the whole table talking
-  P('P7246906', 7.5, 1.2, 0.5, { fps: 25, g: 'lamp', act: 'table' }),
-  P('P6289662', 10.5, 3.0, 0.5, { fps: 25, sp: 0.85, z: 0.06, g: 'lamp', in: 'dissolve', out: 'black' })
+  // V. the table: setting it together, then the whole table around it
+  P('P7246906', 7.5, 1.3, 0.5, { fps: 25, g: 'lamp', act: 'table' }),
+  P('P4781506', 23.0, 2.2, 0.5, { fps: 25, url: 'https://videos.pexels.com/video-files/4781506/4781506-uhd_4096_2160_25fps.mp4', sp: 0.85, z: 0.06, g: 'lamp', in: 'dissolve', out: 'black' })
 ];
 const XD = { dissolve: 0.36, white: 0.0 }; // dissolve overlap; white is a flash at the start of the shot, no overlap
 
 // the biggest file each site serves for a clip, so the 9:16 crop stays sharp (Mixkit: 1080 then 720; Pexels: 1080p, 1440p, 4K, 720p)
-function source(id, fps) {
+function source(id, fps, url) {
   const ok = (u) => { try { execFileSync(findBin('ffprobe'), ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', u], { stdio: ['ignore', 'pipe', 'ignore'] }); return true; } catch (e) { return false; } };
   const n = String(id).replace(/^P/, ''), urls = /^P/.test(String(id))
     ? ['hd_1920_1080', 'uhd_2560_1440', 'uhd_3840_2160', 'uhd_4096_2160', 'hd_1280_720'].map((r) => `https://videos.pexels.com/video-files/${n}/${n}-${r}_${fps || 25}fps.mp4`)
     : [1080, 720].map((r) => `https://assets.mixkit.co/videos/${n}/${n}-${r}.mp4`);
-  for (const u of urls) if (ok(u)) return u;
+  for (const u of (url ? [url] : []).concat(urls)) if (ok(u)) return u;
   throw new Error('clip ' + id + ' is not reachable');
 }
+// the frame as it plays: a clip stored sideways with a rotation tag counts as turned
 function probe(u) {
-  const o = execFileSync(findBin('ffprobe'), ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', u]).toString().trim().split(',');
-  return { w: +o[0], h: +o[1] };
+  const j = JSON.parse(execFileSync(findBin('ffprobe'), ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height:stream_side_data=rotation', '-of', 'json', u]).toString());
+  const st = (j.streams || [])[0] || {}, rot = Math.abs(+(((st.side_data_list || []).find((d) => d.rotation != null) || {}).rotation || 0)) % 180;
+  return rot === 90 ? { w: +st.height, h: +st.width } : { w: +st.width, h: +st.height };
 }
 
 function shotFile(s, i) {
@@ -113,8 +115,8 @@ function shotFile(s, i) {
   const pre = s.in === 'dissolve' ? XD.dissolve : 0, sp = s.sp || 1, dur = s.d + pre;
   const key = crypto.createHash('md5').update(JSON.stringify([s, pre, GRADE[s.g], GLOW[s.g], 3])).digest('hex').slice(0, 10);
   const f = path.join(CACHE, `shot-${String(i).padStart(2, '0')}-${s.id}-${key}.mp4`);
-  if (fs.existsSync(f)) return { f, dur };
-  const u = source(s.id, s.fps), { w, h } = probe(u), land = w > h;
+  if (fs.existsSync(f) && fs.statSync(f).size > 1000) return { f, dur }; // an empty file is a cut that failed, not a cached one
+  const u = source(s.id, s.fps, s.url), { w, h } = probe(u), land = w > h;
   const t0 = Math.max(0, s.t - pre * sp);
   const z = s.z || 0, zs = s.zs || 1, xc = s.xc == null ? 0.5 : s.xc, yc = s.yc == null ? 0.5 : s.yc, xz = s.xz == null ? 0.5 : s.xz;
   const crop = land ? `crop=w='trunc(ih*9/16/2)*2':h=ih:x='(iw-trunc(ih*9/16/2)*2)*${xc}':y=0,` : '';
