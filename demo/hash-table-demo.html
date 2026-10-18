@@ -1437,6 +1437,32 @@ h2.q.tabh{margin-top:6px;font-size:34px}
 
 button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inherit;cursor:pointer}
 
+/* ---------- the invitation, refined: paper, a wax seal that says what it is, a letterhead ---------- */
+:root{--paper-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .34 0 0 0 0 .26 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.env{background:var(--paper-grain),linear-gradient(168deg,#FDFAF5 0%,#F6EFE5 55%,#EFE5D8 100%);border:1px solid rgba(150,120,100,.2);box-shadow:0 22px 40px -26px rgba(70,50,40,.55),0 1px 0 rgba(255,255,255,.8) inset}
+.env::before{background:var(--paper-grain),linear-gradient(180deg,#F9F3EA,#EDE3D6)}
+/* the seal: a pill of wax with the word pressed into it */
+.seal{left:50%;top:50%;width:auto;min-width:78px;height:38px;margin:0;padding:0 18px;translate:-50% -50%;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--italic);font-style:italic;font-weight:400;font-size:19px;letter-spacing:-.005em;line-height:1;white-space:nowrap;color:#FFF6EE;
+  text-shadow:0 1px 0 rgba(0,0,0,.28),0 -1px 0 rgba(255,255,255,.14)}
+.env:not(.pending) .seal{top:38%}
+.career .seal{background:radial-gradient(130% 160% at 28% 22%,#9AB0CC,#566F92 52%,#3D5474);box-shadow:inset 0 0 0 3px rgba(255,255,255,.1),inset 0 -4px 7px rgba(10,20,40,.32),inset 0 3px 5px rgba(255,255,255,.18),0 10px 18px -10px rgba(30,50,80,.85)}
+.social .seal{background:radial-gradient(130% 160% at 28% 22%,#E2A6B1,#AE5A6E 52%,#8C4055);box-shadow:inset 0 0 0 3px rgba(255,255,255,.1),inset 0 -4px 7px rgba(60,10,20,.3),inset 0 3px 5px rgba(255,255,255,.18),0 10px 18px -10px rgba(110,40,55,.8)}
+.seal.mono{min-width:0;width:44px;height:44px;padding:0;border-radius:50%;font-size:22px;font-style:normal;font-family:var(--sans);font-weight:500}
+.env .to{bottom:18px;font-size:11.5px;font-weight:600;color:#9A8576}
+.env .to b{font-size:21px;margin-top:3px;color:#352F2A}
+.env .to small{font-size:12.5px;letter-spacing:0;font-weight:500;color:#8A7A6E;margin-top:4px}
+.inv-env{background:var(--paper-grain),linear-gradient(168deg,#FDFAF5,#EFE5D8)}
+.inv-env .flap{background:var(--paper-grain),linear-gradient(180deg,#F9F3EA,#EADFD1)}
+.inv-env .seal{top:124px}
+/* the letter: a quiet letterhead, the kind of table under the line, paper you could feel */
+.invite{background:var(--paper-grain),linear-gradient(180deg,#FEFCF8,#FAF6EF)}
+.invite .ihead{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 14px;font-size:12.5px;font-weight:600;letter-spacing:-.003em;color:#8A7466}
+.invite .ihash{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-size:13px;font-weight:600;color:#FBF6EE;background:linear-gradient(160deg,#5E4E43,#3D322B)}
+.invite .ikind{display:inline-flex;align-items:center;height:26px;margin:16px auto 0;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:650}
+.invite .ikind.career{color:#3F5C8E;background:rgba(126,152,212,.14);box-shadow:inset 0 0 0 1px rgba(126,152,212,.35)}
+.invite .ikind.social{color:#9F4D5A;background:rgba(213,140,153,.14);box-shadow:inset 0 0 0 1px rgba(213,140,153,.38)}
+
 
 
 /* demo build: fit the viewer's frame on a phone, and the Demo tab */
@@ -5565,7 +5591,8 @@ function api(method, url, body) {
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
 function note(slot, text) { $(slot).innerHTML = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>${esc(text)}</p></div>`; }
 function oops(e) { toast('Something’s off', e && e.message ? cap(e.message) + '.' : 'Try again in a moment.'); }
-function av(p, cls) { return `<div class="av ${esc(p.school || 'harvard')} ${cls || ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : esc(((p.first || '?')[0] || '?').toUpperCase())}</div>`; }
+// a face, or the first letter on the school color; a photo that fails to load falls back to the letter
+function av(p, cls) { const ini = esc(((p.first || '?')[0] || '?').toUpperCase()); return `<div class="av ${esc(p.school || 'harvard')} ${cls || ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="" onerror="this.parentNode.textContent='${ini}'">` : ini}</div>`; }
 const personaHTML = (c) => { const p = SX.persona(c); return `${esc(p.first)} <span class="it">${esc(p.last)}</span>`; };
 const countWord = (c, n) => (c === n ? (n === 2 ? 'Both' : 'All ' + NUMW[n]) : cap(NUMW[c] || String(c)));
 const trackIcon = (t) => ICON[t] || ICON.genai;
@@ -5935,8 +5962,10 @@ function tableWho(t) {
   if (t.type !== 'kindred') return `A tech table of ${nw(t.size)} who love ${t.trackName}`;
   return t.theme ? `A social table of ${nw(t.size)}, and ${nw(t.theme.n)} of you want to ${SX.ACTV[t.theme.act] || t.theme.act.toLowerCase()}` : `A social table of ${nw(t.size)}, seated for how you click, not what you do`;
 }
+// what a seal says: the kind of table, or the round
+const sealWord = (t) => (t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t) {
-  return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation"><i class="fold"></i><span class="seal">${tableKind(t) === 'social' ? 'S' : 'T'}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social table' : 'Tech table'}, ${esc(t.day)} evening</small></span></button>`;
+  return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i><span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
 const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
@@ -5977,7 +6006,7 @@ function firstTableHTML() {
   return `<div class="cardg firsttable"><div class="ctitle">${GICON.spark} Your first ${kind}</div>
     <h3>${social ? 'Dinner with four or five people you’d click with' : `Dinner with four or five people who love ${esc(tr ? SX.track(tr).t : 'tech')}`}</h3>
     <ol class="fsteps">${steps.map(([t, s], i) => `<li class="${i === 0 ? (picked ? 'done' : 'now') : i === 1 && picked ? 'now' : ''}"><i>${i === 0 && picked ? ICON.check : i + 1}</i><div><b>${t}</b><span>${esc(s)}</span></div></li>`).join('')}</ol>
-    ${a.count >= (a.max || 1) && !A.view.me.paused && !A.view.me.cool ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal">${social ? 'S' : 'T'}</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
+    ${a.count >= (a.max || 1) && !A.view.me.paused && !A.view.me.cool ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal mono">#</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
     ${picked ? '' : `<button class="btn sm" onclick="$('availCard').scrollIntoView({behavior:'smooth',block:'center'})">Pick my evenings</button>`}</div>`;
 }
 function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
@@ -6102,11 +6131,13 @@ function drawInvite(already) {
   const t = A.inv, k = tableKind(t), me = A.view.me, who = tableWho(t).toLowerCase();
   const lines = (t.why || []).filter((l) => who.indexOf(l.replace(/\*/g, '').toLowerCase()) < 0 && l.replace(/\*/g, '').toLowerCase().indexOf(who.split(', and ').pop()) < 0).slice(0, 2);
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
-      <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${k === 'social' ? 'S' : 'T'}</span></div>
+      <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${sealWord(t)}</span></div>
       <article class="invite ${k}">
+        <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
         <h2>${t.round > 1 ? `you’re invited to <span class="it">round ${nw(t.round)}</span>` : `you’re invited to a <span class="it">${k === 'social' ? 'small dinner' : 'tech table'}</span>`}</h2>
+        <div class="ikind ${k}">${k === 'social' ? 'Social table' : 'Tech table'}${t.round > 1 ? `, round ${nw(t.round)}` : ''}</div>
         <div class="rule"></div>
         <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? (t.spotIn ? 'Tonight. The spot is on your table.' : 'Tonight. The exact spot arrives at noon.') : 'The exact spot arrives on the day, at noon.'}</small></div>
         <div class="rule"></div>

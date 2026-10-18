@@ -12,7 +12,8 @@
     "demo": "node scripts/build-demo.js",
     "art": "node art/make-art.js && powershell -NoProfile -ExecutionPolicy Bypass -File art/render.ps1",
     "film": "node art/make-film.js",
-    "simulate": "node scripts/simulate.js"
+    "simulate": "node scripts/simulate.js",
+    "e2e": "node scripts/e2e.js"
   },
   "engines": {
     "node": ">=18"

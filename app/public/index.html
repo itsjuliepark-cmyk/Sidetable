@@ -399,7 +399,8 @@ function api(method, url, body) {
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
 function note(slot, text) { $(slot).innerHTML = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>${esc(text)}</p></div>`; }
 function oops(e) { toast('Something’s off', e && e.message ? cap(e.message) + '.' : 'Try again in a moment.'); }
-function av(p, cls) { return `<div class="av ${esc(p.school || 'harvard')} ${cls || ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : esc(((p.first || '?')[0] || '?').toUpperCase())}</div>`; }
+// a face, or the first letter on the school color; a photo that fails to load falls back to the letter
+function av(p, cls) { const ini = esc(((p.first || '?')[0] || '?').toUpperCase()); return `<div class="av ${esc(p.school || 'harvard')} ${cls || ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="" onerror="this.parentNode.textContent='${ini}'">` : ini}</div>`; }
 const personaHTML = (c) => { const p = SX.persona(c); return `${esc(p.first)} <span class="it">${esc(p.last)}</span>`; };
 const countWord = (c, n) => (c === n ? (n === 2 ? 'Both' : 'All ' + NUMW[n]) : cap(NUMW[c] || String(c)));
 const trackIcon = (t) => ICON[t] || ICON.genai;
@@ -769,8 +770,10 @@ function tableWho(t) {
   if (t.type !== 'kindred') return `A tech table of ${nw(t.size)} who love ${t.trackName}`;
   return t.theme ? `A social table of ${nw(t.size)}, and ${nw(t.theme.n)} of you want to ${SX.ACTV[t.theme.act] || t.theme.act.toLowerCase()}` : `A social table of ${nw(t.size)}, seated for how you click, not what you do`;
 }
+// what a seal says: the kind of table, or the round
+const sealWord = (t) => (t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t) {
-  return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation"><i class="fold"></i><span class="seal">${tableKind(t) === 'social' ? 'S' : 'T'}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social table' : 'Tech table'}, ${esc(t.day)} evening</small></span></button>`;
+  return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i><span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
 const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
@@ -811,7 +814,7 @@ function firstTableHTML() {
   return `<div class="cardg firsttable"><div class="ctitle">${GICON.spark} Your first ${kind}</div>
     <h3>${social ? 'Dinner with four or five people you’d click with' : `Dinner with four or five people who love ${esc(tr ? SX.track(tr).t : 'tech')}`}</h3>
     <ol class="fsteps">${steps.map(([t, s], i) => `<li class="${i === 0 ? (picked ? 'done' : 'now') : i === 1 && picked ? 'now' : ''}"><i>${i === 0 && picked ? ICON.check : i + 1}</i><div><b>${t}</b><span>${esc(s)}</span></div></li>`).join('')}</ol>
-    ${a.count >= (a.max || 1) && !A.view.me.paused && !A.view.me.cool ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal">${social ? 'S' : 'T'}</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
+    ${a.count >= (a.max || 1) && !A.view.me.paused && !A.view.me.cool ? `<div class="env pending ${social ? 'social' : 'career'}" aria-label="Your invitation is on its way"><i class="fold"></i><span class="seal mono">#</span><span class="to">On its way<b>for ${esc(A.view.me.first)}</b><small>Sealed until Sunday night</small></span></div>` : ''}
     ${picked ? '' : `<button class="btn sm" onclick="$('availCard').scrollIntoView({behavior:'smooth',block:'center'})">Pick my evenings</button>`}</div>`;
 }
 function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
@@ -936,11 +939,13 @@ function drawInvite(already) {
   const t = A.inv, k = tableKind(t), me = A.view.me, who = tableWho(t).toLowerCase();
   const lines = (t.why || []).filter((l) => who.indexOf(l.replace(/\*/g, '').toLowerCase()) < 0 && l.replace(/\*/g, '').toLowerCase().indexOf(who.split(', and ').pop()) < 0).slice(0, 2);
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
-      <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${k === 'social' ? 'S' : 'T'}</span></div>
+      <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${sealWord(t)}</span></div>
       <article class="invite ${k}">
+        <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
         <h2>${t.round > 1 ? `you’re invited to <span class="it">round ${nw(t.round)}</span>` : `you’re invited to a <span class="it">${k === 'social' ? 'small dinner' : 'tech table'}</span>`}</h2>
+        <div class="ikind ${k}">${k === 'social' ? 'Social table' : 'Tech table'}${t.round > 1 ? `, round ${nw(t.round)}` : ''}</div>
         <div class="rule"></div>
         <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? (t.spotIn ? 'Tonight. The spot is on your table.' : 'Tonight. The exact spot arrives at noon.') : 'The exact spot arrives on the day, at noon.'}</small></div>
         <div class="rule"></div>

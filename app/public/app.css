@@ -1427,3 +1427,29 @@ h2.q.tabh{margin-top:6px;font-size:34px}
 .whogrid .seat.dim{opacity:.32}
 
 button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inherit;cursor:pointer}
+
+/* ---------- the invitation, refined: paper, a wax seal that says what it is, a letterhead ---------- */
+:root{--paper-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .34 0 0 0 0 .26 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.env{background:var(--paper-grain),linear-gradient(168deg,#FDFAF5 0%,#F6EFE5 55%,#EFE5D8 100%);border:1px solid rgba(150,120,100,.2);box-shadow:0 22px 40px -26px rgba(70,50,40,.55),0 1px 0 rgba(255,255,255,.8) inset}
+.env::before{background:var(--paper-grain),linear-gradient(180deg,#F9F3EA,#EDE3D6)}
+/* the seal: a pill of wax with the word pressed into it */
+.seal{left:50%;top:50%;width:auto;min-width:78px;height:38px;margin:0;padding:0 18px;translate:-50% -50%;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--italic);font-style:italic;font-weight:400;font-size:19px;letter-spacing:-.005em;line-height:1;white-space:nowrap;color:#FFF6EE;
+  text-shadow:0 1px 0 rgba(0,0,0,.28),0 -1px 0 rgba(255,255,255,.14)}
+.env:not(.pending) .seal{top:38%}
+.career .seal{background:radial-gradient(130% 160% at 28% 22%,#9AB0CC,#566F92 52%,#3D5474);box-shadow:inset 0 0 0 3px rgba(255,255,255,.1),inset 0 -4px 7px rgba(10,20,40,.32),inset 0 3px 5px rgba(255,255,255,.18),0 10px 18px -10px rgba(30,50,80,.85)}
+.social .seal{background:radial-gradient(130% 160% at 28% 22%,#E2A6B1,#AE5A6E 52%,#8C4055);box-shadow:inset 0 0 0 3px rgba(255,255,255,.1),inset 0 -4px 7px rgba(60,10,20,.3),inset 0 3px 5px rgba(255,255,255,.18),0 10px 18px -10px rgba(110,40,55,.8)}
+.seal.mono{min-width:0;width:44px;height:44px;padding:0;border-radius:50%;font-size:22px;font-style:normal;font-family:var(--sans);font-weight:500}
+.env .to{bottom:18px;font-size:11.5px;font-weight:600;color:#9A8576}
+.env .to b{font-size:21px;margin-top:3px;color:#352F2A}
+.env .to small{font-size:12.5px;letter-spacing:0;font-weight:500;color:#8A7A6E;margin-top:4px}
+.inv-env{background:var(--paper-grain),linear-gradient(168deg,#FDFAF5,#EFE5D8)}
+.inv-env .flap{background:var(--paper-grain),linear-gradient(180deg,#F9F3EA,#EADFD1)}
+.inv-env .seal{top:124px}
+/* the letter: a quiet letterhead, the kind of table under the line, paper you could feel */
+.invite{background:var(--paper-grain),linear-gradient(180deg,#FEFCF8,#FAF6EF)}
+.invite .ihead{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 14px;font-size:12.5px;font-weight:600;letter-spacing:-.003em;color:#8A7466}
+.invite .ihash{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-size:13px;font-weight:600;color:#FBF6EE;background:linear-gradient(160deg,#5E4E43,#3D322B)}
+.invite .ikind{display:inline-flex;align-items:center;height:26px;margin:16px auto 0;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:650}
+.invite .ikind.career{color:#3F5C8E;background:rgba(126,152,212,.14);box-shadow:inset 0 0 0 1px rgba(126,152,212,.35)}
+.invite .ikind.social{color:#9F4D5A;background:rgba(213,140,153,.14);box-shadow:inset 0 0 0 1px rgba(213,140,153,.38)}
