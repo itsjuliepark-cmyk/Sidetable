@@ -98,11 +98,6 @@ textarea{width:100%;min-height:60px}
       <p class="soft" id="plOut">Weeknights are the easy ask: the restaurant gets a confirmed group on a slow evening, and everyone orders a main and a drink.</p></div>
     <h2>Needs a person</h2>
     <div class="card" id="plNeeds"></div>
-    <h2>This month’s long table</h2>
-    <div class="card"><div class="soft" id="ltInfo"></div>
-      <div class="row" style="margin-top:8px"><input type="text" class="grow" id="ltName" placeholder="Place (a private room, a sponsor’s space)" aria-label="Long table place"><input type="text" class="grow" id="ltAddr" placeholder="Address" aria-label="Long table address"><input type="number" id="ltCap" min="8" max="200" value="40" style="width:80px" aria-label="Seats"><input type="date" id="ltDate" aria-label="Long table date" title="Move it off a holiday"></div>
-      <div class="row" style="margin-top:8px"><input type="text" class="grow" id="ltPay" placeholder="Who pays, e.g. $35 at the door, or Hosted by a fund" aria-label="Who pays"><input type="text" class="grow" id="ltNote" placeholder="Note" aria-label="Long table note"><button id="ltGo">Save</button></div>
-      <p class="soft">Book the room six to eight weeks out. Private rooms near the squares usually want a food-and-drink minimum (often $2,500 to $6,500 on a weeknight) and a final count about a week before, so RSVPs here close five days out and stop at the seat limit, with a line after that.</p></div>
   </section>
 
   <section id="v-ops" hidden>
@@ -111,7 +106,7 @@ textarea{width:100%;min-height:60px}
     <h2>Alerts</h2>
     <div class="card" id="opsAlerts"></div>
     <h2>The team and the rota</h2>
-    <div class="card"><p class="soft">One person is on duty each day and gets every alert by email: a table with no place, a restaurant that hasn’t answered, a table that changed on the day, a partner that keeps cancelling. Partner deals, Sunday’s publish and the long table stay with the ops lead.</p>
+    <div class="card"><p class="soft">One person is on duty each day and gets every alert by email: a table with no place, a restaurant that hasn’t answered, a table that changed on the day, a partner that keeps cancelling. Partner deals and Sunday’s publish stay with the ops lead.</p>
       <div id="opsTeam"></div><div class="row" style="margin-top:8px"><button class="ghost" id="opsAdd">Add a person</button><button id="opsGo">Save team and rota</button></div><div class="tbl" style="margin-top:12px"><table id="opsRota"></table></div></div>
   </section>
 
@@ -174,7 +169,7 @@ function load() {
     S = s; $('keyrow').hidden = true; $('app').hidden = false;
     var m = s.metrics;
     $('stats').innerHTML = [['Invited', m.invited], ['Joined', m.joined + ' <small class=soft>(' + m.harvard + ' Harvard, ' + m.mit + ' MIT)</small>'], ['Show-up', m.showUp, 1], ['Confirmed came', m.confirmed], ['Avg rating', m.rating, 1], ['Came back in 3 wks', m.rebook, 1],
-      ['Mutual picks', m.mutual], ['1:1 chats', m.dms], ['Pairs met once', m.met], ['Met twice', m.second], ['Met three times', m.third, 1], ['Want same table', m.wantAgain], ['Round twos booked', m.standing], ['Long table, going', m.longGoing], ['Pop-ups hosted', m.popsHosted], ['Pop-up joins', m.popJoins], ['Open roles', m.roles], ['Intro asks', m.introsAsked], ['Intros made', m.introsYes], ['Mutual waves', m.waves]]
+      ['Mutual picks', m.mutual], ['1:1 chats', m.dms], ['Pairs met once', m.met], ['Met twice', m.second], ['Met three times', m.third, 1], ['Want same table', m.wantAgain], ['Round twos booked', m.standing], ['Pop-ups hosted', m.popsHosted], ['Pop-up joins', m.popJoins], ['Open roles', m.roles], ['Intro asks', m.introsAsked], ['Intros made', m.introsYes], ['Mutual waves', m.waves]]
       .map(function (x) { return '<div' + (x[2] ? ' class=ns' : '') + '><b>' + x[1] + '</b><span>' + x[0] + '</span></div>'; }).join('');
     var w = s.week;
     $('week').innerHTML = '<div class=soft>Week of ' + esc(w.week) + ', members can change their slots until ' + esc(w.closes) + ', <b>' + w.people + '</b> people marked their week</div>'
@@ -217,9 +212,6 @@ function drawPlaces(P) {
   $('plNeeds').innerHTML = P.needs.length ? P.needs.map(function (n) {
     return '<p><b>' + esc(n.label) + '</b>: ' + esc(n.text) + ' ' + (n.kind === 'noplace' ? '<button class="ghost small" data-pt="' + n.table + '">Place it</button> <button class="ghost small" data-off="' + n.table + '">Call it off</button>' : '<button class="ghost small" data-pa="' + n.place + '|' + n.date + '|1">Yes, by phone</button> <button class="ghost small" data-pa="' + n.place + '|' + n.date + '|0">Can’t host</button>') + '</p>';
   }).join('') + '<p class=soft>A table with no place: add a partner or tables (it’s placed on its own within five minutes), type a venue in by hand on its night, or call it off. Called-off tables go first next week and can ask for another evening.</p>' : '<p class=soft>Nothing needs a person right now.</p>';
-  var L = P.long;
-  $('ltInfo').textContent = L.date + ' at 7 PM. ' + L.going + ' going of ' + L.cap + (L.wait ? ', ' + L.wait + ' in line' : '') + '. RSVPs close ' + L.closes + ' at noon. ' + (L.spot ? 'Members see ' + L.spot.name + (L.spot.pay ? ' (' + L.spot.pay + ')' : '') + '.' : 'No place yet. Members see it once you save one.');
-  if (document.activeElement && ['ltName', 'ltAddr', 'ltNote', 'ltPay', 'ltCap', 'ltDate'].indexOf(document.activeElement.id) < 0) { $('ltDate').value = L.day || ''; $('ltName').value = L.spot ? L.spot.name : ''; $('ltAddr').value = L.spot ? L.spot.address : ''; $('ltNote').value = L.spot ? L.spot.note : ''; $('ltPay').value = L.spot ? L.spot.pay || '' : ''; $('ltCap').value = L.cap; }
 }
 function editPlace(v) {
   $('plId').value = v ? v.id : ''; $('plHead').textContent = v ? 'Edit ' + v.name : 'Add a partner';
@@ -323,7 +315,6 @@ $('plGo').onclick = function () {
 $('plNew').onclick = function () { editPlace(null); };
 $('opsAdd').onclick = function () { readTeam(); OPS.team.push({ id: 'p' + Math.random().toString(16).slice(2, 8).padEnd(6, '0'), name: '', email: '', role: '' }); drawTeam(); };
 $('opsGo').onclick = function () { readTeam(); api('POST', '/api/admin/ops', { team: OPS.team, rota: OPS.rota }).then(function (o) { drawOps(o); alert('Saved.'); }).catch(function (er) { alert(er.message); }); };
-$('ltGo').onclick = function () { api('POST', '/api/admin/long-spot', { name: $('ltName').value, address: $('ltAddr').value, note: $('ltNote').value, pay: $('ltPay').value, cap: +$('ltCap').value, date: $('ltDate').value }).then(function (p) { S.places = p; drawPlaces(p); }).catch(function (e) { alert(e.message); }); };
 $('evInd').onchange = function () { $('evIndRow').hidden = !this.checked; };
 $('evGo').onclick = function () { api('POST', '/api/admin/event', { type: $('evType').value, date: $('evDate').value, time: $('evTime').value, area: $('evArea').value, notify: $('evNotify').checked, industry: $('evInd').checked, guest: $('evGuest').value, role: $('evRole').value, about: $('evAbout').value }).then(function (e) { $('evOut').textContent = 'Seats are open.'; openEv = e.id; load(); }).catch(function (e) { $('evOut').textContent = e.message; }); };
 (function () { var d = new Date(Date.now() + 9 * 864e5); $('evDate').value = d.toISOString().slice(0, 10); })();

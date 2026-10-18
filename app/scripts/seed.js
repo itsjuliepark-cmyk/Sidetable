@@ -162,10 +162,6 @@ Object.values(db.tables).filter((t) => t.published && !t.closed && !t.venue && t
   const opts = S.spotOptions(t).filter((o) => o.kind === 'book'), c = db.members[t.captain]; if (!opts.length || !c) return;
   try { S.captainBook(c, { table: t.id, place: opts[k % opts.length].id, time: db.events[t.eventId].time, name: c.name }); } catch (e) {}
 });
-// the long table at the end of the month: some of Jordan's people already said they're in (Jordan hasn't yet)
-const month = S.monthNow(); db.long[month] = {};
-db.longSpot[month] = { name: 'The Demo Loft', address: 'Main St, Kendall Square', note: 'Upstairs, one long table' };
-members.slice(1).filter((m, i) => i % 3 === 0 || demoTwo.indexOf(m.id) >= 0).forEach((m, k) => { db.long[month][m.id] = ago(40 - k); });
 
 // 3. next week: most people have marked their evenings and how many dinners they want (Jordan: two)
 const week = S.targetWeek(), eve = (d) => S.addDays(week, d) + '|dinner';

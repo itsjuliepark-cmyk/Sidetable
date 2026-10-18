@@ -857,13 +857,12 @@ function renderHome() {
   if (cs.first) out.push(`<div class="sp"></div><div class="cardg row"><div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles so far</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">${cs.first}</b> first meetings${cs.third ? ` and <b style="color:var(--ink)">${cs.third}</b> third ones` : ''}</div></div></div>`);
   $('homeBody').innerHTML = out.join('');
 }
-/* your month: every table is a bead on one thread (tap one to open it), round two wears a small 2, and the month ends with a
-   long table for everyone who sat at one. Below: how many people so far, the long table, and the line you're carrying. */
+/* your month as a calendar (tap a dinner to open it). Below: round twos coming up, and the line you're carrying. */
 const LTI = SV('<rect x="2.5" y="10" width="19" height="4" rx="2"/><circle cx="6" cy="6.3" r="1.5"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="18" cy="6.3" r="1.5"/><circle cx="6" cy="17.7" r="1.5"/><circle cx="12" cy="17.7" r="1.5"/><circle cx="18" cy="17.7" r="1.5"/>', 17);
 const PEN = SV('<path d="M4 20l4.4-1 10.1-10.1a2.1 2.1 0 0 0-3-3L5.4 16z"/><path d="M14 7l3 3"/>', 14);
 function monthHTML() {
-  const M = A.view.month, L = M.long, DAY = 864e5;
-  // the month as a calendar, Sunday to Saturday, from the day after last month's long table to this month's
+  const M = A.view.month, DAY = 864e5;
+  // the month as a calendar, Sunday to Saturday, from the 1st to the last day
   const ymd = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const start = ymd(M.from), first = start - new Date(start).getUTCDay() * DAY, end = start + (M.span - 1) * DAY, last = end + (6 - new Date(end).getUTCDay()) * DAY;
   const byAt = {}; M.beads.forEach((x) => { (byAt[x.at] = byAt[x.at] || []).push(x); });
@@ -872,11 +871,11 @@ function monthHTML() {
     let row = '';
     for (let d = w; d < w + 7 * DAY; d += DAY) {
       const at = Math.round((d - start) / DAY), inSpan = at >= 0 && at < M.span, dt = new Date(d), n = dt.getUTCDate();
-      const items = (inSpan && byAt[at]) || [], tb = items.find((x) => x.kind !== 'hang'), hg = items.find((x) => x.kind === 'hang'), isLong = inSpan && at === L.at;
+      const items = (inSpan && byAt[at]) || [], tb = items.find((x) => x.kind !== 'hang'), hg = items.find((x) => x.kind === 'hang');
       const num = n === 1 || at === 0 ? `${MON[dt.getUTCMonth()]} ${n}` : String(n);
-      const cls = ['cd', inSpan ? '' : 'out', tb ? `din ${tb.kind} ${tb.past ? 'past' : 'soon'}` : '', isLong ? `long${L.going ? ' in' : ''}` : '', at === M.today ? 'today' : '', num.length > 2 ? 'mo' : ''].filter(Boolean).join(' ');
-      const tag = tb ? (tb.round > 1 ? `<small class="lg">Round ${tb.round}</small>` : `<small>${tb.kind === 'social' ? 'Social' : 'Tech'}</small>`) : isLong ? '<small>Long</small>' : hg ? '<small>Hang</small>' : '';
-      const label = tb ? `${tb.kind === 'social' ? 'Social' : 'Tech'} table, ${esc(tb.label)}${tb.past ? '' : ', coming up'}` : isLong ? `Long table, ${esc(L.date)}` : hg ? `A hang, ${esc(hg.label)}` : '';
+      const cls = ['cd', inSpan ? '' : 'out', tb ? `din ${tb.kind} ${tb.past ? 'past' : 'soon'}` : '', at === M.today ? 'today' : '', num.length > 2 ? 'mo' : ''].filter(Boolean).join(' ');
+      const tag = tb ? (tb.round > 1 ? `<small class="lg">Round ${tb.round}</small>` : `<small>${tb.kind === 'social' ? 'Social' : 'Tech'}</small>`) : hg ? '<small>Hang</small>' : '';
+      const label = tb ? `${tb.kind === 'social' ? 'Social' : 'Tech'} table, ${esc(tb.label)}${tb.past ? '' : ', coming up'}` : hg ? `A hang, ${esc(hg.label)}` : '';
       const go = tb ? `openTable('${tb.id}')` : hg ? `openPop('${hg.id}')` : '';
       row += go ? `<button class="${cls}${hg && !tb ? ' hangday' : ''}" onclick="${go}" aria-label="${label}"><b>${num}</b>${tag}${hg && tb ? '<i class="hdot"></i>' : ''}</button>`
         : `<div class="${cls}"${label ? ` aria-label="${label}"` : ''}><b>${num}</b>${tag}</div>`;
@@ -884,27 +883,13 @@ function monthHTML() {
     weeks.push(`<div class="wk">${row}</div>`);
   }
   const kinds = new Set(M.beads.map((x) => x.kind));
-  const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}<span><i class="sw long"></i>Long table</span>${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
-  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way, then a long table` : 'Every table you sit at shows up on this calendar';
-  const when = `${esc(L.label.split(',')[0])} at ${esc(L.time.replace(':00', ''))}${L.spot ? `, ${esc(L.spot.name)}` : ''}`, sub = L.tonight ? `Tonight at ${esc(L.time)} in ${esc(L.area)}` : L.going ? `${when}. You’re in, with ${L.count - 1 > 0 ? `${L.count - 1} ${L.count - 1 === 1 ? 'other' : 'others'}` : 'more coming'}` : L.known ? `${when}. ${cap(nw(L.known))} of your people ${L.known > 1 ? 'are' : 'is'} going` : `${when}. Everyone from this month’s tables, together`;
-  const sub2 = L.wait ? `${when}. You’re #${L.wait} in line, and a seat opens whenever someone can’t come` : !L.going && L.closed ? `${when}. RSVPs closed and the count went to the venue` : !L.going && L.full ? `${when}. It’s full, so join the line and a seat may open` : sub;
-  const lbtn = L.going ? `<button class="lgo on" onclick="goLong(false, this)">${ICON.check}Going</button>` : L.wait ? `<button class="lgo on" onclick="goLong(false, this)">In line</button>` : L.closed ? '' : `<button class="lgo" onclick="goLong(true, this)">${L.full ? 'Join the line' : 'I’m in'}</button>`;
-  const long = L.invited ? `<div class="longrow">${L.faces.length ? `<span class="avs">${L.faces.map((f) => av(f, 'xs')).join('')}</span>` : `<span class="lti">${LTI}</span>`}<div class="grow"><b>Long table, ${esc(L.date)}</b><small>${sub2}</small></div>
-      ${lbtn}</div>`
-    : `<div class="longrow off"><span class="lti">${LTI}</span><div class="grow"><b>Long table, ${esc(L.date)}</b><small>${when}. Everyone who sits at a table this month is invited</small></div></div>`;
+  const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
+  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way` : 'Every table you sit at shows up on this calendar';
+  const again = (M.again || []).map((g) => `<button class="longrow" onclick="openTable('${g.id}')"><span class="avs">${g.faces.map((f) => av(f, 'xs')).join('')}</span><div class="grow"><b>Round ${nw(g.round)}, ${esc(g.label)}</b><small>The same table, together again</small></div></button>`).join('');
   return `<div class="cardg month"><div class="mhead"><h3>Your <span class="it">${esc(M.name)}</span></h3><div class="sub2">${esc(stat)}</div></div>
     <div class="cal" aria-label="Your tables this month"><div class="dow">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((x) => `<span>${x}</span>`).join('')}</div>${weeks.join('')}</div>
     ${legend}
-    ${long}${M.loose ? `<div class="looserow"><span class="lti">${PEN}</span><div class="grow"><small>Before your next table</small><b>${esc(M.loose)}</b></div></div>` : ''}</div>`;
-}
-function goLong(on, b) {
-  b.disabled = true;
-  api('POST', '/api/long', { going: on }).then((r) => {
-    A.view = r.view; if (cur === 'home') renderHome();
-    if (on && r.wait) toast('Charlie', `It’s full, so you’re #${r.wait} in line. If a seat opens, it’s yours and I’ll tell you.`);
-    else if (on) { toast('Charlie', `You’re in. See you at the long table on ${A.view.month.long.label.split(',')[0]}.`); const c = document.querySelector('#homeBody .month'); if (c) celebrate(c, 'social'); }
-    else toast('Charlie', 'Okay. Your seat goes to the next person in line.');
-  }).catch((e) => { b.disabled = false; oops(e); });
+    ${again}${M.loose ? `<div class="looserow"><span class="lti">${PEN}</span><div class="grow"><small>Before your next table</small><b>${esc(M.loose)}</b></div></div>` : ''}</div>`;
 }
 /* next week with Charlie: how many dinners (1 to 5) and which evenings */
 const DAYN = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday' };
@@ -1630,7 +1615,7 @@ function againHTML(t, F) {
   if (G.open === false) return '';
   if (G.busy) return `<div class="cardg again"><div class="grow"><b>Round ${rd} didn’t fit</b><div class="sub2">Most of you already have a dinner that evening. Pick each other and mark the same evening, and I’ll seat you together.</div></div></div>`;
   const yes = F.again === true, n = Math.max(0, Math.min(G.need, G.yes + (yes && !G.mine ? 1 : 0) - (!yes && G.mine ? 1 : 0)));
-  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for everyone who did, at the same spot if it has room. Up to two chairs go to someone new.</div>
+  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for the same table, just the people who said yes, at the same spot if it has room.</div>
     <div class="seg two agpick">${[[true, `Yes, round ${rd}`], [false, 'Not this time']].map(([v, l]) => `<button class="${F.again === v ? 'sel' : ''}" aria-pressed="${F.again === v}" onclick="A.fb.again=${v};drawAfter()">${l}</button>`).join('')}</div>
     <div class="agbar">${Array.from({ length: G.need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}<span>${n} of ${G.need} said yes${yes && !G.mine ? ', counting you' : ''}</span></div></div>`;
 }

@@ -23,7 +23,7 @@ npm run dev
   - 이번 주: Jordan에게 온 초대장 두 장(테크, 소셜), 테크 테이블 캡틴은 Jordan
   - 다음 주: 34명이 가능한 저녁을 이미 고른 상태라 관리자 화면에서 바로 테이블 구성 가능
   - 지난주 테이블에서 Jordan이 캡틴 미션 셋을 모두 해서 스트라이프 1개, 다음 주 Industry table 하나
-  - 그 밖에 Hang 6개, Board 글, Long table 신청 15명, 가상의 제휴 식당 4곳
+  - 그 밖에 Hang 6개, Board 글, 가상의 캡틴 예약 식당 4곳
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
@@ -46,7 +46,6 @@ SIXTOP_ADMIN_KEY=choose-a-long-secret SIXTOP_PUBLIC_URL=https://your-domain npm 
 | `RESEND_API_KEY`, `SIXTOP_MAIL_FROM` | 없음 | 인증 코드와 식당 메일을 보내는 [Resend](https://resend.com) 키와 보내는 주소, 없으면 가입 불가 |
 | `SIXTOP_MAIL` | 없음 | `show`면 인증 코드를 화면에 표시, 로컬 개발과 데모 전용, https 주소에서는 시작 거부 |
 | `SIXTOP_AUTO_WEEK` | 없음 | `1`이면 일요일 20시에 다음 주 테이블 자동 구성과 공개 |
-| `SIXTOP_LONG_TIME` | `19:00` | Long table 시작 시각 |
 | `SIXTOP_PUSH_DAY` | 4 | 한 사람이 하루에 받는 알림 최대 개수 |
 | `SIXTOP_VAPID_PUBLIC`, `SIXTOP_VAPID_PRIVATE` | 처음 실행 때 생성해 데이터 폴더에 저장 | 푸시 알림 키, 바꾸면 회원 전원 알림 재설정 필요, 잘못된 키면 시작 거부 |
 | `SIXTOP_VAPID_SUBJECT` | 없음 | 푸시 서비스에 알릴 연락처(예: `mailto:hello@your-domain`), 아이폰 알림을 위해 설정 권장 |
@@ -166,7 +165,8 @@ npm run film
 - 다음 날 아침 같은 멤버로 2주 뒤에 다시 만날지 직접 선택, 기본값 없음
 - 4~5명 테이블은 3명, 6명 테이블은 4명이 yes면 같은 요일 2주 뒤로 예약
 - 장소는 지난번 식당 우선, 자리가 없으면 다른 제휴 식당
-- yes 한 사람만 자리 배정, 남는 자리는 새 사람 최대 2명
+- yes 한 사람만, 새 사람은 추가하지 않음 (같은 테이블이 다시 모이는 자리)
+- 대기 중인 사람이나 다른 저녁을 요청한 사람도 round two 테이블에는 배정하지 않음
 - 한 표가 모자라면 단톡방에 One more yes 게시
 - round two 뒤에도 같은 방식으로 round three
 - 서로 차단한 사이는 제외, 두 명만 남으면 취소
@@ -175,8 +175,8 @@ npm run film
 
 - 같은 얼굴 다시: 서로 고른 사이는 같은 저녁을 고르면 같은 테이블, 저녁 고르기 화면에 그 사람들 얼굴 표시
 - Since last time: 다음 테이블 전까지 해 볼 일을 한 줄로 적으면 다음 테이블에서 Charlie가 언급
-- Your October: 이번 달을 달력으로 보여주는 Tables 탭 카드, 테크 테이블은 파란색 "Tech", 소셜은 분홍색 "Social", Long table은 금색, 지난 저녁은 채워진 칸, 다가오는 저녁은 점선 칸, 오늘은 테두리
-- Long table: 매달 마지막 목요일, 그 달 테이블에 앉았던 사람이 모두 모이는 저녁
+- Your October: 이번 달을 달력으로 보여주는 Tables 탭 카드, 테크 테이블은 파란색 "Tech", 소셜은 분홍색 "Social", round two는 "Round 2", 지난 저녁은 채워진 칸, 다가오는 저녁은 점선 칸, 오늘은 테두리
+- 달력은 이번 달 1일부터 말일까지, 아래에 다가오는 round two(같은 테이블 다시 모이기)와 얼굴
 - 서버 코드: `roundTwo`, `againNudge`, `fillRounds`, `setLoose`, `looseFor`, `monthView`, `setLong`
 
 ## 장소와 운영
@@ -241,7 +241,6 @@ npm run film
 
 - 처음에는 창업자와 캠퍼스 리드 1~2명이 하루씩 돌아가며 당번
 - 당번은 자리 없는 테이블, 답 없는 식당, 당일 변동 알림을 메일로 받아 Ops 탭에서 처리
-- Long table 장소는 운영팀이 6~8주 전에 직접 예약, 좌석이 차면 대기, RSVP는 5일 전 마감
 - RSVP가 마감되면 인원을 당번에게 알림, 날짜는 Places 탭에서 변경 가능 (추수감사절, 연말)
 - 서버 코드: `placeTable`, `savePlace`, `syncBooking`, `placeAnswer`, `placeMail`, `shrink`, `closeTable`, `lateChanges`, `pickCaptain`, `alertOps`, 식당 페이지는 `public/place.html`
 
@@ -350,7 +349,6 @@ npm install -g @railway/cli
 | 가입 여부 노출 | 로그인 화면에서 가입한 이메일인지 알 수 있음 | 필요하면 가입 여부와 상관없이 같은 안내로 변경 |
 | 동문 메일 | alum.mit.edu 같은 동문 주소도 가입 가능 | 학생만 받을지 결정 필요 |
 | 늦은 변경 수수료 | 점수제 | 카드 등록 후 1인 약 $15, 가입 때 미리 고지 |
-| Long table 결제 | 비용 안내 문구만 | 선결제 좌석 또는 후원 |
 | 식당 예약 시스템 연동 | 메일, 식당 전용 페이지, 전화 | 규모가 커지면 OpenTable, Resy 공식 제휴 신청 |
 
 ## 파일

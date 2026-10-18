@@ -1202,7 +1202,7 @@ textarea.field{font-family:inherit;font-size:16px;line-height:1.5;resize:none;pa
 /* the key for the gold rings */
 .tvkey{width:12px;height:12px;border-radius:50%;background:none;border:2px solid #E2B271;box-shadow:0 0 6px rgba(226,178,113,.6)}
 
-/* ---------- the month: tables as beads on one thread, ending in a long table ---------- */
+/* ---------- the month: a calendar of your dinners ---------- */
 .cardg.month{position:relative;padding:18px 18px 14px}
 .mhead h3{margin:0;font-size:19px;line-height:1.2;font-weight:600;letter-spacing:-.015em}
 .mhead .sub2{margin-top:3px;font-size:13px}
@@ -1223,8 +1223,6 @@ button.cd:active{transform:scale(.94)}
 .cd.din.social.past{background:linear-gradient(160deg,#E8AAB6,#C97786);color:#fff;box-shadow:0 8px 14px -10px rgba(120,46,60,.7)}
 .cd.din.tech.soon{background:#EEF2FB;color:#4A649C;border:1.5px dashed #8EA6DB}
 .cd.din.social.soon{background:#FCEFF2;color:#9F4D5A;border:1.5px dashed #D58C99}
-.cd.long{background:linear-gradient(160deg,#F7E6BC,#E4BE70);color:#6A4A10}
-.cd.long.in{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #D9A94A}
 .cd.hangday{background:#F4F0FC;color:#6E58B0}
 .cd .hdot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:#A893E0;box-shadow:0 0 0 1.5px #fff}
 .cd sup{position:absolute;top:4px;right:5px;font-size:8.5px;font-weight:700;line-height:1;opacity:.9}
@@ -1232,7 +1230,7 @@ button.cd:active{transform:scale(.94)}
 .mlegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 2px 0;font-size:11.5px;color:var(--ink-soft)}
 .mlegend span{display:inline-flex;align-items:center;gap:6px}
 .mlegend .sw{width:12px;height:12px;border-radius:4px;flex:none}
-.sw.tech{background:#8EA6DB}.sw.social{background:#D58C99}.sw.long{background:#E4BE70}
+.sw.tech{background:#8EA6DB}.sw.social{background:#D58C99}
 .sw.hang{background:#A893E0;border-radius:50%}
 .sw.soon{background:#fff;border:1.5px dashed #8E959C}
 .longrow,.looserow{display:flex;align-items:center;gap:11px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
@@ -1243,12 +1241,6 @@ button.cd:active{transform:scale(.94)}
 .lti{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;color:#A9782F;background:rgba(226,178,113,.2)}
 .longrow .avs .av{width:24px;height:24px;font-size:10px;margin-left:-9px;box-shadow:0 0 0 2px #fff}
 .longrow .avs .av:first-child{margin-left:0}
-.longrow.off{opacity:.8}
-.lgo{flex:none;display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 14px;border-radius:999px;background:var(--ink);color:#fff;font-size:13px;font-weight:650;box-shadow:0 8px 16px -10px rgba(18,28,38,.7);transition:transform .15s}
-.lgo:active{transform:scale(.96)}
-.lgo.on{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
-.lgo svg{width:14px;height:14px}
-.lgo:disabled{opacity:.6}
 /* your people on the evenings they marked */
 .dayp{position:relative}
 .days.haspals{padding-top:9px}
@@ -1442,6 +1434,8 @@ h2.q.tabh{margin-top:6px;font-size:34px}
 .stripes em{margin-left:6px;font-size:11.5px;font-weight:650;color:#9A7228;white-space:nowrap}
 .axsum{flex-basis:100%;padding-left:22px}
 .whogrid .seat.dim{opacity:.32}
+
+button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inherit;cursor:pointer}
 
 
 
@@ -2282,7 +2276,7 @@ h2.q.tabh{margin-top:6px;font-size:34px}
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var KEY = 'sixtop-demo-2e9510d0d3', MAX_AGE = 3 * 864e5;
+  var KEY = 'sixtop-demo-17bac10946', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -2658,7 +2652,7 @@ const HOUR = 36e5, DAY = 24 * HOUR;
 /* ---------- storage: one JSON file, written atomically ---------- */
 const DBF = path.join(DATA, 'db.json');
 const fresh = () => ({ v: 1, members: {}, clubs: {}, events: {}, seats: {}, tables: {}, chats: {}, dms: {}, feedback: {}, reports: [], log: [],
-  jobs: {}, saves: {}, intros: [], posts: [], waves: {}, links: {}, pops: {}, weeks: {}, verify: {}, long: {}, places: {}, longSpot: {}, bookings: {}, ops: {}, alerts: [], longWait: {} });
+  jobs: {}, saves: {}, intros: [], posts: [], waves: {}, links: {}, pops: {}, weeks: {}, verify: {}, places: {}, bookings: {}, ops: {}, alerts: [] });
 let db = fresh();
 try { db = Object.assign(fresh(), JSON.parse(fs.readFileSync(DBF, 'utf8'))); } catch (e) {
   // a missing file is a first run; a file that won't parse (cut off, hand-edited) is never quietly replaced by an empty one
@@ -3047,7 +3041,6 @@ function publishWeek(b) {
   if (w.published) fail('already published');
   w.events.forEach((eid) => { const e = db.events[eid]; if (e && e.status === 'draft') publish({ event: eid }, true); });
   w.published = true; w.publishedAt = new Date().toISOString(); resolveAlerts('week:' + week); resolveAlerts('autoweek:' + week);
-  fillRounds(week);
   w.unmatched.forEach((id) => { const m = db.members[id]; if (m && !Object.values(db.tables).some((t) => t.published && seatedIds(t).indexOf(id) >= 0 && (db.events[t.eventId] || {}).week === week)) {
     m.prio = (m.prio || 0) + 1; notify(id, 'unmatched');
     const ds = ((m.avail && m.avail.week === week && m.avail.slots) || []).map((s) => s.split('|')[0]).filter((d) => tzMs(d, '19:00') > Date.now() + 6 * HOUR);
@@ -3180,6 +3173,7 @@ function chairFits(m, t, e, dates, skip) {
   if (tablesOf(e.id).some((x) => x.ids.indexOf(m.id) >= 0)) return false;
   if (Object.keys(db.seats).some((eid) => eid !== e.id && ((db.seats[eid] || {})[m.id] || {}).status === 'held' && (db.events[eid] || {}).date === e.date)) return false;
   if (e.date === skip || eventTimes(e).start < Date.now() + 6 * HOUR || eventTimes(e).start > Date.now() + 8 * DAY) return false;
+  if ((t.round || 1) > 1) return false; // round two is the same table meeting again
   const ids = seatedIds(t); if (ids.length >= tableCap(t) || t.ids.indexOf(m.id) >= 0) return false;
   if (ids.some((id) => apart(m.id, id))) return false;
   if (Object.values(db.tables).some((x) => x !== t && x.published && seatedIds(x).indexOf(m.id) >= 0 && (db.events[x.eventId] || {}).date === e.date)) return false;
@@ -3212,7 +3206,7 @@ function reinvite(me, b) {
   if (!from || !fe || from.ids.indexOf(me.id) < 0 || !(from.out && from.out[me.id])) fail('let Charlie know you can’t make that table first');
   if (seat && seat.reinvited) fail('you already asked for another evening for that one');
   if (cooling(me)) fail('your invitations are paused until ' + dayLabel(Date.parse(me.coolUntil)) + ', so I can’t find you another evening before then');
-  const kind = fe.type, skip = fe.date;
+  const kind = mixFor(me, fe.type) ? fe.type : fe.type === 'topic' ? 'kindred' : 'topic', skip = fe.date; // someone fitted in at the other kind of table asks for the kind they wanted
   const dates = arr(b.dates).filter((d, i, a) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== skip && a.indexOf(d) === i).slice(0, 8);
   if (!dates.length) fail('pick at least one evening');
   if (seat) seat.reinvited = true;
@@ -3421,18 +3415,7 @@ function placesAdmin() {
       booked: isPartner(v) ? [] : Object.values(db.tables).filter((t) => t.published && !t.closed && t.venue && t.venue.pid === v.id && (db.events[t.eventId] || {}).date >= today).map((t) => { const e = db.events[t.eventId], c = capOf(t); return { label: shortLabel(eventTimes(e).start) + ', ' + timeLabel(t.time ? tzMs(e.date, t.time) : eventTimes(e).start), size: seatedIds(t).length, by: c.booking ? c.booking.name : '' }; }),
       evenings: B.filter((b) => b.vid === v.id && b.date >= today && b.date <= last && (b.state !== 'released' || b.told)).sort((a, b) => (a.date < b.date ? -1 : 1)).map((b) => ({ date: b.date, label: shortLabel(tzMs(b.date, '12:00')), state: b.state, started: tablesAt(v, b.date).some((t) => eventTimes(db.events[t.eventId]).start <= now), tables: b.tables || 0, covers: b.covers || 0, of: v.tables, due: b.state === 'asked' ? shortLabel(confirmBy(b)) + ' ' + timeLabel(confirmBy(b)) : '' })) })),
     needs: needs.sort((a, b) => (a.at < b.at ? -1 : 1)),
-    long: { month: monthNow(), day: longDate(monthNow()), date: dayLabel(tzMs(longDate(monthNow()), LONG_TIME)), spot: ((db.longSpot || {})[monthNow()] || {}).name ? db.longSpot[monthNow()] : null, going: Object.keys(db.long[monthNow()] || {}).length, wait: arr((db.longWait || {})[monthNow()]).length, cap: longCap(monthNow()), closes: dayLabel(longCloses(monthNow())) }
   };
-}
-function setLongSpot(b) {
-  const mo = monthNow(), name = clip(b.name, 80).trim();
-  db.longSpot = db.longSpot || {};
-  const cap = Math.max(8, Math.min(200, Math.round(+b.cap) || longCap(mo)));
-  const was = db.longSpot[mo] || {}, date = /^\d{4}-\d{2}-\d{2}$/.test(String(b.date || '')) && String(b.date).slice(0, 7) === mo ? String(b.date) : b.date === '' ? '' : was.date || '';
-  if (date && date !== was.date && tzMs(date, LONG_TIME) < Date.now()) fail('that date has passed');
-  db.longSpot[mo] = Object.assign(name ? { name, address: clip(b.address, 120).trim(), note: clip(b.note, 160).trim(), pay: clip(b.pay, 80).trim(), cap } : { cap }, date ? { date } : {});
-  promoteLong(mo);
-  return placesAdmin();
 }
 
 /* ---------- bookings: each partner's evenings, and who has said what ----------
@@ -3603,15 +3586,15 @@ function placeMail(now) {
 /* ---------- who runs it: the ops team and the person on duty ----------
    A small team (at first the founder and one or two campus leads) takes turns being on duty, one person a day. Whoever is
    on duty gets every alert by email (an evening with no place, a restaurant that hasn't answered, a table that changed on
-   the day, a partner that keeps cancelling) and clears it on the admin page. Partner deals, the weekly publish and the
-   long table stay with the ops lead. */
+   the day, a partner that keeps cancelling) and clears it on the admin page. Partner deals and the weekly publish stay
+   with the ops lead. */
 function opsDuty(nowMs) { const O = db.ops || {}, team = arr(O.team); if (!team.length) return null; const d = dowOf(ymdTz(nowMs || Date.now())); return team.find((p) => p.id === (O.rota || {})[d]) || team[0]; }
 function alertOps(key, kind, text) {
   db.alerts = arr(db.alerts);
   if (db.alerts.some((a) => a.key === key && (!a.done || (a.doneAt && Date.now() - Date.parse(a.doneAt) < 6 * HOUR)))) return;
   const a = { id: 'a' + rid(4), key, kind, text: clip(text, 400), at: isoNow(), done: false };
   db.alerts.push(a); db.alerts = db.alerts.slice(-200);
-  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables', long: 'the long table count' }[kind] || 'needs a look';
+  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables' }[kind] || 'needs a look';
   const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Hash Table: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
   log('alert', kind, key);
 }
@@ -3956,14 +3939,6 @@ function captainChecks(me, b) {
   return { ok: true, cap: capView(t, me) };
 }
 
-/* ---------- the long table: a real room with a real limit ----------
-   The ops lead books the room by hand, weeks ahead: a private room usually comes with a food-and-drink minimum and a final
-   count about a week out, or a sponsor hosts. RSVPs stop at the room's limit and the rest wait in line; they close five days
-   before at noon, when the count goes to the venue. After that you can still say you can't come, and the first person in
-   line gets the seat. */
-const LONG_CAP = 40;
-const longCap = (mo) => (((db.longSpot || {})[mo] || {}).cap) || LONG_CAP;
-const longCloses = (mo) => tzMs(addDays(longDate(mo), -5), '12:00');
 
 function publish(b, quiet) {
   const e = db.events[b.event]; if (!e) fail('no such event');
@@ -4183,9 +4158,8 @@ function feedback(me, b) {
 
 /* ---------- round two: the same table, two weeks later ----------
    The morning after, everyone answers "same table in two weeks?". Once most of the table says yes (three of four or five,
-   four of six), Charlie books round two: the same weekday two weeks on, the same spot, everyone who said yes. Up to two
-   chairs stay open for people who marked that evening and didn't get a table, so a table that keeps meeting never closes
-   into a clique. Round two can lead to round three the same way. */
+   four of six), Charlie books round two: the same weekday two weeks on, the same spot, everyone who said yes, and only
+   them. It's the same table meeting again, so no new chairs are added. Round two can lead to round three the same way. */
 const againNeed = (n) => Math.max(3, Math.ceil(n * 0.6));
 // how many a table can seat: six, or fewer if its restaurant only holds fewer
 const tableCap = (t) => Math.min(6, (t && t.venue && t.venue.id && ((db.places || {})[t.venue.id] || {}).seats) || 6);
@@ -4214,9 +4188,8 @@ function roundWhy(t) {
   if (c && g.revealed) { const A = was.filter((id) => g.sides[id] === 'a').length, B = was.filter((id) => g.sides[id] === 'b').length; if (A + B) out.push(`Last time you argued *${c.kw || c.q}*${A === B ? `, and it ended ${A} to ${B}. Tonight settles it` : `, and it went ${Math.max(A, B)} to ${Math.min(A, B)}`}`); }
   const moved = g && g.revealed ? back.filter((id) => g.final[id] && g.sides[id] && g.final[id] !== g.sides[id]).length : 0;
   if (moved) out.push(`${capFirst(NUMW(moved))} of you changed sides by the morning, so tonight is a rematch`);
-  const open = Math.min(tableCap(t), back.length + 2) - ids.length;
-  if (fresh.length) out.push(`*${listNames(fresh)}* ${fresh.length > 1 ? 'are' : 'is'} new this round`);
-  else if (open > 0) out.push(`*${capFirst(NUMW(open))} ${open > 1 ? 'chairs stay' : 'chair stays'} open* for someone new`);
+  if (fresh.length) out.push(`*${listNames(fresh)}* ${fresh.length > 1 ? 'are' : 'is'} back too`);
+  else out.push(`Just the ${NUMW(ids.length)} of you, *the same table* again`);
   return out.slice(0, 4);
 }
 function roundTwo(t) {
@@ -4234,9 +4207,9 @@ function roundTwo(t) {
   const nt = { id: 't' + rid(5), eventId: ne.id, no: 1, track: t.track, ids: ids.slice(), round, root: t.root || t.id, prev: t.id, venue: t.venue && !t.venue.id && !t.venue.pid ? Object.assign({}, t.venue) : null,
     published: true, publishedAt: now, attended: {}, createdAt: now, score: t.score, flags: [], split: t.split || null };
   db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); noPlace(nt, tzMs(date, e.time)); briefCaptain(nt); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
-  const when = eventTimes(ne).start, open = Math.min(tableCap(nt), ids.length + 2) - ids.length, spot = nt.same ? 'same spot' : nt.venue ? 'a new spot this time' : 'your captain books the spot';
+  const when = eventTimes(ne).start, spot = nt.same ? 'same spot' : nt.venue ? 'a new spot this time' : 'your captain books the spot';
   charlie(nt.id, `Round ${NUMW(round)}, ${spot}. Why you’re back:\n${nt.why.join('\n')}`, 'why');
-  charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}.${open > 0 ? ` I’m keeping ${NUMW(open)} ${open > 1 ? 'chairs' : 'chair'} open for someone new.` : ''} It’s on Tables.`);
+  charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}, just the ${NUMW(ids.length)} of you who said yes. It’s on Tables.`);
   startGame(nt);
   ids.forEach((id) => notify(id, 'again', { day: weekday(when), n: round }));
   log('round', nt.id, String(round));
@@ -4264,25 +4237,6 @@ function againView(t, me) {
   return { when: e ? dayLabel(at) : '', open: !!e && e.status !== 'cancelled' && at >= Date.now() + ROUND_AHEAD, yes: againIds(t).length, need: againNeed(n), round: (t.round || 1) + 1,
     mine: !!(((db.feedback[t.id] || {})[me.id]) || {}).again, booked: nt && ne && ne.status !== 'cancelled' && !nt.closed ? { id: nt.id, label: dayLabel(eventTimes(ne).start), in: seatedIds(nt).indexOf(me.id) >= 0, same: !!nt.same } : null,
     busy: !!t.busyNoted && !nt, off: t.next === 'off' || !!(ne && ne.status === 'cancelled') || !!(nt && nt.closed) };
-}
-// round-two tables that week: their open chairs go to new people who marked that evening and still have room for a dinner
-// (never someone from the table before: a yes is already seated, and a no meant no)
-function fillRounds(week) {
-  const w = db.weeks[week] || { unmatched: [] }, dates = weekSlots(week).map((s) => s.split('|')[0]);
-  const inWeek = (x) => dates.indexOf((db.events[x.eventId] || {}).date) >= 0;
-  const room = (m) => (m.avail.max || 1) - Object.values(db.tables).filter((x) => x.published && inWeek(x) && seatedIds(x).indexOf(m.id) >= 0).length;
-  Object.values(db.tables).filter((t) => t.round > 1 && t.published && !t.closed && inWeek(t) && (db.events[t.eventId] || {}).status === 'published').forEach((t) => {
-    const e = db.events[t.eventId], prev = db.tables[t.prev], before = prev ? prev.ids : [], back = backIds(t).length;
-    const not = e.type === 'kindred' ? 'topic' : 'social', unm = w.unmatched || [];
-    while (seatedIds(t).length < Math.min(tableCap(t), back + 2)) {
-      const m = live().filter((x) => done(x) && !x.paused && before.indexOf(x.id) < 0 && x.avail && x.avail.week === week && x.avail.slots.indexOf(e.date + '|dinner') >= 0 && room(x) > 0
-        && ((x.profile || {}).mix || 'both') !== not && chairFits(x, t, e, [e.date], null) && !seatedIds(t).some((y) => apart(x.id, y)))
-        .sort((a, b) => (unm.indexOf(b.id) >= 0) - (unm.indexOf(a.id) >= 0) || (b.prio || 0) - (a.prio || 0) || ((a.avail.at || '') < (b.avail.at || '') ? -1 : 1))[0];
-      if (!m) break;
-      seatAt(m, t, e); w.unmatched = (w.unmatched || []).filter((id) => id !== m.id);
-    }
-    t.why = roundWhy(t);
-  });
 }
 
 /* ---------- before next time ----------
@@ -4324,45 +4278,19 @@ function looseAt(t, me) {
   return seatedIds(t).map((id) => { const m = db.members[id], l = m && !m.deleted ? looseFor(m, t) : null; return l ? { id, first: id === me.id ? 'You' : firstOf(m), text: l.text, done: l.done === 'done', me: id === me.id } : null; }).filter(Boolean);
 }
 
-/* ---------- the month: every table is a bead on one thread, and the month ends with a long table ----------
-   The last Thursday of every month, everyone who sat at a table that month is invited to one long table together, so the
-   people from different tables meet each other too. A month runs from the day after last month's long table through this
-   month's, so the dinners in the last days of a month count toward the next one. */
-const LONG_TIME = process.env.SIXTOP_LONG_TIME || '19:00';
+/* ---------- the month: this month's dinners, laid out as a calendar ----------
+   The first to the last day of the month. Every table and hang you went to, or are going to, shows up on it. */
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-function longDate(mo) { const o = (((db.longSpot || {})[mo]) || {}).date; if (o && /^\d{4}-\d{2}-\d{2}$/.test(o) && o.slice(0, 7) === mo) return o; const [y, m] = mo.split('-').map(Number), last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); return addDays(last, -((dowOf(last) + 3) % 7)); }
 function nextMonth(mo) { const [y, m] = mo.split('-').map(Number); return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0'); }
-function prevMonth(mo) { const [y, m] = mo.split('-').map(Number); return m === 1 ? (y - 1) + '-12' : y + '-' + String(m - 1).padStart(2, '0'); }
-function monthSpan(mo) { return { from: addDays(longDate(prevMonth(mo)), 1), to: longDate(mo) }; }
-// this month, until its long table is over; then next month
-function monthNow() { const mo = ymdTz(Date.now()).slice(0, 7); return Date.now() > tzMs(longDate(mo), LONG_TIME) + 4 * HOUR ? nextMonth(mo) : mo; }
+function monthSpan(mo) { const [y, m] = mo.split('-').map(Number); return { from: mo + '-01', to: new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10) }; }
+function monthNow() { return ymdTz(Date.now()).slice(0, 7); }
 function tablesIn(me, mo) {
   const sp = monthSpan(mo);
   return Object.values(db.tables).filter((t) => t.published && t.ids.indexOf(me.id) >= 0 && !(t.out && t.out[me.id])).map((t) => ({ t, e: db.events[t.eventId] }))
     .filter((x) => x.e && x.e.status !== 'cancelled' && x.e.date >= sp.from && x.e.date <= sp.to);
 }
-function setLong(me, b) {
-  const mo = monthNow(), L = db.long[mo] = db.long[mo] || {}, LW = db.longWait = db.longWait || {}, W = LW[mo] = arr(LW[mo]), now = Date.now(), start = tzMs(longDate(mo), LONG_TIME);
-  if (b.going === false) {
-    const was = !!L[me.id]; delete L[me.id]; const i = W.indexOf(me.id); if (i >= 0) W.splice(i, 1);
-    if (was && now < start - 6 * HOUR) promoteLong(mo);
-    return { ok: true, going: false };
-  }
-  if (!done(me) || !tablesIn(me, mo).length) fail('sit at one table this month first');
-  if (L[me.id] || W.indexOf(me.id) >= 0) return { ok: true, going: !!L[me.id], wait: W.indexOf(me.id) + 1 };
-  if (now > longCloses(mo)) fail('RSVPs for this one closed, and the final count went to the venue');
-  if (Object.keys(L).filter((id) => db.members[id] && !db.members[id].deleted).length >= longCap(mo)) { W.push(me.id); return { ok: true, going: false, wait: W.length }; }
-  L[me.id] = isoNow();
-  return { ok: true, going: true };
-}
-// a seat opened at the long table (someone can't come, or the room got bigger): the first person waiting gets it
-function promoteLong(mo) {
-  const L = db.long[mo] = db.long[mo] || {}, W = arr((db.longWait || {})[mo]), count = () => Object.keys(L).filter((id) => db.members[id] && !db.members[id].deleted).length;
-  while (W.length && count() < longCap(mo)) { const id = W.shift(), m = db.members[id]; if (m && !m.deleted) { L[id] = isoNow(); notify(id, 'longin', { day: dayLabel(tzMs(longDate(mo), LONG_TIME)) }); } }
-  if (db.longWait) db.longWait[mo] = W;
-}
 function monthView(me, tog) {
-  const mo = monthNow(), m = +mo.slice(5), now = Date.now(), today = ymdTz(now), sp = monthSpan(mo), ld = sp.to, lstart = tzMs(ld, LONG_TIME), at = (d) => dayDiff(sp.from, d);
+  const mo = monthNow(), m = +mo.slice(5), now = Date.now(), today = ymdTz(now), sp = monthSpan(mo), at = (d) => dayDiff(sp.from, d);
   const short = (d) => fmt(tzMs(d, '12:00'), { month: 'short', day: 'numeric' });
   const mine = tablesIn(me, mo), beads = [], met = new Set();
   mine.forEach(({ t, e }) => {
@@ -4376,16 +4304,12 @@ function monthView(me, tog) {
     if (past) ids.forEach((o) => { if (o !== me.id) met.add(o); });
   });
   beads.sort((a, b) => a.at - b.at);
-  const L = db.long[mo] || {}, going = Object.keys(L).filter((id) => db.members[id] && !db.members[id].deleted);
-  tog = tog || together(me);
-  const known = going.filter((id) => id !== me.id && !blockedEither(me.id, id) && ((tog[id] || []).length || canDm(me.id, id)));
   const picked = Array.from(met).filter((o) => mine.some(({ t }) => mutualPairs(t).some((p) => p.indexOf(me.id) >= 0 && p.indexOf(o) >= 0))).length;
   const since = new Date(now - LOOSE_DAYS * DAY).toISOString(), l = arr(me.loose).filter((x) => !x.done && x.start > since).sort(byStart).pop();
   return { key: mo, name: MONTHS[m - 1], from: sp.from, span: at(sp.to) + 1, today: today >= sp.from && today <= sp.to ? at(today) : -1, fromLabel: short(sp.from), toLabel: short(sp.to), beads,
     tables: mine.length, people: met.size, picked, loose: l ? l.text : '',
-    long: { at: at(ld), label: dayLabel(lstart), date: short(ld), time: timeLabel(lstart), area: AREA, invited: done(me) && mine.length > 0, going: !!L[me.id], count: going.length,
-      known: known.length, faces: known.slice(0, 4).map((id) => mini(db.members[id], me)), tonight: today === ld, spot: done(me) && mine.length && ((db.longSpot || {})[mo] || {}).name ? db.longSpot[mo] : null,
-      cap: longCap(mo), full: going.length >= longCap(mo), closed: now > longCloses(mo), closes: dayLabel(longCloses(mo)), wait: arr((db.longWait || {})[mo]).indexOf(me.id) + 1 } };
+    // round twos coming up: the same table meeting again
+    again: Object.values(db.tables).filter((t) => t.published && !t.closed && (t.round || 1) > 1 && seatedIds(t).indexOf(me.id) >= 0 && db.events[t.eventId] && eventTimes(db.events[t.eventId]).start > now).map((t) => ({ t, e: db.events[t.eventId] })).sort((a, b) => (a.e.date < b.e.date ? -1 : 1)).map(({ t, e }) => ({ id: t.id, label: short(e.date), round: t.round, faces: seatedIds(t).filter((x) => x !== me.id).slice(0, 5).map((x) => mini(db.members[x], me)) })) };
 }
 function dmKey(a, b) { return pk(a, b); }
 const blockedEither = (a, b) => !!(((db.members[a] || {}).never || {})[b] || ((db.members[b] || {}).never || {})[a]);
@@ -4712,14 +4636,13 @@ const PUSH_TEXT = {
   industry: (o) => ({ body: `Captains first: an industry table with ${o.guest} on ${o.label}. You get 48 hours before anyone else`, url: './#home' }),
   industryopen: (o) => ({ body: `Seats are open for an industry table with ${o.guest} on ${o.label}`, url: './#home' }),
   captain: (o) => ({ body: `You’re the captain for ${o.day}: get there five minutes early and give the name at the door.`, url: './#home' }),
-  longin: (o) => ({ body: `A seat opened at the long table on ${o.day}, and it’s yours.`, url: './#home' }),
   again: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} is booked: your table again, ${o.day} two weeks from now.`, url: './#home' }),
   unmatched: () => ({ body: 'Nobody else picked your evenings this week, so there’s no table yet. If a chair opens on one of them, it’s yours, and you’re first in line next week', url: './#home' }),
   popjoin: (o) => ({ body: `${o.other || 'Someone'} is in for your hang: ${o.title || ''}`, url: './#hangs' }),
   popcancel: (o) => ({ body: `${o.other || 'The host'} called off “${o.title || 'the hang'}”.`, url: './#hangs' })
 };
 // about tonight: these always go out, whatever else someone got today
-const URGENT = ['reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'longin', 'table', 'bookcancel', 'bookkeep', 'captainbrief', 'bookremind', 'captaintake', 'bookfix', 'spotlost', 'captainoff'];
+const URGENT = ['reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'table', 'bookcancel', 'bookkeep', 'captainbrief', 'bookremind', 'captaintake', 'bookfix', 'spotlost', 'captainoff'];
 function notify(id, kind, o) {
   const m = db.members[id]; if (!m || m.deleted || !(m.push && m.push.length) || !PUSH_TEXT[kind]) return Promise.resolve(0);
   if (m.paused && kind === 'event') return Promise.resolve(0);
@@ -4798,11 +4721,6 @@ function tick(nowMs) {
       const n = seatedIds(t).length; if (n !== c.booking.size && c.booking.warned !== n && dayHours(now)) { c.booking.warned = n; notify(c.booking.by || t.captain, 'bookfix', { n, day: weekday(st), table: t.id }); }
     }
   });
-  const mo = monthNow(), going = Object.keys(db.long[mo] || {}).length;
-  if (going && now >= longCloses(mo) && now < tzMs(longDate(mo), LONG_TIME) && !(db.longCount || {})[mo]) {
-    (db.longCount = db.longCount || {})[mo] = isoNow(); const sp = (db.longSpot || {})[mo] || {};
-    alertOps('longcount:' + mo, 'long', `Long table RSVPs just closed: ${going} going${arr((db.longWait || {})[mo]).length ? ', ' + arr(db.longWait[mo]).length + ' waiting' : ''}. Send the count to ${sp.name || 'the venue'}${sp.name ? '' : ' (no venue entered yet)'}.`);
-  }
   // sign-ups that never finished: their name and email don't stay around
   Object.keys(db.verify).forEach((em) => { if ((db.verify[em].exp || 0) + DAY < now) delete db.verify[em]; });
   placeMail(now);
@@ -4830,8 +4748,6 @@ function erase(me) {
   Object.keys(db.seats).forEach((eid) => { const s = db.seats[eid][me.id]; if (s && s.status === 'held') { try { cancelSeat(me, { event: eid }); } catch (e) { s.status = 'cancelled'; } } });
   Object.values(db.pops).forEach((u) => { if (u.host === me.id && !u.cancelled) u.cancelled = true; const k = u.joined.indexOf(me.id); if (k >= 0) u.joined.splice(k, 1); });
   if (db.standby) delete db.standby[me.id];
-  Object.keys(db.long || {}).forEach((mo) => { if (db.long[mo][me.id]) { delete db.long[mo][me.id]; if (Date.now() < tzMs(longDate(mo), LONG_TIME) - 6 * HOUR) promoteLong(mo); } });
-  Object.keys(db.longWait || {}).forEach((mo) => { db.longWait[mo] = arr(db.longWait[mo]).filter((x) => x !== me.id); });
   Object.keys(db.chats).forEach((k) => { db.chats[k] = arr(db.chats[k]).filter((x) => x.from !== me.id); });
   Object.keys(db.dms).forEach((k) => { if (k.split('|').indexOf(me.id) >= 0) delete db.dms[k]; });
   db.posts.forEach((p) => { if (p.by === me.id) { p.removed = true; p.text = ''; } });
@@ -4874,7 +4790,7 @@ function metrics() {
   return {
     invited: L.length, joined: joined.length, harvard: joined.filter((m) => m.school === 'harvard').length, mit: joined.filter((m) => m.school === 'mit').length,
     showUp: came + absent ? Math.round(100 * came / (came + absent)) + '%' : 'n/a', confirmed: came + ' of ' + seated, rating: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'n/a',
-    rebook, mutual, dms: Object.keys(db.dms).length, met: cs.first, second: cs.second, third: cs.third, wantAgain: again, standing, longGoing: Object.keys(db.long[monthNow()] || {}).filter((id) => db.members[id] && !db.members[id].deleted).length,
+    rebook, mutual, dms: Object.keys(db.dms).length, met: cs.first, second: cs.second, third: cs.third, wantAgain: again, standing,
     popsHosted: Object.keys(db.pops).length, popJoins: Object.values(db.pops).reduce((n, x) => n + x.joined.length, 0),
     roles: Object.values(db.jobs).filter((j) => !j.closed).length, introsAsked: db.intros.length, introsYes: db.intros.filter((x) => x.status === 'accepted').length,
     posts: db.posts.filter((x) => !x.removed).length, votes: db.posts.reduce((n, x) => n + Object.keys(x.votes || {}).length, 0),
@@ -5010,7 +4926,6 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/place') out = savePlace(b);
       else if (p === '/api/admin/place-off') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); v.off = !v.off; if (v.off) replaceAt(v); out = { ok: true }; }
       else if (p === '/api/admin/place-table') { const t = own(db.tables, b.table); if (!t) fail('no such table'); if (!placeTable(t)) fail('no partner has room that evening'); out = placesAdmin(); }
-      else if (p === '/api/admin/long-spot') out = setLongSpot(b);
       else if (p === '/api/admin/place-answer') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); placeAnswer(v, String(b.date || ''), !!b.ok, 'admin'); out = placesAdmin(); }
       else if (p === '/api/admin/place-key') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); v.key = rid(12); out = placesAdmin(); }
       else if (p === '/api/admin/ops') out = saveOps(b);
@@ -5091,7 +5006,6 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/pop') out = createPop(me, b);
       else if (p === '/api/reinvite') { if (limited('reinvite:' + me.id, 10)) fail('slow down'); out = reinvite(me, b); }
       else if (p === '/api/standby-stop') out = stopStandby(me);
-      else if (p === '/api/long') out = setLong(me, b);
       else if (p === '/api/seen') { const k = String(b.key || ''); if (!/^off:t[a-f0-9]{10}$/.test(k)) fail('nothing to mark'); me.read[k] = isoNow(); out = { ok: true }; }
       else if (p === '/api/captain') out = captainMove(me, b);
       else if (p === '/api/captain-spot') out = captainSpot(me, b);
@@ -5143,7 +5057,7 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, setLongSpot, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, promoteLong, setVenue, fillRounds, monthView, setLong, longDate, monthNow,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };
 
 },
@@ -5312,10 +5226,6 @@ Object.values(db.tables).filter((t) => t.published && !t.closed && !t.venue && t
   const opts = S.spotOptions(t).filter((o) => o.kind === 'book'), c = db.members[t.captain]; if (!opts.length || !c) return;
   try { S.captainBook(c, { table: t.id, place: opts[k % opts.length].id, time: db.events[t.eventId].time, name: c.name }); } catch (e) {}
 });
-// the long table at the end of the month: some of Jordan's people already said they're in (Jordan hasn't yet)
-const month = S.monthNow(); db.long[month] = {};
-db.longSpot[month] = { name: 'The Demo Loft', address: 'Main St, Kendall Square', note: 'Upstairs, one long table' };
-members.slice(1).filter((m, i) => i % 3 === 0 || demoTwo.indexOf(m.id) >= 0).forEach((m, k) => { db.long[month][m.id] = ago(40 - k); });
 
 // 3. next week: most people have marked their evenings and how many dinners they want (Jordan: two)
 const week = S.targetWeek(), eve = (d) => S.addDays(week, d) + '|dinner';
@@ -6113,13 +6023,12 @@ function renderHome() {
   if (cs.first) out.push(`<div class="sp"></div><div class="cardg row"><div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles so far</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">${cs.first}</b> first meetings${cs.third ? ` and <b style="color:var(--ink)">${cs.third}</b> third ones` : ''}</div></div></div>`);
   $('homeBody').innerHTML = out.join('');
 }
-/* your month: every table is a bead on one thread (tap one to open it), round two wears a small 2, and the month ends with a
-   long table for everyone who sat at one. Below: how many people so far, the long table, and the line you're carrying. */
+/* your month as a calendar (tap a dinner to open it). Below: round twos coming up, and the line you're carrying. */
 const LTI = SV('<rect x="2.5" y="10" width="19" height="4" rx="2"/><circle cx="6" cy="6.3" r="1.5"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="18" cy="6.3" r="1.5"/><circle cx="6" cy="17.7" r="1.5"/><circle cx="12" cy="17.7" r="1.5"/><circle cx="18" cy="17.7" r="1.5"/>', 17);
 const PEN = SV('<path d="M4 20l4.4-1 10.1-10.1a2.1 2.1 0 0 0-3-3L5.4 16z"/><path d="M14 7l3 3"/>', 14);
 function monthHTML() {
-  const M = A.view.month, L = M.long, DAY = 864e5;
-  // the month as a calendar, Sunday to Saturday, from the day after last month's long table to this month's
+  const M = A.view.month, DAY = 864e5;
+  // the month as a calendar, Sunday to Saturday, from the 1st to the last day
   const ymd = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const start = ymd(M.from), first = start - new Date(start).getUTCDay() * DAY, end = start + (M.span - 1) * DAY, last = end + (6 - new Date(end).getUTCDay()) * DAY;
   const byAt = {}; M.beads.forEach((x) => { (byAt[x.at] = byAt[x.at] || []).push(x); });
@@ -6128,11 +6037,11 @@ function monthHTML() {
     let row = '';
     for (let d = w; d < w + 7 * DAY; d += DAY) {
       const at = Math.round((d - start) / DAY), inSpan = at >= 0 && at < M.span, dt = new Date(d), n = dt.getUTCDate();
-      const items = (inSpan && byAt[at]) || [], tb = items.find((x) => x.kind !== 'hang'), hg = items.find((x) => x.kind === 'hang'), isLong = inSpan && at === L.at;
+      const items = (inSpan && byAt[at]) || [], tb = items.find((x) => x.kind !== 'hang'), hg = items.find((x) => x.kind === 'hang');
       const num = n === 1 || at === 0 ? `${MON[dt.getUTCMonth()]} ${n}` : String(n);
-      const cls = ['cd', inSpan ? '' : 'out', tb ? `din ${tb.kind} ${tb.past ? 'past' : 'soon'}` : '', isLong ? `long${L.going ? ' in' : ''}` : '', at === M.today ? 'today' : '', num.length > 2 ? 'mo' : ''].filter(Boolean).join(' ');
-      const tag = tb ? (tb.round > 1 ? `<small class="lg">Round ${tb.round}</small>` : `<small>${tb.kind === 'social' ? 'Social' : 'Tech'}</small>`) : isLong ? '<small>Long</small>' : hg ? '<small>Hang</small>' : '';
-      const label = tb ? `${tb.kind === 'social' ? 'Social' : 'Tech'} table, ${esc(tb.label)}${tb.past ? '' : ', coming up'}` : isLong ? `Long table, ${esc(L.date)}` : hg ? `A hang, ${esc(hg.label)}` : '';
+      const cls = ['cd', inSpan ? '' : 'out', tb ? `din ${tb.kind} ${tb.past ? 'past' : 'soon'}` : '', at === M.today ? 'today' : '', num.length > 2 ? 'mo' : ''].filter(Boolean).join(' ');
+      const tag = tb ? (tb.round > 1 ? `<small class="lg">Round ${tb.round}</small>` : `<small>${tb.kind === 'social' ? 'Social' : 'Tech'}</small>`) : hg ? '<small>Hang</small>' : '';
+      const label = tb ? `${tb.kind === 'social' ? 'Social' : 'Tech'} table, ${esc(tb.label)}${tb.past ? '' : ', coming up'}` : hg ? `A hang, ${esc(hg.label)}` : '';
       const go = tb ? `openTable('${tb.id}')` : hg ? `openPop('${hg.id}')` : '';
       row += go ? `<button class="${cls}${hg && !tb ? ' hangday' : ''}" onclick="${go}" aria-label="${label}"><b>${num}</b>${tag}${hg && tb ? '<i class="hdot"></i>' : ''}</button>`
         : `<div class="${cls}"${label ? ` aria-label="${label}"` : ''}><b>${num}</b>${tag}</div>`;
@@ -6140,27 +6049,13 @@ function monthHTML() {
     weeks.push(`<div class="wk">${row}</div>`);
   }
   const kinds = new Set(M.beads.map((x) => x.kind));
-  const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}<span><i class="sw long"></i>Long table</span>${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
-  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way, then a long table` : 'Every table you sit at shows up on this calendar';
-  const when = `${esc(L.label.split(',')[0])} at ${esc(L.time.replace(':00', ''))}${L.spot ? `, ${esc(L.spot.name)}` : ''}`, sub = L.tonight ? `Tonight at ${esc(L.time)} in ${esc(L.area)}` : L.going ? `${when}. You’re in, with ${L.count - 1 > 0 ? `${L.count - 1} ${L.count - 1 === 1 ? 'other' : 'others'}` : 'more coming'}` : L.known ? `${when}. ${cap(nw(L.known))} of your people ${L.known > 1 ? 'are' : 'is'} going` : `${when}. Everyone from this month’s tables, together`;
-  const sub2 = L.wait ? `${when}. You’re #${L.wait} in line, and a seat opens whenever someone can’t come` : !L.going && L.closed ? `${when}. RSVPs closed and the count went to the venue` : !L.going && L.full ? `${when}. It’s full, so join the line and a seat may open` : sub;
-  const lbtn = L.going ? `<button class="lgo on" onclick="goLong(false, this)">${ICON.check}Going</button>` : L.wait ? `<button class="lgo on" onclick="goLong(false, this)">In line</button>` : L.closed ? '' : `<button class="lgo" onclick="goLong(true, this)">${L.full ? 'Join the line' : 'I’m in'}</button>`;
-  const long = L.invited ? `<div class="longrow">${L.faces.length ? `<span class="avs">${L.faces.map((f) => av(f, 'xs')).join('')}</span>` : `<span class="lti">${LTI}</span>`}<div class="grow"><b>Long table, ${esc(L.date)}</b><small>${sub2}</small></div>
-      ${lbtn}</div>`
-    : `<div class="longrow off"><span class="lti">${LTI}</span><div class="grow"><b>Long table, ${esc(L.date)}</b><small>${when}. Everyone who sits at a table this month is invited</small></div></div>`;
+  const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
+  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way` : 'Every table you sit at shows up on this calendar';
+  const again = (M.again || []).map((g) => `<button class="longrow" onclick="openTable('${g.id}')"><span class="avs">${g.faces.map((f) => av(f, 'xs')).join('')}</span><div class="grow"><b>Round ${nw(g.round)}, ${esc(g.label)}</b><small>The same table, together again</small></div></button>`).join('');
   return `<div class="cardg month"><div class="mhead"><h3>Your <span class="it">${esc(M.name)}</span></h3><div class="sub2">${esc(stat)}</div></div>
     <div class="cal" aria-label="Your tables this month"><div class="dow">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((x) => `<span>${x}</span>`).join('')}</div>${weeks.join('')}</div>
     ${legend}
-    ${long}${M.loose ? `<div class="looserow"><span class="lti">${PEN}</span><div class="grow"><small>Before your next table</small><b>${esc(M.loose)}</b></div></div>` : ''}</div>`;
-}
-function goLong(on, b) {
-  b.disabled = true;
-  api('POST', '/api/long', { going: on }).then((r) => {
-    A.view = r.view; if (cur === 'home') renderHome();
-    if (on && r.wait) toast('Charlie', `It’s full, so you’re #${r.wait} in line. If a seat opens, it’s yours and I’ll tell you.`);
-    else if (on) { toast('Charlie', `You’re in. See you at the long table on ${A.view.month.long.label.split(',')[0]}.`); const c = document.querySelector('#homeBody .month'); if (c) celebrate(c, 'social'); }
-    else toast('Charlie', 'Okay. Your seat goes to the next person in line.');
-  }).catch((e) => { b.disabled = false; oops(e); });
+    ${again}${M.loose ? `<div class="looserow"><span class="lti">${PEN}</span><div class="grow"><small>Before your next table</small><b>${esc(M.loose)}</b></div></div>` : ''}</div>`;
 }
 /* next week with Charlie: how many dinners (1 to 5) and which evenings */
 const DAYN = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday' };
@@ -6886,7 +6781,7 @@ function againHTML(t, F) {
   if (G.open === false) return '';
   if (G.busy) return `<div class="cardg again"><div class="grow"><b>Round ${rd} didn’t fit</b><div class="sub2">Most of you already have a dinner that evening. Pick each other and mark the same evening, and I’ll seat you together.</div></div></div>`;
   const yes = F.again === true, n = Math.max(0, Math.min(G.need, G.yes + (yes && !G.mine ? 1 : 0) - (!yes && G.mine ? 1 : 0)));
-  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for everyone who did, at the same spot if it has room. Up to two chairs go to someone new.</div>
+  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for the same table, just the people who said yes, at the same spot if it has room.</div>
     <div class="seg two agpick">${[[true, `Yes, round ${rd}`], [false, 'Not this time']].map(([v, l]) => `<button class="${F.again === v ? 'sel' : ''}" aria-pressed="${F.again === v}" onclick="A.fb.again=${v};drawAfter()">${l}</button>`).join('')}</div>
     <div class="agbar">${Array.from({ length: G.need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}<span>${n} of ${G.need} said yes${yes && !G.mine ? ', counting you' : ''}</span></div></div>`;
 }

@@ -460,15 +460,13 @@ test('round two: once most of the table says yes, Charlie books the same table t
   S.feedback(no, { table: t.id, rating: 3, picks: [], again: true });
   assert.strictEqual(db().tables[t.next], nt, 'still the same round two');
   assert.ok(nt.ids.indexOf(no.id) >= 0, 'a late yes still gets a chair');
-  // the empty chairs: people who marked that evening and have no table that night, schools kept even
+  // round two is the same table meeting again: someone new who marked that evening never takes a chair there
   const wk = ne.week, fresh = people(4, 'Chair');
   fresh.forEach((m) => { m.avail = { week: wk, slots: [ne.date + '|dinner'], max: 1, at: new Date().toISOString() }; });
-  S.fillRounds(wk);
-  const added = nt.ids.filter((id) => fresh.some((m) => m.id === id));
-  assert.ok(added.length >= 1 && added.length <= 2 && nt.ids.length <= 6, 'up to two new chairs: ' + nt.ids.length);
-  assert.ok(db().chats[nt.id].some((x) => /pulled up a chair/.test(x.text)));
-  const h = nt.ids.filter((id) => db().members[id].school === 'harvard').length; assert.ok(Math.abs(nt.ids.length - 2 * h) <= 1, 'schools stay even');
-  assert.ok(nt.why.some((l) => /new this round/.test(l)), 'the why line names who is new');
+  fresh.forEach((m) => { db().standby = db().standby || {}; db().standby[m.id] = { kind: 'any', dates: [ne.date], skip: null, until: ne.date, at: new Date().toISOString() }; });
+  S.fillChair(nt, ne);
+  assert.ok(!nt.ids.some((id) => fresh.some((m) => m.id === id)), 'nobody new at round two');
+  assert.ok(nt.why.some((l) => /same table/.test(l) || /back too/.test(l)), 'the why line says it is the same table');
 });
 
 test('before next time: one line the morning after shows at your next table, Charlie brings it up on the day, and you say whether it happened', () => {
@@ -491,23 +489,15 @@ test('before next time: one line the morning after shows at your next table, Cha
   assert.throws(() => S.tableView(db().members[people(1, 'Outsider')[0].id], two.t.id));
 });
 
-test('the month: your tables are beads on one thread, and the last Thursday is a long table for everyone who sat at one', () => {
-  const mo = S.monthNow(), ld = S.longDate(mo);
-  assert.strictEqual(new Date(ld + 'T12:00:00Z').getUTCDay(), 4, 'a Thursday');
-  assert.strictEqual(ld.slice(0, 7), mo); assert.ok(+ld.slice(8) > 21, 'the last one');
-  const [x] = people(1, 'Lonely');
-  assert.ok(!S.view(x).month.long.invited); assert.throws(() => S.setLong(x, {}), /one table/);
-  const ms = people(4, 'Month'), first = mo + '-' + String(Math.max(1, +ld.slice(8) - 7)).padStart(2, '0'), { t } = night(ms, 'topic', first);
-  const a = db().members[t.ids[0]], b = db().members[t.ids[1]];
-  const mv = S.view(a).month;
-  assert.ok(mv.long.invited && !mv.long.going && mv.beads.some((k) => k.id === t.id && k.kind === 'tech'), 'your table is on the thread');
-  assert.strictEqual(mv.name.length > 2, true); assert.strictEqual(mv.long.at, mv.span - 1, 'the long table closes the thread');
-  assert.ok(mv.span >= 28 && mv.span <= 35, 'a month runs from the last long table to this one: ' + mv.span);
-  db().waves[a.id] = { [b.id]: new Date().toISOString() }; db().waves[b.id] = { [a.id]: new Date().toISOString() };
-  S.setLong(a, {});
-  const vb = S.view(b).month.long;
-  assert.ok(vb.count >= 1 && vb.known >= 1 && vb.faces.some((f) => f.id === a.id), 'your people who are going show up');
-  S.setLong(a, { going: false }); assert.ok(!S.view(a).month.long.going);
+test('the month: a calendar from the 1st to the last day, with your tables on it and round twos coming up', () => {
+  const mo = S.monthNow(), [y, m] = mo.split('-').map(Number), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const ms = people(4, 'Month'), d = mo + '-' + String(Math.min(last, Math.max(1, +S.ymdTz(Date.now()).slice(8) + 1))).padStart(2, '0'), { t } = night(ms, 'topic', d);
+  const a = db().members[t.ids[0]], mv = S.view(a).month;
+  assert.strictEqual(mv.from, mo + '-01', 'it starts on the 1st');
+  assert.strictEqual(mv.span, last, 'and runs to the last day');
+  assert.ok(mv.beads.some((k) => k.id === t.id && k.kind === 'tech'), 'your table is on it');
+  assert.ok(mv.long === undefined, 'no long table any more');
+  assert.ok(Array.isArray(mv.again));
 });
 
 test('your people on the week: someone you picked each other with shows on the evenings they marked', () => {
@@ -538,7 +528,7 @@ test('a round table that drops to two is called off, so nobody ends up at a dinn
   assert.ok(Object.values(db().seats[ne.id]).every((x) => x.status === 'cancelled'), 'nobody is held for that evening any more');
 });
 
-test('round two keeps people apart who must be, never books in the past, and gives open chairs only to new people', () => {
+test('round two keeps people apart who must be, never books in the past, and is only the people who said yes', () => {
   // blocked pair: both say yes, only one is seated
   const ms = people(6, 'Apart');
   const a1 = night(ms, 'topic', day(-2)), seated = a1.t.ids.map((id) => db().members[id]);
@@ -551,12 +541,12 @@ test('round two keeps people apart who must be, never books in the past, and giv
   old.forEach((m) => S.feedback(m, { table: o.t.id, rating: 5, picks: [], again: true }));
   assert.ok(!o.t.next, 'no round two in the past');
   assert.strictEqual(S.tableView(old[0], o.t.id).again.open, false);
-  // open chairs: someone who said no, free that evening, stays out
+  // someone who said no, free that evening, stays out
   const six = people(6, 'Chairs'), c = night(six, 'topic', day(-8)), cs = c.t.ids.map((id) => db().members[id]), need = Math.max(3, Math.ceil(cs.length * 0.6));
   cs.forEach((m, k) => S.feedback(m, { table: c.t.id, rating: 4, picks: [], again: k < need }));
   const nt = db().tables[c.t.next], ne = db().events[nt.eventId], no = cs[cs.length - 1];
   no.avail = { week: ne.week, slots: [ne.date + '|dinner'], max: 1, at: new Date().toISOString() };
-  S.fillRounds(ne.week);
+  S.fillChair(nt, ne);
   assert.ok(nt.ids.indexOf(no.id) < 0, 'a no stays a no, even with a free evening');
   // called off: the old table's switch says it's off, not booked
   nt.ids.slice().forEach((id, k) => { if (k < nt.ids.length - 2) S.cancelSeat(db().members[id], { event: ne.id }); });
@@ -715,23 +705,6 @@ test('captains rotate, skip people who said no, and can pass it on', () => {
   assert.ok(S.tableView(ms[3], t.id).captain, 'everyone sees who it is');
 });
 
-test('the long table has a limit: past it you wait in line, and a seat that opens goes to the first in line', () => {
-  const mo = S.monthNow(), ld = S.longDate(mo), d = mo + '-' + String(Math.max(1, +ld.slice(8) - 7)).padStart(2, '0');
-  const ms = people(4, 'LongCap'), { t } = night(ms, 'topic', d);
-  const [a, b, c] = t.ids.map((id) => db().members[id]);
-  db().long[mo] = {}; db().longWait = {};
-  S.setLongSpot({ name: 'Small Room', address: '1 Hall St', cap: 8 });
-  const filler = Object.values(db().members).filter((m) => !m.deleted).slice(0, 7);
-  filler.forEach((m) => { db().long[mo][m.id] = new Date().toISOString(); });
-  if (Date.now() < S.tzMs(S.addDays(ld, -3), '12:00')) {
-    assert.strictEqual(S.setLong(a, {}).going, true, 'the eighth seat');
-    const r = S.setLong(b, {}); assert.ok(!r.going && r.wait === 1, 'then a line');
-    assert.strictEqual(S.view(b).month.long.wait, 1);
-    S.setLong(a, { going: false });
-    assert.ok(db().long[mo][b.id], 'the first in line gets the seat');
-    void c;
-  }
-});
 
 test('ops edge cases: a re-ask reaches the restaurant, a hand-typed note keeps the partner, a paused partner hands its tables on, people who left can’t read new chat, answers stop at dinner', () => {
   const date = day(16), dow = new Date(date + 'T12:00:00Z').getUTCDay();

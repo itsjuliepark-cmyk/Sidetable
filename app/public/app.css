@@ -1193,7 +1193,7 @@ textarea.field{font-family:inherit;font-size:16px;line-height:1.5;resize:none;pa
 /* the key for the gold rings */
 .tvkey{width:12px;height:12px;border-radius:50%;background:none;border:2px solid #E2B271;box-shadow:0 0 6px rgba(226,178,113,.6)}
 
-/* ---------- the month: tables as beads on one thread, ending in a long table ---------- */
+/* ---------- the month: a calendar of your dinners ---------- */
 .cardg.month{position:relative;padding:18px 18px 14px}
 .mhead h3{margin:0;font-size:19px;line-height:1.2;font-weight:600;letter-spacing:-.015em}
 .mhead .sub2{margin-top:3px;font-size:13px}
@@ -1214,8 +1214,6 @@ button.cd:active{transform:scale(.94)}
 .cd.din.social.past{background:linear-gradient(160deg,#E8AAB6,#C97786);color:#fff;box-shadow:0 8px 14px -10px rgba(120,46,60,.7)}
 .cd.din.tech.soon{background:#EEF2FB;color:#4A649C;border:1.5px dashed #8EA6DB}
 .cd.din.social.soon{background:#FCEFF2;color:#9F4D5A;border:1.5px dashed #D58C99}
-.cd.long{background:linear-gradient(160deg,#F7E6BC,#E4BE70);color:#6A4A10}
-.cd.long.in{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #D9A94A}
 .cd.hangday{background:#F4F0FC;color:#6E58B0}
 .cd .hdot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:#A893E0;box-shadow:0 0 0 1.5px #fff}
 .cd sup{position:absolute;top:4px;right:5px;font-size:8.5px;font-weight:700;line-height:1;opacity:.9}
@@ -1223,7 +1221,7 @@ button.cd:active{transform:scale(.94)}
 .mlegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 2px 0;font-size:11.5px;color:var(--ink-soft)}
 .mlegend span{display:inline-flex;align-items:center;gap:6px}
 .mlegend .sw{width:12px;height:12px;border-radius:4px;flex:none}
-.sw.tech{background:#8EA6DB}.sw.social{background:#D58C99}.sw.long{background:#E4BE70}
+.sw.tech{background:#8EA6DB}.sw.social{background:#D58C99}
 .sw.hang{background:#A893E0;border-radius:50%}
 .sw.soon{background:#fff;border:1.5px dashed #8E959C}
 .longrow,.looserow{display:flex;align-items:center;gap:11px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
@@ -1234,12 +1232,6 @@ button.cd:active{transform:scale(.94)}
 .lti{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;color:#A9782F;background:rgba(226,178,113,.2)}
 .longrow .avs .av{width:24px;height:24px;font-size:10px;margin-left:-9px;box-shadow:0 0 0 2px #fff}
 .longrow .avs .av:first-child{margin-left:0}
-.longrow.off{opacity:.8}
-.lgo{flex:none;display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 14px;border-radius:999px;background:var(--ink);color:#fff;font-size:13px;font-weight:650;box-shadow:0 8px 16px -10px rgba(18,28,38,.7);transition:transform .15s}
-.lgo:active{transform:scale(.96)}
-.lgo.on{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
-.lgo svg{width:14px;height:14px}
-.lgo:disabled{opacity:.6}
 /* your people on the evenings they marked */
 .dayp{position:relative}
 .days.haspals{padding-top:9px}
@@ -1433,3 +1425,5 @@ h2.q.tabh{margin-top:6px;font-size:34px}
 .stripes em{margin-left:6px;font-size:11.5px;font-weight:650;color:#9A7228;white-space:nowrap}
 .axsum{flex-basis:100%;padding-left:22px}
 .whogrid .seat.dim{opacity:.32}
+
+button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inherit;cursor:pointer}

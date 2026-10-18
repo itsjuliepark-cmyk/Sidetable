@@ -96,7 +96,7 @@
 1. 비어 있는 틈새: 테크 디너는 많지만 모두 일회성, 반복해서 친구를 만들어 주는 제품은 없음
 2. 확장 공식: 명문 캠퍼스 두 곳 → 동문 → 도시 테크 → 방문자 패스로 다음 도시
 3. 다양한 매출원: 개인 회비, 회사, VC, 식당
-4. 제품 안의 재방문 장치: round two, Long table, 매주 바뀌는 Tonight’s question
+4. 제품 안의 재방문 장치: round two(같은 테이블 다시 모이기), 매주 바뀌는 Tonight’s question
 
 ### 앞으로 90일
 
@@ -172,7 +172,7 @@ Hash Table 방식 (웹앱에 반영)
 
 | 역할 | 누가 | 하는 일 |
 |---|---|---|
-| Ops lead | 창업자 | 제휴 식당 섭외와 계약, 일요일 테이블 공개, Long table 예약, 월 정산 |
+| Ops lead | 창업자 | 제휴 식당 섭외와 계약, 일요일 테이블 공개, 월 정산 |
 | 당번 | ops lead와 캠퍼스 리드 1~2명이 하루씩 교대 | 운영 알림을 메일로 받아 처리, 평소 하루 10~20분 |
 | 캡틴 | 테이블마다 회원 한 명이 돌아가며 | 장소를 골라 직접 예약(OpenTable, Resy, 전화), 토론 주제 투표 독려, 각자 계산 리드 |
 
@@ -188,14 +188,7 @@ Hash Table 방식 (웹앱에 반영)
 - 회원 1,000명이 넘으면 첫 정규직은 도시 매니저
 - 운영 부담은 주 24테이블 기준 당번 하루 15분, 일요일 공개 30분, 식당 관리 주 1~2시간 (가정)
 
-### Long table
-
-- 운영팀이 직접 예약하는 유일한 장소
-- 근처 프라이빗 룸은 평일 최소 주문액 $2,500~6,500, 인원 확정은 1주 전쯤
-- 6~8주 전 예약, RSVP는 좌석 수까지만 받고 5일 전 정오 마감
-- 비용은 선결제 좌석(1인 $35~60) 또는 후원, 기관 매출의 첫 상품으로 적합
-
-출처: Timeleft 도움말과 약관(help.timeleft.com, timeleft.com/terms-conditions), Timeleft 파트너 센터(timeleft-partners.zendesk.com), 222 파트너(partners.222.place), OpenTable 파트너 정책(restaurantdive.com 2026-03), Resy(blog.resy.com), 보스턴 식당 예약 정책(Comfort Kitchen, Black Lamb, Yvonne’s, Estella, Nubar, Althea), 매사추세츠 수수료 규정(Boston Globe 2025-09), 프라이빗 룸(Tripleseat Scampo, Tagvenue Boston과 Cambridge, PartySlate Harvest)
+출처: Timeleft 도움말과 약관(help.timeleft.com, timeleft.com/terms-conditions), Timeleft 파트너 센터(timeleft-partners.zendesk.com), 222 파트너(partners.222.place), OpenTable 파트너 정책(restaurantdive.com 2026-03), Resy(blog.resy.com), 보스턴 식당 예약 정책(Comfort Kitchen, Black Lamb, Yvonne’s, Estella, Nubar, Althea), 매사추세츠 수수료 규정(Boston Globe 2025-09)
 
 ### Hang을 무료로 두는 이유
 
@@ -254,7 +247,7 @@ Hash Table 방식 (웹앱에 반영)
 | 형식 | 디너, 드링크, 커피, 러닝 | 디너 중심, 다시 만나는 테이블과 디너 밖 약속 |
 | 누구와 | 그 도시의 누구나 (성격 테스트) | 검증된 커뮤니티 (Harvard와 MIT에서 시작) |
 | 묶는 기준 | 성격 | 좋아하는 주제와 사람끼리의 궁합 |
-| 첫 만남 이후 | 서로 고른 사람끼리 채팅 | round two, 단골 테이블, 매달 Long table까지 설계 |
+| 첫 만남 이후 | 서로 고른 사람끼리 채팅 | round two, 단골 테이블까지 설계 |
 | 분위기 | 가벼운 저녁, 새 사람 | 깊은 대화, 같은 사람을 여러 번 |
 | 테이블에서 하는 것 | 아이스브레이커 질문 | Tonight’s question: 그 주 가장 뜨거운 테크 질문으로 투표하고 편을 나누는 게임 |
 | 가격 | 월 약 $20 | 비슷한 수준, 단골 테이블 플랜은 프리미엄 |
@@ -355,7 +348,7 @@ Hash Table 방식 (웹앱에 반영)
 | 시기 | 할 일 |
 |---|---|
 | 10월 | 클럽 4쌍 피치, Central Square 식당 2~3곳 확보, 실제 서버 배포와 알파 테스트 |
-| 10월 말~11월 | 4주 파일럿, 테크와 소셜 테이블, round two, 월말 Long table까지, 4주차에 봄 학기 멤버십 사전 판매 |
+| 10월 말~11월 | 4주 파일럿, 테크와 소셜 테이블, round two, 4주차에 봄 학기 멤버십 사전 판매 |
 | 12월 | 결과 정리, Friend test 웹 테스트 공개, B2B 논의 시작 |
 | 2027년 1~2월 | 학교 창업 프로그램 지원 (HBS New Venture Competition, MIT $100K, MIT delta v 등) |
 | 2027년 봄 | 캠퍼스 단계, Harvard와 MIT 대학원 전체, 유료 전환, 첫 B2B 계약 |
@@ -365,7 +358,7 @@ Hash Table 방식 (웹앱에 반영)
 | 리스크 | 위험한 이유 | 대응 |
 |---|---|---|
 | Timeleft의 반격 | 압도적인 자금과 운영력 | 큐레이션, 주제, 다시 만나는 테이블이라는 틈새에 집중, 검증된 커뮤니티는 따라 하기 어려움 |
-| 유지율 | 몇 번 오고 끊기면 단위 경제 붕괴 | 단골 테이블 플랜, round two, Long table |
+| 유지율 | 몇 번 오고 끊기면 단위 경제 붕괴 | 단골 테이블 플랜, round two |
 | 학사 일정 | 여름과 겨울에 학생 이탈 | 캠퍼스는 증명 단계, 매출은 퍼블릭에서 |
 | 무거운 운영 | 식당, 노쇼, 고객 지원 | 동네 단위 오픈, 늦은 변경 규칙, 식당 자동 배치와 당번제 |
 | 학교 이름과 브랜드 | 학교가 보증하는 것처럼 보일 위험 | "Harvard와 MIT 학생이 만든"까지만 사용, 로고와 공식 표현 미사용 |
