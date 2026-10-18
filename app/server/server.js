@@ -1757,7 +1757,7 @@ function monthView(me, tog) {
   const known = going.filter((id) => id !== me.id && !blockedEither(me.id, id) && ((tog[id] || []).length || canDm(me.id, id)));
   const picked = Array.from(met).filter((o) => mine.some(({ t }) => mutualPairs(t).some((p) => p.indexOf(me.id) >= 0 && p.indexOf(o) >= 0))).length;
   const since = new Date(now - LOOSE_DAYS * DAY).toISOString(), l = arr(me.loose).filter((x) => !x.done && x.start > since).sort(byStart).pop();
-  return { key: mo, name: MONTHS[m - 1], span: at(sp.to) + 1, today: today >= sp.from && today <= sp.to ? at(today) : -1, fromLabel: short(sp.from), toLabel: short(sp.to), beads,
+  return { key: mo, name: MONTHS[m - 1], from: sp.from, span: at(sp.to) + 1, today: today >= sp.from && today <= sp.to ? at(today) : -1, fromLabel: short(sp.from), toLabel: short(sp.to), beads,
     tables: mine.length, people: met.size, picked, loose: l ? l.text : '',
     long: { at: at(ld), label: dayLabel(lstart), date: short(ld), time: timeLabel(lstart), area: AREA, invited: done(me) && mine.length > 0, going: !!L[me.id], count: going.length,
       known: known.length, faces: known.slice(0, 4).map((id) => mini(db.members[id], me)), tonight: today === ld, spot: done(me) && mine.length && ((db.longSpot || {})[mo] || {}).name ? db.longSpot[mo] : null,

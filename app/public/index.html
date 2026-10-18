@@ -861,12 +861,30 @@ function renderHome() {
 const LTI = SV('<rect x="2.5" y="10" width="19" height="4" rx="2"/><circle cx="6" cy="6.3" r="1.5"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="18" cy="6.3" r="1.5"/><circle cx="6" cy="17.7" r="1.5"/><circle cx="12" cy="17.7" r="1.5"/><circle cx="18" cy="17.7" r="1.5"/>', 17);
 const PEN = SV('<path d="M4 20l4.4-1 10.1-10.1a2.1 2.1 0 0 0-3-3L5.4 16z"/><path d="M14 7l3 3"/>', 14);
 function monthHTML() {
-  const M = A.view.month, L = M.long, x = (d) => (4 + (d / Math.max(1, M.span - 1)) * 92).toFixed(2), on = M.today >= 0;
-  const done = on ? x(M.today) : M.beads.some((b) => b.past) ? 96 : 4;
-  // beads too close to the one before step off the thread, above it and then below it, so none hides another (the long table keeps its spot)
-  const last = [-99, -99, -99], lane = M.beads.map((b) => { const w = b.kind === 'hang' ? 2 : 3, ok = (n) => b.at - last[n] >= w && (n || Math.abs(b.at - L.at) >= 3); const n = ok(0) ? 0 : ok(1) ? 1 : ok(2) ? 2 : 0; last[n] = b.at; return n; });
-  const beads = M.beads.map((b, i) => `<button class="bead ${b.kind} ${b.past ? 'past' : ''} ${lane[i] ? 'l' + lane[i] : ''}" style="left:${x(b.at)}%;animation-delay:${0.1 + i * 0.07}s" onclick="${b.kind === 'hang' ? `openPop('${b.id}')` : `openTable('${b.id}')`}" aria-label="${b.kind === 'hang' ? 'A hang' : b.kind === 'social' ? 'Social table' : 'Tech table'} on ${esc(b.label)}">${b.kind === 'hang' ? '' : b.kind === 'social' ? 'S' : 'T'}${b.round > 1 ? `<sup>${b.round}</sup>` : ''}</button>`).join('');
-  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way, then a long table` : 'Every table you sit at lands on this thread';
+  const M = A.view.month, L = M.long, DAY = 864e5;
+  // the month as a calendar, Sunday to Saturday, from the day after last month's long table to this month's
+  const ymd = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const start = ymd(M.from), first = start - new Date(start).getUTCDay() * DAY, end = start + (M.span - 1) * DAY, last = end + (6 - new Date(end).getUTCDay()) * DAY;
+  const byAt = {}; M.beads.forEach((x) => { (byAt[x.at] = byAt[x.at] || []).push(x); });
+  const weeks = [];
+  for (let w = first; w <= last; w += 7 * DAY) {
+    let row = '';
+    for (let d = w; d < w + 7 * DAY; d += DAY) {
+      const at = Math.round((d - start) / DAY), inSpan = at >= 0 && at < M.span, dt = new Date(d), n = dt.getUTCDate();
+      const items = (inSpan && byAt[at]) || [], tb = items.find((x) => x.kind !== 'hang'), hg = items.find((x) => x.kind === 'hang'), isLong = inSpan && at === L.at;
+      const num = n === 1 || at === 0 ? `${MON[dt.getUTCMonth()]} ${n}` : String(n);
+      const cls = ['cd', inSpan ? '' : 'out', tb ? `din ${tb.kind} ${tb.past ? 'past' : 'soon'}` : '', isLong ? `long${L.going ? ' in' : ''}` : '', at === M.today ? 'today' : '', num.length > 2 ? 'mo' : ''].filter(Boolean).join(' ');
+      const tag = tb ? (tb.round > 1 ? `<small class="lg">Round ${tb.round}</small>` : `<small>${tb.kind === 'social' ? 'Social' : 'Tech'}</small>`) : isLong ? '<small>Long</small>' : hg ? '<small>Hang</small>' : '';
+      const label = tb ? `${tb.kind === 'social' ? 'Social' : 'Tech'} table, ${esc(tb.label)}${tb.past ? '' : ', coming up'}` : isLong ? `Long table, ${esc(L.date)}` : hg ? `A hang, ${esc(hg.label)}` : '';
+      const go = tb ? `openTable('${tb.id}')` : hg ? `openPop('${hg.id}')` : '';
+      row += go ? `<button class="${cls}${hg && !tb ? ' hangday' : ''}" onclick="${go}" aria-label="${label}"><b>${num}</b>${tag}${hg && tb ? '<i class="hdot"></i>' : ''}</button>`
+        : `<div class="${cls}"${label ? ` aria-label="${label}"` : ''}><b>${num}</b>${tag}</div>`;
+    }
+    weeks.push(`<div class="wk">${row}</div>`);
+  }
+  const kinds = new Set(M.beads.map((x) => x.kind));
+  const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}<span><i class="sw long"></i>Long table</span>${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
+  const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way, then a long table` : 'Every table you sit at shows up on this calendar';
   const when = `${esc(L.label.split(',')[0])} at ${esc(L.time.replace(':00', ''))}${L.spot ? `, ${esc(L.spot.name)}` : ''}`, sub = L.tonight ? `Tonight at ${esc(L.time)} in ${esc(L.area)}` : L.going ? `${when}. You’re in, with ${L.count - 1 > 0 ? `${L.count - 1} ${L.count - 1 === 1 ? 'other' : 'others'}` : 'more coming'}` : L.known ? `${when}. ${cap(nw(L.known))} of your people ${L.known > 1 ? 'are' : 'is'} going` : `${when}. Everyone from this month’s tables, together`;
   const sub2 = L.wait ? `${when}. You’re #${L.wait} in line, and a seat opens whenever someone can’t come` : !L.going && L.closed ? `${when}. RSVPs closed and the count went to the venue` : !L.going && L.full ? `${when}. It’s full, so join the line and a seat may open` : sub;
   const lbtn = L.going ? `<button class="lgo on" onclick="goLong(false, this)">${ICON.check}Going</button>` : L.wait ? `<button class="lgo on" onclick="goLong(false, this)">In line</button>` : L.closed ? '' : `<button class="lgo" onclick="goLong(true, this)">${L.full ? 'Join the line' : 'I’m in'}</button>`;
@@ -874,8 +892,8 @@ function monthHTML() {
       ${lbtn}</div>`
     : `<div class="longrow off"><span class="lti">${LTI}</span><div class="grow"><b>Long table, ${esc(L.date)}</b><small>${when}. Everyone who sits at a table this month is invited</small></div></div>`;
   return `<div class="cardg month"><div class="mhead"><h3>Your <span class="it">${esc(M.name)}</span></h3><div class="sub2">${esc(stat)}</div></div>
-    <div class="thread" aria-label="Your tables this month"><i class="tl"></i><i class="tl done" style="width:${done - 4}%"></i>${on ? `<i class="today" style="left:${x(M.today)}%"></i>` : ''}<span class="lbead ${L.going ? 'in' : ''}" style="left:${x(L.at)}%">${LTI}</span>${beads}</div>
-    <div class="tdates"><span>${esc(M.fromLabel)}</span>${on && M.today >= 5 && M.today <= M.span - 6 ? `<span class="tday" style="left:${x(M.today)}%">Today</span>` : ''}<span>${esc(M.toLabel)}</span></div>
+    <div class="cal" aria-label="Your tables this month"><div class="dow">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((x) => `<span>${x}</span>`).join('')}</div>${weeks.join('')}</div>
+    ${legend}
     ${long}${M.loose ? `<div class="looserow"><span class="lti">${PEN}</span><div class="grow"><small>Before your next table</small><b>${esc(M.loose)}</b></div></div>` : ''}</div>`;
 }
 function goLong(on, b) {

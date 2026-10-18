@@ -173,7 +173,7 @@ npm run film
 
 - 같은 얼굴 다시: 서로 고른 사이는 같은 저녁을 고르면 같은 테이블, 저녁 고르기 화면에 그 사람들 얼굴 표시
 - Since last time: 다음 테이블 전까지 해 볼 일을 한 줄로 적으면 다음 테이블에서 Charlie가 언급
-- Your October: 이번 달 테이블을 실에 꿴 구슬처럼 보여주는 Tables 탭 카드
+- Your October: 이번 달을 달력으로 보여주는 Tables 탭 카드, 테크 테이블은 파란색 "Tech", 소셜은 분홍색 "Social", Long table은 금색, 지난 저녁은 채워진 칸, 다가오는 저녁은 점선 칸, 오늘은 테두리
 - Long table: 매달 마지막 목요일, 그 달 테이블에 앉았던 사람이 모두 모이는 저녁
 - 서버 코드: `roundTwo`, `againNudge`, `fillRounds`, `setLoose`, `looseFor`, `monthView`, `setLong`
 
