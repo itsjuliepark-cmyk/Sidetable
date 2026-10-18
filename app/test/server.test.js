@@ -437,7 +437,9 @@ function night(ms, type, date, time) {
 
 test('round two: once most of the table says yes, Charlie books the same table two weeks later, and the open chairs go to people free that night', () => {
   const ms = people(6, 'Round');
-  const { e, t } = night(ms, 'topic', day(-8)), seated = t.ids.map((id) => db().members[id]), need = Math.max(3, Math.ceil(seated.length * 0.6));
+  // a weekday, so round two two weeks later lands inside a Monday-to-Friday week whatever the hour the tests run
+  const base = [-8, -9, -10, -11, -12].map(day).find((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(); return w >= 1 && w <= 5; });
+  const { e, t } = night(ms, 'topic', base), seated = t.ids.map((id) => db().members[id]), need = Math.max(3, Math.ceil(seated.length * 0.6));
   assert.ok(seated.length >= 4);
   seated.slice(0, need - 1).forEach((m) => S.feedback(m, { table: t.id, rating: 5, picks: [], again: true }));
   assert.ok(!t.next, 'not booked one yes short');
