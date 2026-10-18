@@ -1,5 +1,6 @@
 // Draws the Hash Table app icon (a table seen from above: a river runner, three mist plates for Kendall, three rose
 // plates for Allston, two candle glows) into PNGs with no dependencies. Run once: node scripts/make-icons.js
+// Also a maskable copy (the table inside Android's safe circle) and the notification badge (a white hash on clear).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -17,15 +18,16 @@ function png(size, px) {
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 const mix = (a, b, t) => a.map((x, i) => x + (b[i] - x) * t);
 
-function draw(size) {
+function draw(size, zoom) {
+  zoom = zoom || 1; // under 1 shrinks the table toward the middle (the maskable icon keeps it inside the safe circle)
   const S = 4, N = size * S, px = Buffer.alloc(size * size * 4); // 4x supersampling
   const bgTop = hex('#F7F4F2'), bgBot = hex('#E9EDF0'), linen = hex('#FFFFFF'), linen2 = hex('#EEF1F2'), river = hex('#C3D2DF');
   const mist = hex('#8DA3B8'), rose = hex('#C7848C'), glow = hex('#F6C98A');
   const plates = [[0.36, 0.415, mist], [0.5, 0.405, mist], [0.64, 0.415, mist], [0.36, 0.585, rose], [0.5, 0.595, rose], [0.64, 0.585, rose]];
   const acc = new Float64Array(size * size * 3);
   for (let Y = 0; Y < N; Y++) for (let X = 0; X < N; X++) {
-    const x = X / N, y = Y / N;
-    let c = mix(bgTop, bgBot, y);
+    const x = (X / N - 0.5) / zoom + 0.5, y = (Y / N - 0.5) / zoom + 0.5;
+    let c = mix(bgTop, bgBot, Math.max(0, Math.min(1, Y / N)));
     // the table: a pill shape
     const tx = Math.max(0.3, Math.min(0.7, x)), dx = x - tx, dy = y - 0.5, inT = dx * dx + dy * dy <= 0.2 * 0.2 && Math.abs(y - 0.5) <= 0.2;
     // soft shadow under the table
@@ -43,6 +45,20 @@ function draw(size) {
   for (let i = 0; i < size * size; i++) { px[i * 4] = acc[i * 3] / (S * S); px[i * 4 + 1] = acc[i * 3 + 1] / (S * S); px[i * 4 + 2] = acc[i * 3 + 2] / (S * S); px[i * 4 + 3] = 255; }
   return png(size, px);
 }
+// the badge Android shows in the status bar: only the shape counts (white where the hash is, clear elsewhere)
+function badge(size) {
+  const S = 4, N = size * S, px = Buffer.alloc(size * size * 4), acc = new Float64Array(size * size), w = 2.3 / 2;
+  const segs = [[9.8, 3.4, 7.6, 20.6], [16.4, 3.4, 14.2, 20.6], [4.2, 8.7, 20.4, 8.7], [3.4, 15.3, 19.6, 15.3]];
+  const dist = (x, y, [ax, ay, bx, by]) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))); return Math.hypot(x - ax - t * dx, y - ay - t * dy); };
+  for (let Y = 0; Y < N; Y++) for (let X = 0; X < N; X++) {
+    const x = ((X + 0.5) / N) * 24, y = ((Y + 0.5) / N) * 24; // the same 24-unit drawing as the hashmark in the app
+    if (segs.some((g) => dist(x, y, g) <= w)) acc[Math.floor(Y / S) * size + Math.floor(X / S)] += 1;
+  }
+  for (let i = 0; i < size * size; i++) { px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = 255; px[i * 4 + 3] = Math.round((acc[i] / (S * S)) * 255); }
+  return png(size, px);
+}
 const out = path.join(__dirname, '..', 'public', 'icons');
 fs.mkdirSync(out, { recursive: true });
 [48, 96, 180, 192, 512].forEach((s) => { fs.writeFileSync(path.join(out, 'icon-' + s + '.png'), draw(s)); console.log('icon-' + s + '.png'); });
+fs.writeFileSync(path.join(out, 'maskable-512.png'), draw(512, 0.76)); console.log('maskable-512.png');
+fs.writeFileSync(path.join(out, 'badge-96.png'), badge(96)); console.log('badge-96.png');

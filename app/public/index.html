@@ -2,12 +2,15 @@
 <html lang="en-US">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>Hash Table</title>
 <meta name="description" content="Private invitations to small dinners, and spur-of-the-moment hangs anyone can start." />
 <meta name="theme-color" content="#F4F5F4" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Hash Table" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="icon" href="/icons/icon-48.png" sizes="48x48" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="apple-touch-icon" href="/icons/icon-180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,9 +44,10 @@
       <div class="land-entry">
         <div class="land-note" id="landNote"></div>
         <div class="land-btns">
-          <button class="lbtn ghost" type="button" onclick="openVerify('signin')">Sign in</button>
-          <button class="lbtn solid" type="button" onclick="landSheet(true)">Join</button>
+          <button class="lbtn ghost" id="lSign" type="button" onclick="openVerify('signin')">Sign in</button>
+          <button class="lbtn solid" id="lJoin" type="button" onclick="landSheet(true)">Join</button>
         </div>
+        <button class="lbtn solid" id="lRetry" type="button" style="display:none;width:100%" onclick="boot()">Try again</button>
         <p class="land-foot">Invite-only, verified school emails, and not a dating app</p>
       </div>
       <div class="land-sheet" id="landSheet" aria-hidden="true">
@@ -236,7 +240,7 @@
           <div class="sp"></div>
           <div class="cardg" id="pBest"></div>
           <div style="height:22px"></div>
-          <button class="btn" onclick="tab('home')">Plan my week with Charlie</button>
+          <button class="btn" onclick="afterResult()">Plan my week with Charlie</button>
         </div>
       </div>
     </section>
@@ -282,7 +286,7 @@
       </div>
       <button class="gpin" id="gpanel" hidden onclick="openGame()"></button>
       <div class="msgs" id="msgs"></div>
-      <div class="composer"><input id="chatIn" maxlength="800" placeholder="Message the table" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendChat()" /><button onclick="sendChat()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+      <div class="composer"><input id="chatIn" enterkeyhint="send" maxlength="800" placeholder="Message the table" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendChat()" /><button onclick="sendChat()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
     </section>
 
     <!-- At the table -->
@@ -325,7 +329,7 @@
         <div id="dmHead"></div>
       </div>
       <div class="msgs" id="dmMsgs"></div>
-      <div class="composer"><input id="dmIn" maxlength="800" placeholder="Say hi" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendDm()" /><button onclick="sendDm()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+      <div class="composer"><input id="dmIn" enterkeyhint="send" maxlength="800" placeholder="Say hi" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendDm()" /><button onclick="sendDm()" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
     </section>
 
     <nav class="tabbar" id="tabbar">
@@ -392,6 +396,31 @@ const store = {
 };
 const A = { token: '', view: null, P: null, qi: 0, table: null, chat: null, dm: null, poll: null, fb: null, seat: null, ver: null,
   pop: null, inv: null, popSeg: 'all', host: null, people: null, pseg: 'people', pq: '', ptrack: '', board: null, bf: 'for', bseg: 'all', btrack: '', posts: null, cp: null, openPost: null };
+/* ---------- on a phone ----------
+   iPhone sends web notifications only to an app added to the Home Screen, and that app keeps its own storage, so it
+   needs its own sign-in. A trip to the Mail app for the code (or to a restaurant's site) can reload a Home Screen app,
+   so the code step and a half-done sign-up wait on the phone. */
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+const inAppBrowser = () => /Instagram|FBAN|FBAV|KAKAOTALK|Line\/|LinkedInApp|Snapchat|GSA\/|DaumApps|NAVER\(inapp/.test(navigator.userAgent);
+const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const local = { get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }, drop(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+// the code step lasts as long as the code (15 minutes)
+function saveVer() { if (A.ver && A.ver.step === 'code') local.set('sixtopVer', { at: Date.now(), v: A.ver }); else local.drop('sixtopVer'); }
+function loadVer() { const s = local.get('sixtopVer'); if (s && s.v && Date.now() - s.at < 15 * 60000) return s.v; local.drop('sixtopVer'); return null; }
+// answers so far (not the photo) wait two weeks, step by step
+const draftKey = () => 'sixtopDraft:' + ((A.view && A.view.me && A.view.me.id) || '');
+function saveDraft(step) { if (!A.P || !A.view || A.view.me.done) return; const P = Object.assign({}, A.P); delete P.photo; delete P.photoUrl; local.set(draftKey(), { at: Date.now(), step, qi: A.qi, P }); }
+function loadDraft() { const d = local.get(draftKey()); return d && d.P && Date.now() - d.at < 14 * 864e5 ? d : null; }
+// the sign-in should outlive storage cleanup on a phone that's short on space
+function keepStore() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} }
+// the page fits what's visible above the keyboard (iPhone keeps the page tall and slides it under the keyboard otherwise)
+if (window.visualViewport) {
+  const vv = window.visualViewport, fit = () => { if (Math.abs((vv.scale || 1) - 1) > 0.01) return; document.documentElement.style.setProperty('--vvh', Math.round(vv.height) + 'px'); if (vv.offsetTop > 0 || window.scrollY) window.scrollTo(0, 0); };
+  vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); fit();
+}
+// directions open in Apple Maps on an iPhone, Google Maps elsewhere
+const mapLink = (name, addr) => (isIOS() ? 'https://maps.apple.com/?q=' + encodeURIComponent(name) + '&address=' + encodeURIComponent(addr) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ' ' + addr));
 function api(method, url, body) {
   return fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-sixtop-token': A.token }, body: body ? JSON.stringify(body) : undefined })
     .then((r) => r.json().catch(() => ({})).then((j) => { if (!r.ok) { const e = new Error(j.error || ('error ' + r.status)); e.status = r.status; throw e; } if (j.view) { if (availTimer && A.view && A.view.avail) j.view.avail = A.view.avail; A.view = j.view; } return j; }));
@@ -453,6 +482,7 @@ function setStep(id) {
   const n = i < qi ? i + 1 : i === qi ? qi + 1 + A.qi : i + SX.QS.length;
   scr.querySelector('.pfill').style.width = (n / total * 100) + '%';
   scr.querySelector('.tb-step').textContent = `${n} of ${total}`;
+  saveDraft(id);
 }
 function badges() {
   if (!A.view || !A.view.counts) return;
@@ -463,12 +493,27 @@ function badges() {
     const b = document.querySelector(`.tabbar button[data-t="${k}"]`); let s = b.querySelector('.tb-n');
     if (n && cur !== k) { if (!s) { s = document.createElement('span'); s.className = 'tb-n'; b.appendChild(s); } s.textContent = n > 9 ? '9+' : n; } else if (s) s.remove();
   });
+  const all = home + pops + (c.introsIn || 0) + (c.dms || 0);
+  try { if ('setAppBadge' in navigator) (all ? navigator.setAppBadge(all) : navigator.clearAppBadge()).catch(() => {}); } catch (e) {}
 }
-function refresh() { if (!A.token) return Promise.resolve(); return api('GET', '/api/me').then((v) => { if (availTimer && A.view && A.view.avail) v.avail = A.view.avail; A.view = v; if (cur === 'home' || cur === 'me' || cur === 'popups') RENDER[cur](); badges(); }).catch(() => {}); }
+function refresh(wake) {
+  if (!A.token) return Promise.resolve(); if (A.offline && cur === 'start') return boot();
+  return api('GET', '/api/me').then((v) => { if (availTimer && A.view && A.view.avail) v.avail = A.view.avail; A.view = v; if (cur === 'home' || cur === 'me' || cur === 'popups') RENDER[cur](); badges(); checkBuild(v, wake); }).catch(() => {});
+}
+// a Home Screen app can stay open for days: when a new version is out, it updates and reloads while nobody's looking
+function checkBuild(v, wake) {
+  if (!v || !v.build) return; if (!A.build) { A.build = v.build; return; } if (v.build === A.build || A.stale) return;
+  A.stale = true; if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});
+  if (wake) reloadIfQuiet();
+}
+function reloadIfQuiet() { if (A.stale && TABBED.indexOf(cur) >= 0 && !$('sheet').classList.contains('on')) location.reload(); }
 
 /* ---------------- start, join ---------------- */
 // msg is a notice for this visit (an old link, no connection): it sits above the buttons on the film
-function renderStart(msg) {
+function renderStart(msg, retry) {
+  const app = standalone(); // inside the Home Screen app, members are signing in, not joining
+  $('lSign').className = 'lbtn ' + (app ? 'solid' : 'ghost'); $('lJoin').className = 'lbtn ' + (app ? 'ghost' : 'solid'); $('lJoin').style.order = app ? '-1' : '';
+  $('lRetry').style.display = retry ? '' : 'none'; document.querySelector('.land-btns').style.display = retry ? 'none' : '';
   $('startBox').innerHTML = `<div class="ls-note">Hash Table is invite-only for now. Open the link from your club or the organizer, and you’re in.</div>
     <button class="btn ghost" onclick="openVerify('signin')">Already a member? Sign in</button>`;
   $('landNote').textContent = msg || ''; $('landNote').classList.toggle('on', !!msg);
@@ -482,7 +527,7 @@ function openJoin(code) {
 // every member proves a Harvard or MIT email with a 6-digit code
 function openVerify(mode, extra) { A.ver = Object.assign({ mode, step: 'email', email: '', name: '', code: '', devCode: '' }, extra || {}); hist.length = 0; go('verify', { noHist: true }); }
 // back out of verifying: a member who isn't verified yet signs out, anyone else just goes back to the start
-function leaveVerify() { if (A.token && A.view && !A.view.me.verified) { store.clear(); A.token = ''; A.view = null; } A.ver = null; hist.length = 0; renderStart(); go('start', { noHist: true }); }
+function leaveVerify() { if (A.token && A.view && !A.view.me.verified) { store.clear(); A.token = ''; A.view = null; } A.ver = null; saveVer(); hist.length = 0; renderStart(); go('start', { noHist: true }); }
 function renderVerify() {
   const V = A.ver; if (!V) return;
   const head = { join: ['Join with ' + (V.clubName || 'your club'), 'Let’s get you a <span class="it">seat</span>', 'For now Hash Table is open to anyone at Harvard or MIT. I’ll send a 6-digit code to your school email, and nobody else sees it.'],
@@ -502,7 +547,7 @@ function renderVerify() {
       <p class="sub">I sent a 6-digit code to <b style="color:var(--ink)">${esc(V.email)}</b>. It works for 15 minutes.</p>
       <input class="field codein" id="vCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" value="${esc(V.code)}" oninput="A.ver.code=this.value.replace(/\\D/g,'');if(A.ver.code.length===6)verifyNext()" />
       ${V.devCode ? `<div class="cnote"><span class="orb"></span><p><b>Demo</b>No email goes out here. Your code is ${esc(V.devCode)}. <button class="link" style="display:inline;margin:0;font-family:var(--sans);font-style:normal" onclick="A.ver.code=A.ver.devCode;renderVerify();verifyNext()">Fill it in</button></p></div>` : ''}
-      <div class="row" style="justify-content:center;gap:18px;margin-top:16px"><button class="link" style="margin:0" onclick="A.ver.step='email';renderVerify()">Use a different email</button><button class="link" style="margin:0" onclick="sendVerify(true)">Send a new code</button></div>
+      <div class="row" style="justify-content:center;gap:18px;margin-top:16px"><button class="link" style="margin:0" onclick="A.ver.step='email';saveVer();renderVerify()">Use a different email</button><button class="link" style="margin:0" onclick="sendVerify(true)">Send a new code</button></div>
       <div class="err" id="vErr"></div>`;
     $('vGo').textContent = 'Verify';
     setTimeout(() => { const el = $('vCode'); if (el && !V.code) el.focus(); }, 300);
@@ -522,14 +567,14 @@ function sendVerify(again) {
   }
   $('vGo').disabled = true; $('vErr').textContent = '';
   api('POST', '/api/verify/start', { email: V.email, name: V.name, code: V.club }).then((r) => {
-    V.step = 'code'; V.code = ''; V.devCode = r.devCode || ''; renderVerify(); if (again) toast('Charlie', 'A new code is on its way.');
+    V.step = 'code'; V.code = ''; V.devCode = r.devCode || ''; saveVer(); renderVerify(); if (again) toast('Charlie', 'A new code is on its way.');
   }).catch((e) => { $('vGo').disabled = false; $('vErr').textContent = cap(e.message) + '.'; });
 }
 function checkVerify() {
   const V = A.ver; if ((V.code || '').length !== 6) { $('vErr').textContent = 'Type the 6 digits from the email.'; return; }
   $('vGo').disabled = true; $('vErr').textContent = '';
   api('POST', '/api/verify/finish', { email: V.email, code: V.code }).then((r) => {
-    A.token = r.token; store.set(r.token); A.ver = null; history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();
+    A.token = r.token; store.set(r.token); A.ver = null; saveVer(); keepStore(); history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();
   }).catch((e) => { $('vGo').disabled = false; V.code = ''; const el = $('vCode'); if (el) el.value = ''; $('vErr').textContent = cap(e.message) + '.'; });
 }
 
@@ -725,6 +770,7 @@ function saveProfile() {
   api('POST', '/api/profile', body).then(() => {
     $('cardNext').disabled = false;
     if (!A.view.me.done) { $('cardErr').textContent = 'A few answers are missing. Go back and check each step.'; return; }
+    local.drop(draftKey());
     if (wasDone) { toast('Charlie', 'Saved. Your next table uses your new answers.'); tab('me'); } else { hist.length = 0; go('result', { noHist: true }); }
   }).catch((e) => { $('cardNext').disabled = false; $('cardErr').textContent = cap(e.message) + '.'; });
 }
@@ -1069,7 +1115,7 @@ function drawTable() {
   const own = (k) => (t.type !== 'kindred' && (SX.INTS.find((x) => x.id === k) || {}).tr === t.track ? 1 : 0);
   const chips = Object.keys(counts).filter((k) => counts[k] >= 2).sort((a, b) => (own(b) - own(a)) || (counts[b] - counts[a]));
   const before = t.phase === 'set' || t.phase === 'tonight';
-  const venue = t.venue ? `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.venue.name)}</b><br><span class="sub2">${esc(t.venue.address)}</span>${t.venue.note ? `<br><span class="sub2">${esc(t.venue.note)}</span>` : ''}${t.venue.address ? `<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.venue.name + ' ' + t.venue.address)}" target="_blank" rel="noopener">Open in Maps</a>` : ''}</div></div>`
+  const venue = t.venue ? `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.venue.name)}</b><br><span class="sub2">${esc(t.venue.address)}</span>${t.venue.note ? `<br><span class="sub2">${esc(t.venue.note)}</span>` : ''}${t.venue.address ? `<br><a href="${esc(mapLink(t.venue.name, t.venue.address))}" target="_blank" rel="noopener">Open in Maps</a>` : ''}</div></div>`
     : `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.area)}</b><br><span class="sub2">${t.spotPending ? (t.spotByCaptain ? 'Your captain is still booking tonight’s spot. It shows up here, with a notification, the moment it’s set' : 'I’m confirming the spot with the restaurant. It shows up here, with a notification, the moment it’s set') : `The exact spot is revealed ${esc(t.revealLabel)}.`}</span></div></div>`;
   $('tableBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
     <div class="kick">${t.type === 'kindred' ? 'Social dinner' : 'Tech dinner'} on ${esc(t.short)} at ${esc(t.time)}</div>
@@ -1166,7 +1212,8 @@ function openBook(id) {
   const t = A.table, S = t.cap.spot, o = S.options.find((x) => x.id === id); if (!o) return;
   const [h, m] = (S.time || '19:00').split(':').map(Number), base = h * 60 + m, hm = (x) => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'), lab = (x) => { const hh = Math.floor(x / 60), mm = x % 60; return ((hh + 11) % 12 + 1) + ':' + String(mm).padStart(2, '0') + (hh >= 12 ? ' PM' : ' AM'); };
   const tel = (o.link || '').indexOf('tel:') === 0, via = tel ? 'phone' : o.via;
-  A.book = { id, time: S.time || '19:00', opened: false };
+  const was = local.get('sixtopBookOpen:' + t.id + ':' + id);
+  A.book = { id, time: S.time || '19:00', opened: !!(was && Date.now() - was < 6 * 3600e3) };
   openSheet(`<h3>${esc(o.name)}</h3><div class="sub2">${esc(o.area)}</div>${o.note ? `<div class="sub2 spotnote">${esc(o.note)}</div>` : ''}
     <div class="bookstep"><span class="mnum">1</span><div class="grow"><b>Book a table for ${nw(S.size)}</b><small>${esc(S.when)}, under your name. If ${lab(base)} is gone, anything from ${lab(base - 60)} to ${lab(base + 60)} works</small></div></div>
     ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
@@ -1178,10 +1225,11 @@ function openBook(id) {
     <input class="field" id="bookCode" maxlength="40" placeholder="Confirmation number (optional)" style="margin-top:8px" oninput="bookReady()" />
     <button class="btn" id="bookGo" style="margin-top:12px" disabled onclick="bookIt(this)">I booked it</button><p class="hint" id="bookWait" style="text-align:center;margin-top:6px">Opens once you’ve been to the booking page, or typed a confirmation number</p>
     <button class="link" onclick="openSpot()">Back to the list</button>`);
+  bookReady();
 }
 // in the phone demo there's nothing to book
 function bookReady() { const go = $('bookGo'), ok = !!(A.book && (A.book.opened || ($('bookCode') && $('bookCode').value.trim()))); if (go) go.disabled = !ok; const w = $('bookWait'); if (w) w.hidden = ok; }
-function bookOut(ev) { if (A.book) { A.book.opened = true; setTimeout(bookReady, 0); } if (window.SIXTOP_DEMO) { ev.preventDefault(); toast('Demo', 'Nothing to book in the demo. Tap I booked it'); return false; } return true; }
+function bookOut(ev) { if (A.book) { A.book.opened = true; local.set('sixtopBookOpen:' + A.table.id + ':' + A.book.id, Date.now()); setTimeout(bookReady, 0); } if (window.SIXTOP_DEMO) { ev.preventDefault(); toast('Demo', 'Nothing to book in the demo. Tap I booked it'); return false; } return true; }
 function bookIt(b) {
   if (bookIt.busy) return; bookIt.busy = true; b.disabled = true;
   api('POST', '/api/captain-book', { table: A.table.id, place: A.book.id, time: A.book.time, name: $('bookName').value, code: $('bookCode').value }).then((r) => { closeSheet(); capAfter(r, 'Booked. Keep it a secret until noon on the day'); }).catch((e) => { b.disabled = false; oops(e); }).then(() => { bookIt.busy = false; });
@@ -1736,7 +1784,7 @@ function drawPostSheet(p) {
   el.innerHTML = `${postHTML(p).replace('role="button" tabindex="0" onclick="openPost(\'' + p.id + '\')"', '').replace('class="bpost', 'class="bpost open')}
     <div class="label" style="margin-top:18px">Replies${p.replyN ? ` <span class="cnt">${p.replyN}</span>` : ''}</div>
     ${(p.replies || []).length ? p.replies.map((r) => `<div class="m">${av(r.by, 's')}<div><div class="who">${esc(r.by.first)} <span>${esc(r.age)}</span></div><div class="bub">${esc(r.text)}</div></div></div>`).join('') : '<div class="sub2" style="margin-bottom:6px">No replies yet. Start it off.</div>'}
-    <div class="bp-reply"><input class="field" id="replyIn" maxlength="400" placeholder="Reply to ${esc(p.by.first)}" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendReply('${p.id}')" /><button class="btn sm" style="margin:0" onclick="sendReply('${p.id}')">Send</button></div>
+    <div class="bp-reply"><input class="field" id="replyIn" enterkeyhint="send" maxlength="400" placeholder="Reply to ${esc(p.by.first)}" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendReply('${p.id}')" /><button class="btn sm" style="margin:0" onclick="sendReply('${p.id}')">Send</button></div>
     ${p.mine ? `<button class="link" onclick="deletePost('${p.id}', this)">Delete my post</button>` : p.by && p.by.id ? `<button class="link" style="color:var(--ink-faint)" onclick="openReport('${p.by.id}')">Report this post</button>` : ''}`;
 }
 function sendReply(id) {
@@ -1955,7 +2003,7 @@ const devicePush = () => { try { return localStorage.getItem('sixtopPush') === '
 const setDevicePush = (on) => { try { if (on) localStorage.setItem('sixtopPush', '1'); else localStorage.removeItem('sixtopPush'); } catch (e) {} };
 const sameKey = (a, b) => { const x = new Uint8Array(a); if (x.length !== b.length) return false; for (let i = 0; i < x.length; i++) if (x[i] !== b[i]) return false; return true; };
 function enablePush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { toast('Notifications', /iPhone|iPad/.test(navigator.userAgent) ? 'On iPhone, add Hash Table to your Home Screen first (Share → Add to Home Screen), open it from there, sign in with your school email once more, then turn this on.' : 'This browser can’t do notifications.'); return; }
+  if (!canPush()) { if (isIOS() && !standalone()) installSheet(); else toast('Notifications', isIOS() ? 'Notifications need iOS 16.4 or newer. Until then, the important ones come by email.' : 'This browser can’t do notifications. The important ones come by email.'); return; }
   const key = b64ToBytes(A.view.pushKey || '');
   Promise.resolve(Notification.permission === 'granted' ? 'granted' : Notification.requestPermission()).then((perm) => {
     if (perm !== 'granted') throw new Error('notifications are off for Hash Table in this browser’s settings');
@@ -1965,6 +2013,30 @@ function enablePush() {
     return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
   })).then((sub) => api('POST', '/api/push', { sub: sub.toJSON() })).then(() => { setDevicePush(true); toast('Charlie', 'Done. I’ll ping you on this phone when your tables are set.'); if (cur === 'me') renderMe(); }).catch(oops);
 }
+// iPhone: the Home Screen app, step by step (the important notices come by email until then)
+function installSheet() {
+  const step = (n, b, s) => `<div class="bookstep"><span class="mnum">${n}</span><div class="grow"><b>${b}</b><small>${s}</small></div></div>`, inApp = inAppBrowser();
+  openSheet(`<h3>Put Hash Table on your Home Screen</h3><p class="sub2" style="line-height:1.55;margin-bottom:6px">On iPhone, invitations reach your phone only from the Home Screen app. Until then, the important ones come by email</p>
+    ${[inApp ? ['Open this page in Safari', 'Tap the menu in the corner of this screen, then Open in Safari'] : null,
+      ['Tap Share', 'The square with an arrow, at the bottom of Safari (at the top on iPad)'],
+      ['Choose Add to Home Screen', 'Scroll the list a little if you don’t see it'],
+      ['Open Hash Table from your Home Screen', 'Sign in with your school email once more. The app keeps its own sign-in'],
+      ['Turn on notifications', 'Charlie asks right after you sign in']].filter(Boolean).map((x, i) => step(i + 1, x[0], x[1])).join('')}
+    <button class="btn" style="margin-top:16px" onclick="closeSheet()">Got it</button>`);
+}
+function pushSheet() {
+  openSheet(`<h3>Know when your table is set</h3><p class="sub2" style="line-height:1.55">Charlie sends a note when your invitation arrives, when tonight’s spot is revealed, and when someone messages you. A few a day at most</p>
+    <button class="btn" style="margin-top:18px" onclick="closeSheet();enablePush()">Turn on notifications</button>
+    <button class="link" style="display:block;margin:10px auto 0" onclick="closeSheet()">Not now</button>`);
+}
+// once right after the persona, then at most every three days until this phone has notifications on
+function phoneSetup(force) {
+  if (window.SIXTOP_DEMO || !A.view || !A.view.me.done || (A.view.me.push && devicePush())) return;
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') return;
+  const last = local.get('sixtopSetup') || 0; if (!force && Date.now() - last < 3 * 864e5) return;
+  if (isIOS() && !standalone()) { local.set('sixtopSetup', Date.now()); installSheet(); } else if (canPush()) { local.set('sixtopSetup', Date.now()); pushSheet(); }
+}
+function afterResult() { tab('home'); setTimeout(() => { if (cur === 'home') phoneSetup(true); }, 900); }
 function disablePush() {
   const off = (ep) => api('POST', '/api/push', ep ? { off: true, endpoint: ep } : { off: true }).then(() => { setDevicePush(false); if (cur === 'me') renderMe(); }).catch(oops);
   if (!('serviceWorker' in navigator)) return off('');
@@ -2079,6 +2151,7 @@ document.querySelectorAll('.scr[data-step]').forEach((s) => {
 });
 function route() {
   const h = (location.hash || '').slice(1);
+  if (h) try { history.replaceState(history.state, '', location.href.split('#')[0]); } catch (e) {}
   if (h === 'popups' || h === 'hangs') tab('popups'); else if (h === 'roles') { A.bseg = 'roles'; tab('board'); } else if (h === 'board' || h === 'pulse') { A.bseg = 'all'; tab('board'); } else if (h === 'messages') { A.pseg = 'messages'; tab('people'); } else if (h === 'people' || h === 'friends') tab('people'); else if (h === 'me') tab('me'); else if (/^(table|after)(=|$)/.test(h)) {
     tab('home'); const id = h.split('=')[1], ts = ((A.view && A.view.tables) || []).filter((x) => !x.left && !x.closed), now = Date.now();
     const t = (id && ts.find((x) => x.id === id)) || ts.find((x) => x.phase === 'tonight') || ts.filter((x) => new Date(x.start) > now).sort((a, b) => new Date(a.start) - new Date(b.start))[0] || ts.find((x) => x.feedbackOpen && !x.feedbackDone);
@@ -2087,16 +2160,20 @@ function route() {
 }
 let loops = false;
 function boot() {
-  if (!loops) { loops = true; setInterval(() => { if (!document.hidden && A.view && TABBED.indexOf(cur) >= 0) refresh(); }, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); }); }
+  if (!loops) { loops = true; setInterval(() => { if (!document.hidden && A.view && TABBED.indexOf(cur) >= 0) refresh(); }, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); else reloadIfQuiet(); }); window.addEventListener('online', () => { if (A.offline) boot(); }); }
   return api('GET', '/api/me').then((v) => {
-    A.view = v; A.people = null; A.board = null; A.posts = null; A.openPost = null;
-    if (!v.me.verified) { openVerify('member', { email: v.me.email || '' }); return; }
-    if (!v.me.done) { initDraft(); hist.length = 0; go('school', { noHist: true }); return; }
-    route();
+    A.view = v; A.people = null; A.board = null; A.posts = null; A.openPost = null; A.offline = false; A.tries = 0; checkBuild(v);
+    if (!v.me.verified) { const sv = loadVer(); openVerify('member', sv && sv.mode === 'member' ? sv : { email: v.me.email || '' }); return; }
+    if (!v.me.done) {
+      initDraft(); hist.length = 0; const d = loadDraft(); if (d) Object.assign(A.P, d.P, { photo: undefined, photoUrl: v.me.photo });
+      const F = flow(), at = d && F.indexOf(d.step) > 0 ? d.step : 'school'; F.slice(0, F.indexOf(at)).forEach((s) => hist.push(s)); A.qi = at === 'q' ? Math.min(d.qi || 0, SX.QS.length - 1) : 0;
+      go(at, { noHist: true }); return;
+    }
+    route(); setTimeout(() => { if (cur === 'home') phoneSetup(false); }, 1500);
   }).catch((e) => {
     if (e.status === 401 && A.joinCode) { store.clear(); A.token = ''; openJoin(A.joinCode); return; }
     if (e.status === 401) { store.clear(); A.token = ''; renderStart('This link isn’t active anymore. Sign in with your school email instead.'); }
-    else renderStart('Couldn’t reach Hash Table. Check your connection and try again.');
+    else { A.offline = true; renderStart('Couldn’t reach Hash Table. Trying again by itself', true); clearTimeout(boot.t); boot.t = setTimeout(() => { if (A.offline && !document.hidden) boot(); }, Math.min(30000, 5000 * (A.tries = (A.tries || 0) + 1))); }
     go('start', { noHist: true });
   });
 }
@@ -2106,8 +2183,11 @@ function boot() {
   A.token = A.token || store.get();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
-    navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.sixtopOpen && A.view) { location.hash = new URL(e.data.sixtopOpen).hash; refresh().then(route); } });
+    navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.sixtopOpen && A.view) { const h = new URL(e.data.sixtopOpen).hash; if (h) try { history.replaceState(history.state, '', h); } catch (er) {} refresh().then(route); } });
   }
+  window.addEventListener('hashchange', () => { if (location.hash.length > 1 && A.view && A.view.me.done) route(); });
+  const sv = !A.token && loadVer();
+  if (sv && sv.mode !== 'member' && (!join || sv.club === join)) { renderStart(); A.ver = sv; hist.length = 0; go('verify', { noHist: true }); return; }
   if (join && !A.token) { openJoin(join); return; }
   if (!A.token) { renderStart(); go('start', { noHist: true }); return; }
   boot();

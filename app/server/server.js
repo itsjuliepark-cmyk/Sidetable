@@ -28,7 +28,7 @@ let ADMIN = process.env.SIXTOP_ADMIN_KEY || '';
 if (!ADMIN) { ADMIN = crypto.randomBytes(12).toString('hex'); if (require.main === module || process.env.SIXTOP_DEV) console.log('No SIXTOP_ADMIN_KEY set. Admin key for this run: ' + ADMIN); }
 const PHOTOS = path.join(DATA, 'photos');
 fs.mkdirSync(PHOTOS, { recursive: true });
-const PUSH = require('./push.js')({ dir: DATA, allowHttp: process.env.SIXTOP_PUSH_HTTP === '1' });
+const PUSH = require('./push.js')({ dir: DATA, allowHttp: process.env.SIXTOP_PUSH_HTTP === '1', subject: process.env.SIXTOP_VAPID_SUBJECT || (/^https:\/\//.test(PUBLIC_URL) ? PUBLIC_URL : undefined) });
 const HOUR = 36e5, DAY = 24 * HOUR;
 
 /* ---------- storage: one JSON file, written atomically ---------- */
@@ -123,10 +123,10 @@ async function sendCode(email, code) {
 async function startVerify(me, b) {
   const email = clip(b && b.email, 120).toLowerCase().trim(), school = schoolOfEmail(email);
   if (!school) fail('use your Harvard or MIT email');
-  const owner = live().find((m) => m.verified && m.email === email);
+  const owner = live().find((m) => m.verified && m.email === email), invited = !owner && live().find((m) => m.via === 'invite' && !m.verified && m.email === email);
   let who;
   if (me) { if (owner && owner.id !== me.id) fail('that email belongs to another member'); who = { kind: 'member', id: me.id }; }
-  else if (owner) who = { kind: 'signin', id: owner.id };
+  else if (owner || invited) who = { kind: 'signin', id: (owner || invited).id };
   else {
     const c = own(db.clubs, clip(b.code, 20)); if (!c || c.off) fail('Hash Table is invite-only for now, so open the link from your club');
     const name = oneLine(clip(b.name, 80)); if (name.split(' ').length < 2) fail('your full name, please');
@@ -149,7 +149,7 @@ function finishVerify(me, b) {
   if (v.kind === 'join') { m = newMember(v.name, email, v.school, 'club:' + v.club); const c = db.clubs[v.club]; if (c) c.uses = (c.uses || 0) + 1; log('join', m.id, c ? c.name : ''); }
   else { m = db.members[v.id]; if (!m || m.deleted || (v.kind === 'member' && (!me || me.id !== m.id))) fail('open your link again'); }
   if (m.school !== v.school) { m.school = v.school; m.program = ''; }
-  if (v.kind === 'member' && !m.verified) m.token = rid(16);
+  if ((v.kind === 'member' || v.kind === 'signin') && !m.verified) m.token = rid(16); // the old invite link stops working once they're in
   m.email = email; m.verified = true; m.verifiedAt = new Date().toISOString();
   if (v.kind === 'signin') log('signin', m.id);
   return { token: m.token };
@@ -1705,7 +1705,7 @@ function postDm(me, b) {
   const text = clip(b.text, 800).trim(); if (!text) fail('message required');
   const k = dmKey(me.id, o.id); (db.dms[k] = db.dms[k] || []).push({ id: rid(6), from: me.id, text, at: new Date().toISOString() });
   me.read['d:' + o.id] = new Date().toISOString();
-  notify(o.id, 'dm', { other: firstOf(me) });
+  notify(o.id, 'dm', { other: firstOf(me), from: me.id });
   return { ok: true };
 }
 function ageLabel(iso) {
@@ -1951,6 +1951,8 @@ function featuredTake(me) {
   return postOut(takes.slice().sort((a, b) => Object.keys(b.votes || {}).length - Object.keys(a.votes || {}).length)[0], me);
 }
 
+// the page's own version (its ETag): changes with every deploy that changes the app
+function appBuild() { try { return staticBody(path.join(PUB, 'index.html')).etag; } catch (e) { return ''; } }
 function view(me) {
   const now = Date.now(), myStripes = done(me) ? captainStats(me, now).stripes : 0;
   const events = Object.values(db.events).filter((e) => !e.generated && e.status !== 'cancelled' && eventTimes(e).start > now - 6 * HOUR).sort((a, b) => eventTimes(a).start - eventTimes(b).start).map((e) => {
@@ -1967,7 +1969,7 @@ function view(me) {
   return { standby: standbyView(me), days: [1, 2, 3, 4, 5, 6, 7].map((i) => { const d = addDays(ymdTz(Date.now()), i); return { date: d, dow: fmt(tzMs(d, '12:00'), { weekday: 'short' }), day: +d.slice(8) }; }),
     me: { id: me.id, first: firstOf(me), name: me.name, email: me.email, verified: !!me.verified, school: me.school, program: me.program || '', year: me.year, profile: p, done: ok, persona: pe, photo: photoUrl(me.id, me),
       paused: !!me.paused, cool: cooling(me) ? dayLabel(Date.parse(me.coolUntil)) : '', late: ok ? lateChanges(me) : 0, captain: me.captain || 'maybe', captainLog: ok ? captainStats(me) : null, push: !!(me.push && me.push.length), never: Object.keys(me.never || {}), tableSize: me.tableSize || 'either' },
-    events, tables, connections: ok ? connections(me) : [], threads: th, campus: campusStats(), pushKey: PUSH.publicKey, area: AREA,
+    events, tables, connections: ok ? connections(me) : [], threads: th, campus: campusStats(), pushKey: PUSH.publicKey, build: appBuild(), area: AREA,
     counts: ok ? { board: Object.values(db.jobs).filter((j) => !j.closed && j.at > (me.read.board || '')).length, pulse: db.posts.filter((x) => postVisible(x, me) && x.by !== me.id && x.at > (me.read.pulse || '')).length,
       introsIn: db.intros.filter((x) => x.to === me.id && x.status === 'sent').length, dms: th.reduce((n, t) => n + t.unread, 0) } : {},
     featured: ok ? { take: featuredTake(me), jobs: jobsFor(me).filter((j) => !j.mine).slice(0, 3) } : {},
@@ -2025,16 +2027,31 @@ const PUSH_TEXT = {
 };
 // about tonight: these always go out, whatever else someone got today
 const URGENT = ['reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'table', 'bookcancel', 'bookkeep', 'captainbrief', 'bookremind', 'captaintake', 'bookfix', 'spotlost', 'captainoff'];
+const MAIL_KINDS = { table: 'a private invitation', reveal: 'tonight’s spot', spot: 'your table’s spot changed', spotlost: 'your table needs a new spot', tableoff: 'your table is off', merged: 'your table changed', bookcancel: 'please cancel a booking', bookkeep: 'please keep your booking', captaintake: 'you’re captain now', captainbrief: 'you’re captain' };
+// no phone to reach: the few notices that matter go by email (at most three a day), with a nudge to turn notifications on
+function mailNotice(m, kind, t, day) {
+  if (!MAIL_KINDS[kind] || !m.email || !m.verified) return;
+  m.mailLog = (m.mailLog || []).filter((x) => x.day === day); if (m.mailLog.length >= 3) return;
+  m.mailLog.push({ day, kind });
+  const link = (PUBLIC_URL || '') + '/' + String(t.url || './').replace(/^\.\//, '');
+  sendMail(m.email, 'Hash Table: ' + MAIL_KINDS[kind], t.body + '\n\n' + link + '\n\nOpen Hash Table from your Home Screen and turn on notifications (Me, then Notifications), and these come to your phone instead.').catch(() => {});
+}
 function notify(id, kind, o) {
-  const m = db.members[id]; if (!m || m.deleted || !(m.push && m.push.length) || !PUSH_TEXT[kind]) return Promise.resolve(0);
+  const m = db.members[id]; if (!m || m.deleted || !PUSH_TEXT[kind]) return Promise.resolve(0);
   if (m.paused && kind === 'event') return Promise.resolve(0);
   const day = ymdTz(Date.now()), urgent = URGENT.indexOf(kind) >= 0;
   m.pushLog = (m.pushLog || []).filter((x) => x.day === day);
   if (!urgent && m.pushLog.filter((x) => URGENT.indexOf(x.kind) < 0).length >= PUSH_DAY) return Promise.resolve(0);
-  m.pushLog.push({ day, kind });
   const t = PUSH_TEXT[kind](o || {}); t.body = t.body.replace(/\.$/, '');
-  return Promise.all(m.push.map((sub) => PUSH.send(sub, { title: 'Hash Table', body: t.body, url: t.url, tag: kind }, { topic: kind })
-    .then((r) => { if (r.gone) m.push = (m.push || []).filter((x) => x.endpoint !== sub.endpoint); return r.ok ? 1 : 0; })))
+  if (!(m.push && m.push.length)) { mailNotice(m, kind, t, day); return Promise.resolve(0); }
+  m.pushLog.push({ day, kind });
+  const tag = kind === 'dm' && o && o.from ? 'dm-' + o.from : kind; // two people messaging you are two notifications, not one replacing the other
+  return Promise.all(m.push.map((sub) => PUSH.send(sub, { title: 'Hash Table', body: t.body, url: t.url, tag }, { urgency: urgent ? 'high' : 'normal', ttl: urgent ? 6 * 3600 : 24 * 3600, topic: kind === 'nudge' || kind === 'lastcall' ? kind : undefined })
+    .then((r) => {
+      if (r.gone) m.push = (m.push || []).filter((x) => x.endpoint !== sub.endpoint);
+      else if (r.status === 401 || r.status === 403) { let host = ''; try { host = new URL(sub.endpoint).host; } catch (e) {} alertOps('pushauth:' + host, 'mail', `Notifications to ${host} are being refused (${r.status}${r.reason ? ': ' + r.reason : ''}). Check SIXTOP_VAPID_SUBJECT and the push keys; subscriptions are kept.`); }
+      return r.ok ? 1 : 0;
+    })))
     .then((a) => { save(); return a.reduce((x, y) => x + y, 0); });
 }
 function setPush(me, b) {
@@ -2257,13 +2274,17 @@ function staticBody(file) {
   const raw = fs.readFileSync(file);
   return (STATIC_CACHE[file] = { mtime: st.mtimeMs, size: st.size, raw, etag: '"' + crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16) + '"', gz: /\.(html|js|css|webmanifest)$/.test(file) ? require('zlib').gzipSync(raw) : null });
 }
+const HTTPS = /^https:\/\//.test(PUBLIC_URL);
+// what a page may load: itself, Google Fonts, its own photos, data: images (a photo being picked), nothing else
+const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 function serveStatic(p, res, req) {
-  let f = STATIC[p]; if (!f && (/^\/icons\/icon-\d{2,4}\.png$/.test(p) || /^\/img\/[a-z]+\.jpg$/.test(p) || /^\/video\/[a-z]+\.mp4$/.test(p))) f = p.slice(1);
+  let f = STATIC[p]; if (!f && (/^\/icons\/(icon|maskable|badge)-\d{2,4}\.png$/.test(p) || /^\/img\/[a-z]+\.jpg$/.test(p) || /^\/video\/[a-z]+\.mp4$/.test(p))) f = p.slice(1);
   if (!f) return false;
   const file = path.join(PUB, f); if (!fs.existsSync(file)) { send(res, 404, { error: 'not found' }); return true; }
   const ext = f.split('.').pop();
   if (ext === 'mp4') return serveVideo(file, req, res);
-  const c = staticBody(file), head = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === 'png' || ext === 'jpg' ? 'public, max-age=86400' : 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Frame-Options': 'DENY', ETag: c.etag, Vary: 'Accept-Encoding' };
+  const c = staticBody(file), head = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === 'png' || ext === 'jpg' ? 'public, max-age=86400' : 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': CSP, 'X-Frame-Options': 'DENY', ETag: c.etag, Vary: 'Accept-Encoding' };
+  if (HTTPS) head['Strict-Transport-Security'] = 'max-age=31536000';
   if (req && req.headers['if-none-match'] === c.etag) { res.writeHead(304, head); res.end(); return true; }
   const gz = !!(c.gz && req && /\bgzip\b/.test(String(req.headers['accept-encoding'] || '')));
   res.writeHead(200, gz ? Object.assign(head, { 'Content-Encoding': 'gzip' }) : head);
@@ -2272,8 +2293,9 @@ function serveStatic(p, res, req) {
 }
 // the opening film: Safari on iPhone only plays video from servers that answer byte ranges
 function serveVideo(file, req, res) {
-  const size = fs.statSync(file).size, m = /^bytes=(\d*)-(\d*)$/.exec((req && req.headers.range) || '');
-  const head = { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' };
+  const st = fs.statSync(file), size = st.size, etag = '"v' + Math.round(st.mtimeMs).toString(36) + size.toString(36) + '"', ir = req && req.headers['if-range'];
+  const m = ir && ir !== etag ? null : /^bytes=(\d*)-(\d*)$/.exec((req && req.headers.range) || '');
+  const head = { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=3600', ETag: etag, 'Last-Modified': new Date(st.mtimeMs).toUTCString(), 'X-Content-Type-Options': 'nosniff' };
   const stream = (o) => { const rs = fs.createReadStream(file, o); res.on('close', () => rs.destroy()); rs.on('error', () => res.destroy()); rs.pipe(res); };
   if (!m) { res.writeHead(200, Object.assign(head, { 'Content-Length': size })); stream(); return true; }
   let a = m[1] === '' ? size - +m[2] : +m[1], b = m[1] !== '' && m[2] !== '' ? +m[2] : size - 1;
@@ -2286,9 +2308,19 @@ function serveVideo(file, req, res) {
 const server = http.createServer(async (req, res) => {
   let u; try { u = new URL(req.url, 'http://x'); } catch (e) { return send(res, 400, { error: 'bad request' }); }
   const p = u.pathname, ip = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim() || req.socket.remoteAddress || '', tk = String(req.headers['x-sixtop-token'] || '');
+  // behind the host's proxy: a plain http visit goes to https (the Home Screen app and its notifications belong to the https address)
+  if (HTTPS && String(req.headers['x-forwarded-proto'] || '') === 'http' && (req.method === 'GET' || req.method === 'HEAD')) { res.writeHead(301, { Location: PUBLIC_URL + req.url }); return res.end(); }
   try {
     if ((req.method === 'GET' || req.method === 'HEAD') && serveStatic(p, res, req)) return;
     if (req.method === 'GET' && p === '/health') return send(res, 200, { ok: true });
+    if (p === '/api/photo' && req.method === 'GET') {
+      const pt = u.searchParams.get('t') || ''; if (limited('ph:' + (pt || ip), 600)) return send(res, 429, { error: 'slow down' });
+      const id = u.searchParams.get('id') || '', o = db.members[id], me = /^[a-f0-9]{32}$/.test(pt) ? live().find((m) => m.pt === pt) : null;
+      const ok = me && o && o.photo && !o.deleted && (id === me.id || (me.verified && done(me) && !blockedEither(me.id, id)));
+      const f = path.join(PHOTOS, id + '.img'); if (!ok || !/^m[a-f0-9]{8}$/.test(id) || !fs.existsSync(f)) return send(res, 404, { error: 'not found' });
+      res.writeHead(200, { 'Content-Type': 'image/' + (o.photoType || 'jpeg'), 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(fs.readFileSync(f));
+    }
     if (limited(/^[a-f0-9]{32}$/.test(tk) && byToken(tk) ? 'm:' + tk : ip, +process.env.SIXTOP_RATE || 300)) return send(res, 429, { error: 'slow down' });
     if (p.indexOf('/api/admin/') === 0) {
       if (recent('adminfail:' + ip) >= 10) return send(res, 429, { error: 'slow down' });
@@ -2336,16 +2368,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/join' && req.method === 'GET') { const c = own(db.clubs, u.searchParams.get('code') || ''); return c && !c.off ? send(res, 200, { ok: true, club: c.name }) : send(res, 404, { error: 'this join link is not active' }); }
     if ((p === '/api/verify/start' || p === '/api/verify/finish') && req.method === 'POST') {
-      if (limited('verify:' + ip, 60)) return send(res, 429, { error: 'slow down' });
+      if (limited('verify:' + ip, 300)) return send(res, 429, { error: 'slow down' }); // a sign-up night on campus Wi-Fi is one address
       const who = byToken(String(req.headers['x-sixtop-token'] || '')) || null, b = await readBody(req, 8 * 1024);
       const out = p === '/api/verify/start' ? await startVerify(who, b) : finishVerify(who, b); save(true); return send(res, 200, out);
-    }
-    if (p === '/api/photo' && req.method === 'GET') {
-      const pt = u.searchParams.get('t') || '', id = u.searchParams.get('id') || '', o = db.members[id], me = /^[a-f0-9]{32}$/.test(pt) ? live().find((m) => m.pt === pt) : null;
-      const ok = me && o && o.photo && !o.deleted && (id === me.id || (me.verified && done(me) && !blockedEither(me.id, id)));
-      const f = path.join(PHOTOS, id + '.img'); if (!ok || !/^m[a-f0-9]{8}$/.test(id) || !fs.existsSync(f)) return send(res, 404, { error: 'not found' });
-      res.writeHead(200, { 'Content-Type': 'image/' + (o.photoType || 'jpeg'), 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
-      return res.end(fs.readFileSync(f));
     }
     if (p.indexOf('/api/') === 0) {
       const me = byToken(String(req.headers['x-sixtop-token'] || ''));
@@ -2439,5 +2464,5 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };

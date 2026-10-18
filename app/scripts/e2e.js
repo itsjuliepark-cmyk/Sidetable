@@ -48,12 +48,15 @@ const pick = (a, i) => a[i % a.length];
     for (let i = 0; i < 60; i++) { try { const r = await fetch(BASE + '/health'); if (r.ok) break; } catch (e) {} await new Promise((r) => setTimeout(r, 150)); }
 
     /* ---------- the pages a phone loads ---------- */
-    for (const [u, type] of [['/', 'text/html'], ['/admin', 'text/html'], ['/manifest.webmanifest', 'manifest'], ['/sw.js', 'javascript'], ['/app.css', 'css'], ['/shared.js', 'javascript'], ['/icons/icon-192.png', 'image/png'], ['/img/film.jpg', 'image/jpeg']]) {
+    for (const [u, type] of [['/', 'text/html'], ['/admin', 'text/html'], ['/manifest.webmanifest', 'manifest'], ['/sw.js', 'javascript'], ['/app.css', 'css'], ['/shared.js', 'javascript'], ['/icons/icon-192.png', 'image/png'], ['/icons/icon-48.png', 'image/png'], ['/icons/maskable-512.png', 'image/png'], ['/icons/badge-96.png', 'image/png'], ['/img/film.jpg', 'image/jpeg']]) {
       const r = await fetch(BASE + u); if (!r.ok) problem('static', `${u} → ${r.status}`); else if ((r.headers.get('content-type') || '').indexOf(type) < 0) problem('static', `${u} served as ${r.headers.get('content-type')}`);
-      if (u === '/') { const h = await r.text(); if (/Sidetable|Sixtop/.test(h.replace(/sixtop(Token|-demo|-v\d)/gi, ''))) problem('name', 'an old name is still on the page'); if (!r.headers.get('content-security-policy')) problem('headers', 'no CSP on the page'); }
+      if (u === '/') { const h = await r.text(); if (/Sidetable|Sixtop/.test(h.replace(/sixtop(Token|-demo|-v\d)/gi, ''))) problem('name', 'an old name is still on the page'); if (!/default-src 'self'/.test(r.headers.get('content-security-policy') || '')) problem('headers', 'no real content policy on the page'); }
+      if (u === '/manifest.webmanifest') { const mf = await r.json().catch(() => ({})); if (mf.id !== '/' || mf.start_url !== '/' || !(mf.icons || []).some((x) => x.purpose === 'maskable' && /maskable/.test(x.src))) problem('manifest', 'the install manifest is missing its id, start_url or padded maskable icon'); }
     }
     const vr = await fetch(BASE + '/video/film.mp4', { headers: { Range: 'bytes=0-1023' } });
     if (vr.status !== 206 || +(vr.headers.get('content-length') || 0) !== 1024) problem('video', `range request → ${vr.status}, ${vr.headers.get('content-length')} bytes (iPhone Safari needs 206)`);
+    if (!vr.headers.get('etag')) problem('video', 'the film has no ETag, so a new cut could mix with cached pieces of the old one');
+    const vr2 = await fetch(BASE + '/video/film.mp4', { headers: { Range: 'bytes=0-1023', 'If-Range': '"old"' } }); if (vr2.status !== 200) problem('video', 'a range for an older copy of the film should get the whole new file, got ' + vr2.status); try { await vr2.body.cancel(); } catch (e) {}
 
     /* ---------- ops sets up: a club link and four spots captains book ---------- */
     const club = (await call('POST', '/api/admin/club', { name: 'E2E Club' }, { admin: true })).j;
@@ -61,6 +64,13 @@ const pick = (a, i) => a[i % a.length];
     for (const [name, via, url] of [['E2E Bistro', 'opentable', 'https://www.opentable.com/'], ['E2E Noodle', 'resy', 'https://resy.com/'], ['E2E Tavern', 'phone', ''], ['E2E Grill', 'web', 'https://example.com/']]) {
       await call('POST', '/api/admin/place', { name, address: '1 Test St, Central Square', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 4, seats: 6, mode: 'captain', bookVia: via, bookUrl: url, phone: via === 'phone' ? '(617) 555-0100' : '', vibe: 'Sample' }, { admin: true });
     }
+
+    /* ---------- someone the team invited by email, who never opened the link, signs in on the Home Screen app ---------- */
+    const inv = (await call('POST', '/api/admin/invite', { name: 'Invited Person', email: 'invited@mit.edu', school: 'mit' }, { admin: true })).j;
+    const iv1 = await call('POST', '/api/verify/start', { email: 'invited@mit.edu' }, { ip: '10.9.0.1' });
+    const iv2 = iv1.j.devCode ? await call('POST', '/api/verify/finish', { email: 'invited@mit.edu', code: iv1.j.devCode }, { ip: '10.9.0.1' }) : { j: {} };
+    if (!iv2.j.token) problem('signin', 'an invited member who never opened their link can’t sign in by email: ' + JSON.stringify(iv1.j).slice(0, 120));
+    else if (inv.link && inv.link.indexOf(iv2.j.token) >= 0) problem('signin', 'the invite link still works after they signed in');
 
     /* ---------- 50 people join, each from their own phone ---------- */
     const tracks = ['genai', 'genai', 'genai', 'robotics', 'bio', 'climate', 'founders', 'fintech'].filter((t) => SX.TRACKS.some((x) => x.id === t));
@@ -109,7 +119,7 @@ const pick = (a, i) => a[i % a.length];
     /* ---------- everyone opens the app: sealed invitations, the table, the rules ---------- */
     const seen = {}, byTable = {}, views = {};
     for (const m of M) {
-      const v = (await call('GET', '/api/me', null, m)).j; views[m.id] = v;
+      const v = (await call('GET', '/api/me', null, m)).j; views[m.id] = v; if (!v.build) problem('version', 'the app can’t tell which version it is (no build in /api/me)');
       const mine = (v.tables || []).filter((t) => !t.left && new Date(t.start) > Date.now());
       if (marked[m.id] && !mine.length) problem('nobody-left-out', `${m.email} marked evenings and has no dinner`);
       if (marked[m.id] && mine.length > marked[m.id].max) problem('plan', `${m.email} has ${mine.length} dinners after asking for ${marked[m.id].max}`);
@@ -215,7 +225,7 @@ const pick = (a, i) => a[i % a.length];
         if (!filmOk) problem('ui', 'the opening film never started on the landing page');
         let checked = 0;
         for (const m of M.filter((x) => x.id !== gone.id).slice(0, 4)) {
-          await run("localStorage.setItem('sixtopToken', " + JSON.stringify(m.token) + "); return 1"); await cmd('Page.navigate', { url: BASE + '/' }); await sleep(2600);
+          await run("localStorage.setItem('sixtopToken', " + JSON.stringify(m.token) + "); localStorage.setItem('sixtopSetup', String(Date.now())); return 1"); await cmd('Page.navigate', { url: BASE + '/' }); await sleep(2600);
           const home = await run("return { cur: typeof cur !== 'undefined' ? cur : '', envs: document.querySelectorAll('#homeBody .env, #homeBody .invm').length, month: !!document.querySelector('#homeBody .month'), err: document.body.innerText.indexOf('Something’s off') >= 0 }");
           if (!home || home.cur !== 'home') problem('ui', m.email + ' did not land on Tables: ' + JSON.stringify(home));
           else if (!home.envs) problem('ui', m.email + ' sees no invitation on Tables');
@@ -234,6 +244,16 @@ const pick = (a, i) => a[i % a.length];
           for (const tb of ['popups', 'board', 'people', 'me']) { await run("tab('" + tb + "'); return 1"); await sleep(900); if (checked === 0) await shot('4-' + tb); }
           checked++;
         }
+        // the iPhone how-to renders its steps, and the app gets through losing its connection
+        const how = await run("installSheet(); await new Promise((r) => setTimeout(r, 500)); const n = document.querySelectorAll('#sheet .bookstep').length; closeSheet(); return n");
+        if (!(how >= 4)) problem('ui', 'the Home Screen how-to shows ' + how + ' steps');
+        await run("await navigator.serviceWorker.ready; return 1"); await cmd('Network.enable');
+        await cmd('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }); await cmd('Page.reload'); await sleep(3000);
+        const off = await run("return { cur: typeof cur !== 'undefined' ? cur : 'no app', retry: !!document.getElementById('lRetry') && getComputedStyle(document.getElementById('lRetry')).display !== 'none', token: !!localStorage.getItem('sixtopToken') }");
+        if (!off || off.cur === 'no app') problem('offline', 'with no connection the app didn’t open at all (nothing cached)');
+        else if (off.cur !== 'start' || !off.retry || !off.token) problem('offline', 'with no connection: ' + JSON.stringify(off));
+        await cmd('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }); await sleep(7000);
+        const back = await run("return typeof cur !== 'undefined' ? cur : ''"); if (back !== 'home') problem('offline', 'back online, the app stayed on ' + back + ' instead of opening Tables');
         errs.filter((e) => !/favicon|Failed to load resource: the server responded with a status of 4\d\d/.test(e)).forEach((e) => problem('ui', 'console error: ' + String(e).slice(0, 160)));
         ui = checked + ' members in headless Chrome, screenshots in ' + shots;
         ws.close();

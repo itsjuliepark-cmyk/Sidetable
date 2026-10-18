@@ -1042,3 +1042,20 @@ test('an unbooked table passes to another captain a day and a half out, and with
   assert.ok(ms.every((m) => m.prio >= 1), 'and they go first next week');
   Object.values(db().places).forEach((v) => { if (v.mode !== 'captain') v.off = false; });
 });
+
+test('someone the team invited can sign in with their email before they ever confirmed it, and the old link stops working', async () => {
+  const m = S.newMember('Late Person', 'late@mit.edu', 'mit', 'invite'), link = m.token;
+  const r = await S.startVerify(null, { email: 'late@mit.edu' });
+  const tok = S.finishVerify(null, { email: 'late@mit.edu', code: r.devCode }).token;
+  assert.ok(m.verified && tok === m.token && tok !== link, 'signed in, with a new key in place of the invite link');
+});
+
+test('with notifications off, the few notices that matter come by email, three a day at most', async () => {
+  const [m] = people(1, 'Mailed'); m.push = [];
+  const out = [], log = console.log; console.log = (...a) => { if (/^\[mail to /.test(String(a[0]))) out.push(String(a[0])); else log(...a); };
+  try { for (const k of ['table', 'dm', 'reveal', 'spot', 'tableoff', 'merged']) await S.notify(m.id, k, { day: 'Friday', n: 4, other: 'Sam', table: 't1' }); }
+  finally { console.log = log; }
+  const mine = out.filter((s) => s.indexOf(m.email) >= 0);
+  assert.strictEqual(mine.length, 3, 'three a day, and never a chat message');
+  assert.ok(/a private invitation/.test(mine[0]) && /\/#home/.test(mine[0]) && /#table=t1/.test(mine[1]), 'each with a link into the app');
+});

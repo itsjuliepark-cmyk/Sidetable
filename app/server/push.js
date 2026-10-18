@@ -81,7 +81,11 @@ module.exports = function makePush(o) {
     if (raw != null) { try { keys = JSON.parse(raw); } catch (e) { throw new Error(f + ' could not be read (' + e.message + '). Restore it from a backup; new keys would turn off everyone’s notifications.'); } }
     else { keys = newKeys(); try { fs.mkdirSync(o.dir, { recursive: true }); fs.writeFileSync(f + '.tmp', JSON.stringify(keys)); fs.renameSync(f + '.tmp', f); } catch (e2) { console.error('could not save push keys', e2.message); } }
   } else keys = newKeys();
+  // Apple wants a real https URL or mailto: here; the site's own address is the safe default
   const subject = o.subject || process.env.SIXTOP_VAPID_SUBJECT || 'mailto:push@sixtop.invalid';
+  // one signed token per push service, reused for an hour (Apple asks not to sign one per message)
+  const jwt = new Map();
+  const authFor = (ep) => { const aud = new URL(ep).origin, now = Date.now(), c = jwt.get(aud); if (c && c.until > now) return c.v; const v = vapidHeader(ep, keys, subject, now); jwt.set(aud, { v, until: now + 3600e3 }); return v; };
   // bad keys (pasted the wrong way round, cut short) fail here at startup, not on the first notification
   try { vapidHeader('https://push.example.com/x', keys, subject); } catch (e) { throw new Error('The push keys (SIXTOP_VAPID_PUBLIC and SIXTOP_VAPID_PRIVATE, or vapid.json) aren’t a valid pair: ' + e.message); }
   function send(sub, payload, opt) {
@@ -90,12 +94,15 @@ module.exports = function makePush(o) {
       let u; try { u = new URL(sub.endpoint); } catch (e) { return resolve({ ok: false, gone: true, status: 0 }); }
       if (u.protocol !== 'https:' && !o.allowHttp) return resolve({ ok: false, gone: true, status: 0 });
       let body, auth; try { body = encrypt(typeof payload === 'string' ? payload : JSON.stringify(payload), sub.keys.p256dh, sub.keys.auth); } catch (e) { return resolve({ ok: false, gone: true, status: 0 }); }
-      try { auth = vapidHeader(sub.endpoint, keys, subject); } catch (e) { return resolve({ ok: false, gone: false, status: 0 }); }
+      try { auth = authFor(sub.endpoint); } catch (e) { return resolve({ ok: false, gone: false, status: 0 }); }
+      const headers = { 'Content-Type': 'application/octet-stream', 'Content-Encoding': 'aes128gcm', 'Content-Length': body.length, TTL: String(opt.ttl || 6 * 3600), Urgency: opt.urgency || 'normal', Authorization: auth };
+      if (opt.topic) headers.Topic = String(opt.topic).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32);
       const req = (u.protocol === 'https:' ? https : http).request(u, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream', 'Content-Encoding': 'aes128gcm', 'Content-Length': body.length, TTL: String(opt.ttl || 6 * 3600), Urgency: opt.urgency || 'normal', Topic: opt.topic ? String(opt.topic).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32) : undefined, Authorization: auth },
+        headers,
         timeout: 10000,
-      }, (res) => { res.resume(); res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, gone: [401, 403, 404, 410].indexOf(res.statusCode) >= 0 })); });
+      }, (res) => { let txt = ''; res.on('data', (c) => { if (txt.length < 400) txt += c; }); res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, reason: txt.slice(0, 200),
+        gone: res.statusCode === 404 || res.statusCode === 410 })); }); // 401/403 are our keys or token, not a dead phone: keep the subscription
       req.on('timeout', () => req.destroy(new Error('timeout')));
       req.on('error', () => resolve({ ok: false, status: 0, gone: false }));
       req.end(body);
