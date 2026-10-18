@@ -93,7 +93,7 @@
   const BEFORE = ['Engineer', 'Product', 'Consulting', 'Banking / PE', 'Founder', 'Medicine', 'Military', 'Something else'];
 
   const BASE_TAKES = [
-    { id: 'code', t: 'Every MBA should learn to code.' },
+    { id: 'code', t: 'Everyone in school should learn to code.' },
     { id: 'lab', t: 'The best startups come out of a lab, not a case study.' }
   ];
   const STANCE = { agree: 'Agree', disagree: 'Disagree', depends: 'It depends' };

@@ -640,10 +640,11 @@ function renderRead(intro) {
   const a = SX.axes(A.P.answers), box = $('readPanel');
   if (intro || !box.querySelector('.ax')) {
     box.classList.remove('intro'); void box.offsetWidth; if (intro) box.classList.add('intro');
-    box.innerHTML = `<div class="axhint"><span class="orb sm"></span>Charlie is reading you</div>` + SX.AXES.map((x) =>
+    box.innerHTML = `<div class="axhint"><span class="orb sm"></span>Charlie is reading you<span class="axsum" id="axSum"></span></div>` + SX.AXES.map((x) =>
       `<div class="ax" data-k="${x.k}"><span class="axl">${x.lo}</span><div class="axtrack"><span class="axthumb" style="left:50%"></span></div><span class="axr">${x.hi}</span></div>`).join('');
   }
   // place the dots after a frame, so they glide from where they were
+  const sum = $('axSum'); if (sum) sum.textContent = 'So far: ' + SX.AXES.map((x) => (a[x.k] > 50 ? x.hi : x.lo)).join(', ');
   requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ax').forEach((row) => {
     const v = a[row.dataset.k], th = row.querySelector('.axthumb'), was = parseFloat(th.style.left);
     th.style.left = v + '%';
@@ -752,7 +753,7 @@ function renderResult() {
   $('pName').innerHTML = personaHTML(c);
   $('pCode').innerHTML = c.split('').map((l) => `<span>${SX.AXWORD[l]}</span>`).join('');
   $('pTag').textContent = pe.tag;
-  $('pTraits').innerHTML = c.split('').map((l) => `<div class="trait"><i>${SX.AXWORD[l][0]}</i><div><b>${SX.AXWORD[l]}</b> ${esc(SX.TRAITS[l])}</div></div>`).join('');
+  $('pTraits').innerHTML = c.split('').map((l) => `<div class="trait"><i aria-hidden="true"></i><div><b>${SX.AXWORD[l]}</b> ${esc(SX.TRAITS[l])}</div></div>`).join('');
   const best = SX.bestWith(c);
   $('pBest').innerHTML = `<div class="ctitle">Best seated with</div><div style="font-size:20px;font-weight:600;letter-spacing:-.015em">${personaHTML(best)}</div><div class="sub2" style="margin-top:6px;line-height:1.5">You’re both ${c[1] === 'D' ? 'happiest when the talk goes deep' : 'happiest when it stays playful'}, and you both love ${c[3] === 'A' ? 'trying something new' : 'a good ritual'}. ${c[2] === 'H' ? 'You make the plans; they always show up.' : 'They make the plans; you always show up.'}</div>`;
 }
@@ -919,7 +920,7 @@ function availHTML() {
     <div class="seg five">${[1, 2, 3, 4, 5].map((k) => `<button class="${n === k ? 'sel' : ''}" ${locked ? 'disabled' : ''} onclick="setMax(${k})">${k}</button>`).join('')}</div>
     <div class="mixline">${mix === 'topic' ? 'All <b>tech</b> tables, around your corner of tech, since that’s what you asked for.' : mix === 'social' ? 'All <b>social</b> tables, seated for how you click, since that’s what you asked for.' : n === 1 ? 'One dinner. Charlie picks tech or social, whichever you’ve had less of lately.' : `About <b>${nw(career)} tech</b> (your corner of tech) and <b>${nw(social)} social</b> (people you’d click with).`}</div>
     <div class="label" style="margin:16px 0 8px">Which evenings work?</div>
-    <div class="days ${pals.length ? 'haspals' : ''}">${a.days.map((d) => { const s = d.slots[0], P = d.pals || [], H = d.has; if (H) return `<button class="dayp has ${H.kind}" disabled aria-label="${esc(d.dow)} ${d.day}, you already have a table"><span class="dhas">${H.kind === 'social' ? 'S' : 'T'}${H.round > 1 ? `<sup>${H.round}</sup>` : ''}</span>${esc(d.dow)}<b>${d.day}</b></button>`; return `<button class="dayp ${s.on ? 'on' : ''}" ${locked ? 'disabled' : ''} aria-pressed="${s.on}" onclick="toggleSlot('${s.id}')">${P.length ? `<span class="dpals" aria-label="${esc(andList(P.map((p) => p.first)))} marked it too">${P.slice(0, 2).map((p) => av(p, 'xs')).join('')}</span>` : ''}${esc(d.dow)}<b>${d.day}</b></button>`; }).join('')}</div>
+    <div class="days ${pals.length ? 'haspals' : ''}">${a.days.map((d) => { const s = d.slots[0], P = d.pals || [], H = d.has; if (H) return `<button class="dayp has ${H.kind}" disabled aria-label="${esc(d.dow)} ${d.day}, you already have a table">${esc(d.dow)}<b>${d.day}</b><small class="hk">${H.round > 1 ? 'Round ' + H.round : H.kind === 'social' ? 'Social' : 'Tech'}</small></button>`; return `<button class="dayp ${s.on ? 'on' : ''}" ${locked ? 'disabled' : ''} aria-pressed="${s.on}" onclick="toggleSlot('${s.id}')">${P.length ? `<span class="dpals" aria-label="${esc(andList(P.map((p) => p.first)))} marked it too">${P.slice(0, 2).map((p) => av(p, 'xs')).join('')}</span>` : ''}${esc(d.dow)}<b>${d.day}</b></button>`; }).join('')}</div>
     
     ${pals.length && !a.set ? `<div class="palhint">${esc(andList(pals.slice(0, 3)))} ${pals.length > 1 ? 'marked evenings too' : 'marked an evening too'}. Pick the same one and I’ll seat you together.</div>` : ''}
     <div class="sub2" style="margin-top:12px;line-height:1.5${short ? ';color:#8E5A2B' : ''}">${esc(status)}${a.free > 1 && !a.set ? ` ${a.free} people have planned their week so far.` : ''}</div>`;
@@ -1082,14 +1083,14 @@ function drawTable() {
     : `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.area)}</b><br><span class="sub2">${t.spotPending ? (t.spotByCaptain ? 'Your captain is still booking tonight’s spot. It shows up here, with a notification, the moment it’s set' : 'I’m confirming the spot with the restaurant. It shows up here, with a notification, the moment it’s set') : `The exact spot is revealed ${esc(t.revealLabel)}.`}</span></div></div>`;
   $('tableBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
     <div class="kick">${t.type === 'kindred' ? 'Social dinner' : 'Tech dinner'} on ${esc(t.short)} at ${esc(t.time)}</div>
-    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>' : t.round > 1 ? `Round ${nw(t.round)}, <span class="it">set</span>.` : `${esc(t.type === 'kindred' ? 'A social table' : t.trackName)}, <span class="it">set</span>.`}</h2>
+    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>' : t.round > 1 ? `Round ${nw(t.round)}, <span class="it">together again</span>` : t.type === 'kindred' ? 'Your social <span class="it">table</span>' : `${esc(t.trackName)} <span class="it">table</span>`}</h2>
     ${before ? venue : ''}
     ${before && !t.left ? captainHTML(t) : ''}
     ${gameSumHTML(t)}
-    ${chips.length ? '<p class="tvcap top" id="tvCap"></p>' : ''}
-    <div class="tv" id="tv"><div class="tbl"><i class="glow" style="left:38%"></i><i class="glow b" style="left:62%"></i><div class="bank t">MIT</div><div class="bank b">Harvard</div></div><svg class="lines" id="tvLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-      ${st.map((s, i) => `<button class="seat ${s.p.me ? 'me' : ''} ${s.up ? 'up' : ''}" data-id="${s.p.id}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i * 0.08}s" onclick="${s.p.me ? '' : `openProfile('${s.p.id}')`}">${av(s.p)}<div class="nm">${s.p.me ? 'You' : esc(s.p.first)}</div><div class="sc">${SCH(s.p.school)}</div></button>`).join('')}</div>
-    ${chips.length ? `<div class="label" style="margin-top:6px">Tap a topic to see who shares it</div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div>` : ''}
+    <div class="cardg who"><div class="ctitle">Who’s coming <span class="wn">${nw(people.length)} of you</span></div>
+      <div class="whogrid" id="tv">${people.slice().sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).map((p, i) => `<button class="seat ${p.me ? 'me' : ''}" data-id="${p.id}" style="animation-delay:${i * 0.06}s" onclick="${p.me ? '' : `openProfile('${p.id}')`}">${av(p)}<div class="nm">${p.me ? 'You' : esc(p.first)}</div>${badge(p.school)}</button>`).join('')}</div>
+      ${chips.length ? `<div class="whoshare"><div class="label">What you share <span>tap one</span></div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div><p class="tvcap" id="tvCap"></p></div>` : ''}
+    </div>
     <div class="sp"></div>
     <div class="cardg why"><div class="ctitle">${t.round > 1 ? 'Why you’re back' : 'Why I put you together'}</div>${t.why.map((l) => `<p>${hl(l)}</p>`).join('')}</div>
     ${sinceHTML(t)}
@@ -1111,7 +1112,7 @@ function sinceHTML(t) {
 // the captain: three missions (pick the spot, rally the vote, settle up), one stripe for all three. It rotates.
 const FLAG = SV('<path d="M5 21V4"/><path d="M5 4h11.5l-2.2 4 2.2 4H5"/>', 14);
 const RANK = { 1: 'Captain', 3: 'Senior captain', 5: 'Commodore' };
-function stripesHTML(n) { return `<span class="stripes" aria-label="${n} ${n === 1 ? 'stripe' : 'stripes'}">${Array.from({ length: 5 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}${n > 5 ? `<em>+${n - 5}</em>` : ''}</span>`; }
+function stripesHTML(n) { return `<span class="stripes" aria-label="${n} ${n === 1 ? 'stripe' : 'stripes'}">${Array.from({ length: 5 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}<em>${n ? `${cap(nw(n))} ${n === 1 ? 'stripe' : 'stripes'}` : 'No stripes yet'}</em></span>`; }
 const capBar = (n, sm) => `<span class="capbar ${sm ? 'sm' : ''}">${[0, 1, 2].map((i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
 function missionRow(n, done, title, sub, action) { return `<div class="mission ${done ? 'done' : ''}"><span class="mnum">${done ? ICON.check : n}</span><div class="grow"><b>${title}</b><small>${sub}</small></div>${action || ''}</div>`; }
 const VIA = { opentable: 'Book on OpenTable', resy: 'Book on Resy', tock: 'Book on Tock', web: 'Book on their site', phone: 'Call to book' };
@@ -1235,6 +1236,7 @@ function hiTag(k) {
   document.querySelectorAll('#tvChips .chip').forEach((c) => c.classList.toggle('sel', c.dataset.i === tvSel));
   const st = seatsOf(A.table.people), on = tvSel ? st.filter((s) => tagsOf(s.p).indexOf(tvSel) >= 0) : [];
   document.querySelectorAll('#tv .seat').forEach((el) => { const has = on.some((s) => s.p.id === el.dataset.id); el.classList.toggle('hi', !!tvSel && has); el.classList.toggle('dim', !!tvSel && !has); });
+  if (!$('tvLines')) { if ($('tvCap')) { const meHas = on.some((s) => s.p.me), verb = SX.INTNAME[tvSel] ? 'picked ' + SX.INTNAME[tvSel] : 'want to ' + (SX.ACTV[tvSel] || String(tvSel).toLowerCase()); $('tvCap').innerHTML = tvSel ? `<b>${cap(nw(on.length))} of you</b> ${esc(verb)}${meHas ? ', you included' : ''}` : ''; } return; }
   let lines = '', n = 0;
   on.filter((s) => s.up).forEach((a) => on.filter((s) => !s.up).forEach((b) => { const d = `M${a.x} ${a.y + 7.2} Q ${(a.x + b.x) / 2 * 0.7 + 15} 50 ${b.x} ${b.y - 7.2}`; lines += `<path class="halo" d="${d}" vector-effect="non-scaling-stroke" style="animation-delay:${n * 0.05}s"/><path d="${d}" vector-effect="non-scaling-stroke" style="animation-delay:${n++ * 0.05}s"/>`; }));
   $('tvLines').innerHTML = lines;
@@ -1519,7 +1521,7 @@ const GICON = {
   eye: SV('<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>', 14),
   read: SV('<path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/><path d="M8 9h6M8 13h6"/>', 13)
 };
-const heatHTML = (n) => `<span class="heat" aria-label="Heat ${n} of 3">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}">${FLAME}</i>`).join('')}</span>`;
+const heatHTML = (n) => `<span class="heat h${n}">${['', 'Mild', 'Spicy', 'Heated'][n] || 'Mild'}</span>`;
 const readsHTML = (c, open, hang, after) => (c.reads && c.reads.length ? `<details class="greads"${open ? ' open' : ''}><summary>${GICON.read} ${after ? 'Read more' : hang ? 'Read before you go' : 'Read before dinner'} <span class="cnt">${c.reads.length}</span></summary>${c.reads.map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.src)}</b><span>${esc(r.title)}</span></a>`).join('')}</details>` : '');
 const facesHTML = (list, people) => list.map((v) => { const p = (people || []).find((x) => x.id === v.id) || { first: v.first }; return `<span class="gface" title="${esc(v.first)}">${av(p.me ? p : Object.assign({}, p, { first: v.first }), 's')}</span>`; }).join('');
 function gameStatus(g) {
