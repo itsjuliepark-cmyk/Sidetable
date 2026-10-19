@@ -91,7 +91,6 @@
         <h2 class="q">What kind of dinners should I invite you to?</h2>
         <p class="sub">Tech tables are about your corner of tech. Social tables are about how you click. You can change this any time.</p>
         <div id="mixList"></div>
-        <div id="mixNote"></div>
         <div class="label">How many invitations a week, at most?</div>
         <div class="seg five" id="perWeekSeg"></div>
         <p class="hint" id="perWeekNote"></p>
@@ -103,7 +102,7 @@
       <div class="scroll pad">
         <div class="stepk" id="trK">What you love</div>
         <h2 class="q" id="trQ">Which corners of tech pull you in?</h2>
-        <p class="sub" id="trSub">Pick one or two. Your first pick is where I seat you most.</p>
+        <p class="sub" id="trSub">Pick as many as you like. Your first pick is where I seat you most.</p>
         <div class="tgrid" id="trackList"></div>
       </div>
       <div class="dock"><button class="btn" id="tracksNext" disabled onclick="goNext('tracks')">Pick a track</button></div>
@@ -113,10 +112,10 @@
       <div class="scroll pad">
         <div class="stepk">What you love</div>
         <h2 class="q">What exactly are you obsessed with?</h2>
-        <p class="sub">Pick three to five. Your first pick is your <b style="color:var(--ink)">anchor</b>, the one you could talk about all night.</p>
+        <p class="sub">Pick as many as you like. Your first pick is your <b style="color:var(--ink)">anchor</b>, the one you could talk about all night.</p>
         <div id="intChips"></div>
       </div>
-      <div class="dock"><button class="btn" id="intNext" disabled onclick="go('lens')">Pick at least 3</button></div>
+      <div class="dock"><button class="btn" id="intNext" disabled onclick="go('lens')">Pick at least one</button></div>
     </section>
 
     <section class="scr bgp" id="s-lens" data-step="5">
@@ -126,7 +125,6 @@
         <div id="lensList"></div>
         <div class="label">Before school, you were…</div>
         <div class="chips" id="beforeChips"></div>
-        <div id="lensNote"></div>
       </div>
       <div class="dock"><button class="btn" id="lensNext" disabled onclick="go('takes')">Continue</button></div>
     </section>
@@ -137,7 +135,6 @@
         <h2 class="q">Three hot takes. Where do you stand?</h2>
         <p class="sub">I use these to make sure someone at your table sees it differently.</p>
         <div id="takeList"></div>
-        <div id="takeNote"></div>
       </div>
       <div class="dock"><button class="btn" id="takeNext" disabled onclick="A.qi=0;go('q')">Next: how you connect</button></div>
     </section>
@@ -149,7 +146,6 @@
         <p class="sub" id="qsub" style="margin:-4px 0 12px;font-size:14px">Topics get you to the table. This part decides who you’d actually click with.</p>
         <h2 class="q" id="qq"></h2>
         <div class="opts" id="qopts"></div>
-        <div id="qnote"></div>
       </div>
     </section>
 
@@ -165,7 +161,6 @@
         <div class="chips" id="actChips"></div>
         <div class="label">What are you hoping to find?</div>
         <div id="lookList"></div>
-        <div id="lookNote"></div>
       </div>
       <div class="dock"><button class="btn" id="lifeNext" disabled onclick="go('future')">Continue</button></div>
     </section>
@@ -177,7 +172,6 @@
         <p class="sub">I use this to sit you near people headed the same way, and a few who aren’t.</p>
         <div class="label">After school, I’m thinking… <span class="soft">pick all that fit</span></div>
         <div class="chips" id="nextChips"></div>
-        <div id="nextNote"></div>
         <div class="label">This year, I want to…</div>
         <input class="field" id="planIn" maxlength="100" placeholder="ship a beta to ten real users" />
         <div class="label">Someday, I’d love to…</div>
@@ -340,6 +334,7 @@
       <button data-t="me" onclick="tab('me')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Me<span class="tdot"></span></button>
     </nav>
 
+    <div class="cfloat" id="cfloat" role="status" aria-live="polite" onclick="this.classList.remove('on')"><span class="orb"></span><div><b>Charlie’s note</b><p id="cfloatT"></p></div></div>
     <div class="toast" id="toast"><span class="orb"></span><div><b id="toastT">Charlie</b><span id="toastM"></span></div></div>
     <div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
     <div class="sheet" id="sheet"></div>
@@ -426,7 +421,17 @@ function api(method, url, body) {
     .then((r) => r.json().catch(() => ({})).then((j) => { if (!r.ok) { const e = new Error(j.error || ('error ' + r.status)); e.status = r.status; throw e; } if (j.view) { if (availTimer && A.view && A.view.avail) j.view.avail = A.view.avail; A.view = j.view; } return j; }));
 }
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
-function note(slot, text) { $(slot).innerHTML = `<div class="cnote"><span class="orb"></span><p><b>Charlie</b>${esc(text)}</p></div>`; }
+// Charlie's note: a quick reaction to what you just picked. It pops up over the next step and goes by itself (a tap closes it)
+function charlieSays(text, ms) {
+  const el = $('cfloat'); if (!el || !text) return;
+  $('cfloatT').textContent = text; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  clearTimeout(charlieSays.t); charlieSays.t = setTimeout(() => el.classList.remove('on'), ms || Math.max(2600, Math.min(5200, 1400 + text.length * 40)));
+}
+// what Charlie says as you leave a step (the sign-up only, and never the same line twice in a row)
+const REACT = { tables: () => (SX.MIX.find((x) => x.id === A.P.mix) || {}).note, lens: () => (SX.LENS.find((l) => l.id === A.P.lens) || {}).note,
+  takes: () => (Object.keys(A.P.takes).length === 3 ? 'Good. I’ll make sure someone at your table disagrees with you. Politely. Now, part two: the people.' : ''),
+  life: () => (SX.LOOK.find((o) => o.id === A.P.look) || {}).note, future: () => NEXT_NOTE[A.P.next[0]] };
+function react(step) { if (!A.P || !A.view || A.view.me.done || !REACT[step]) return; const txt = REACT[step](); A.reacted = A.reacted || {}; if (!txt || A.reacted[step] === txt) return; A.reacted[step] = txt; setTimeout(() => charlieSays(txt), 260); }
 function oops(e) { toast('Something’s off', e && e.message ? cap(e.message) + '.' : 'Try again in a moment.'); }
 // a face, or the first letter on the school color; a photo that fails to load falls back to the letter
 function av(p, cls) { const ini = esc(((p.first || '?')[0] || '?').toUpperCase()); return `<div class="av ${esc(p.school || 'harvard')} ${cls || ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="" onerror="this.parentNode.textContent='${ini}'">` : ini}</div>`; }
@@ -448,7 +453,7 @@ function go(id, opts) {
   const prev = cur ? $('s-' + cur) : null;
   if (prev && prev.id !== 's-' + id) { prev.classList.remove('on'); prev.classList.add('out'); setTimeout(() => prev.classList.remove('out'), 450); }
   if (cur && cur !== id && !opts.noHist) { hist.push(cur); try { history.pushState({ sx: hist.length }, ''); } catch (e) {} }
-  const was = cur; cur = id;
+  const was = cur; cur = id; if (!opts.noHist && was && was !== id) react(was);
   if ((was === 'chat' || was === 'dm') && id !== was) setTimeout(refresh, 300);
   $('phone').dataset.scene = SCENE[id] || 'join'; document.body.classList.toggle('on-film', id === 'start');
   if (SCENE[id] === 'table' && id !== 'chat' && id !== 'invite' && A.table) techRoom(A.table.type !== 'kindred');
@@ -624,7 +629,7 @@ function renderTables() {
   $('perWeekNote').textContent = n === 1 ? 'One a week. A gentle start.' : n === 2 ? 'Two a week is the sweet spot for most people.' : n === 3 ? 'Three a week. You’ll be a regular in no time.' : 'That’s a lot of dinners, and I love it. You can skip any week.';
   gate('tablesNext', A.P.mix ? null : ['mixList', 'Pick the kind of dinners']);
 }
-function pickMix(id) { const first = A.P.mix !== id; A.P.mix = id; renderTables(); if (first) note('mixNote', SX.MIX.find((x) => x.id === id).note); }
+function pickMix(id) { A.P.mix = id; renderTables(); }
 const NEXT_NOTE = { 'Start a company': 'A founder. I’ll seat you near a few builders, and at least one person who asks hard questions.', 'Join a startup': 'Startup-bound. Some of the best intros happen at a dinner table.',
   'Big tech': 'Big tech. You’ll be the one who knows how things really work at scale.', 'Venture capital': 'A future investor. You’ll meet founders before anyone else does.',
   'Back to my old industry': 'Going back with new tricks. That view is gold at a tech table.', 'Research or a PhD': 'A researcher. You’ll keep the rest of the table honest.',
@@ -637,7 +642,7 @@ function renderFuture() {
   gate('futureNext', A.P.next.length ? null : ['nextChips', 'Pick what’s next for you']);
 }
 // pick as many as are true; each new one gets Charlie's note
-function pickNext(i) { const x = SX.NEXT[i], k = A.P.next.indexOf(x); if (k >= 0) A.P.next.splice(k, 1); else A.P.next.push(x); renderFuture(); if (k < 0) note('nextNote', NEXT_NOTE[x]); else if (!A.P.next.length) $('nextNote').innerHTML = ''; }
+function pickNext(i) { const x = SX.NEXT[i], k = A.P.next.indexOf(x); if (k >= 0) A.P.next.splice(k, 1); else A.P.next.push(x); renderFuture(); }
 $('planIn').addEventListener('input', (e) => { A.P.plan = e.target.value; });
 $('dreamIn').addEventListener('input', (e) => { A.P.dream = e.target.value; });
 function renderTracks() {
@@ -648,12 +653,12 @@ function renderTracks() {
   const soc = socialOnly();
   $('trK').textContent = soc ? 'Optional' : 'What you love';
   $('trQ').textContent = soc ? 'Anything in tech you’re into?' : 'Which corners of tech pull you in?';
-  $('trSub').textContent = soc ? 'Totally optional. It helps me suggest hangs you’d like. Your social tables are about how you click, not what you do.' : 'Pick one or two. Your first pick is where I seat you most.';
+  $('trSub').textContent = soc ? 'Totally optional. It helps me suggest hangs you’d like. Your social tables are about how you click, not what you do.' : 'Pick as many as you like. Your first pick is where I seat you most.';
   gate('tracksNext', !soc && !A.P.tracks.length ? ['trackList', 'Pick a track'] : null, A.P.tracks.length ? 'Continue' : 'Skip for now');
 }
 function toggleTrack(id) {
   const k = A.P.tracks.indexOf(id);
-  if (k >= 0) A.P.tracks.splice(k, 1); else if (A.P.tracks.length < 2) A.P.tracks.push(id); else { toast('Charlie', 'Two tracks at most. Your first pick is where I seat you.'); return; }
+  if (k >= 0) A.P.tracks.splice(k, 1); else A.P.tracks.push(id);
   A.P.interests = A.P.interests.filter((i) => A.P.tracks.indexOf(SX.INTS.find((x) => x.id === i).tr) >= 0);
   renderTracks();
 }
@@ -662,11 +667,11 @@ function renderInts() {
     const k = A.P.interests.indexOf(i.id);
     return `<button class="chip ${k >= 0 ? 'sel' : ''}" onclick="toggleInt('${i.id}')">${esc(i.t)}${k === 0 ? ' <span class="star">Anchor</span>' : ''}</button>`;
   }).join('')}</div>`).join('');
-  const n = A.P.interests.length; gate('intNext', n < 3 ? ['intChips', `Pick ${3 - n} more`] : null);
+  gate('intNext', A.P.interests.length ? null : ['intChips', 'Pick at least one']);
 }
 function toggleInt(id) {
   const k = A.P.interests.indexOf(id);
-  if (k >= 0) A.P.interests.splice(k, 1); else if (A.P.interests.length < 5) A.P.interests.push(id); else { toast('Charlie', 'Five is the max. Narrow is good. It gives me something to seat you around.'); return; }
+  if (k >= 0) A.P.interests.splice(k, 1); else A.P.interests.push(id);
   renderInts();
 }
 function renderLens() {
@@ -674,12 +679,12 @@ function renderLens() {
   $('beforeChips').innerHTML = SX.BEFORE.map((b, i) => `<button class="chip ${A.P.before === b ? 'sel' : ''}" onclick="A.P.before=SX.BEFORE[${i}];renderLens()">${esc(b)}</button>`).join('');
   gate('lensNext', !A.P.lens ? ['lensList', 'Pick your angle'] : !A.P.before ? ['beforeChips', 'One more just below'] : null);
 }
-function pickLens(id) { const first = A.P.lens !== id; A.P.lens = id; renderLens(); if (first) note('lensNote', SX.LENS.find((l) => l.id === id).note); }
+function pickLens(id) { A.P.lens = id; renderLens(); }
 function renderTakes() {
   $('takeList').innerHTML = SX.takesFor(A.P.tracks[0]).map((t) => `<div class="take"><p>${esc(t.t)}</p><div class="seg">${['disagree', 'depends', 'agree'].map((v) => `<button class="${A.P.takes[t.id] === v ? 'sel' : ''}" onclick="pickTake('${t.id}','${v}')">${SX.STANCE[v]}</button>`).join('')}</div></div>`).join('');
   const left = 3 - Object.keys(A.P.takes).length; gate('takeNext', left > 0 ? ['takeList', left === 1 ? 'One more take' : left + ' more takes'] : null, 'Next: how you connect');
 }
-function pickTake(id, v) { A.P.takes[id] = v; renderTakes(); if (Object.keys(A.P.takes).length === 3) note('takeNote', 'Good. I’ll make sure someone at your table disagrees with you. Politely. Now, part two: the people.'); }
+function pickTake(id, v) { A.P.takes[id] = v; renderTakes(); }
 // Charlie is reading you: the dots are always drifting a little, as if Charlie is still making up its mind. The first time the
 // panel appears they swing in wide and settle; after each answer the dots that moved spring over with a pulse.
 function renderRead(intro) {
@@ -705,7 +710,6 @@ function renderQ() {
   $('qq').textContent = q.q;
   $('qopts').className = 'opts';
   $('qopts').innerHTML = q.o.map((o, i) => `<button class="opt ${A.P.answers[A.qi] === i ? 'sel' : ''}" onclick="answer(${i})">${esc(o.t)}</button>`).join('');
-  $('qnote').innerHTML = '';
   renderRead(!A.readShown); A.readShown = true; setStep('q');
 }
 function answer(i) {
@@ -713,7 +717,7 @@ function answer(i) {
   A.P.answers[A.qi] = i;
   $('qopts').classList.add('locked');
   [...$('qopts').children].forEach((b, k) => b.classList.toggle('sel', k === i));
-  renderRead(); note('qnote', SX.QS[A.qi].o[i].note);
+  renderRead(); charlieSays(SX.QS[A.qi].o[i].note, 2800);
   const at = A.qi; setTimeout(() => { if (cur !== 'q' || A.qi !== at) return; if (A.qi < SX.QS.length - 1) { A.qi++; renderQ(); } else go('life'); }, 1600);
 }
 function renderLife() {
@@ -725,7 +729,7 @@ function renderLife() {
   gate('lifeNext', !A.P.rhythm ? ['rhythmSeg', 'Pick how often first'] : !A.P.look ? ['lookList', 'One more below: what you’re hoping for'] : null);
 }
 function toggleIn(k, v) { const L = A.P[k], i = L.indexOf(v); if (i >= 0) L.splice(i, 1); else L.push(v); RENDER[cur](); }
-function pickLook(id) { const first = A.P.look !== id; A.P.look = id; renderLife(); if (first) note('lookNote', SX.LOOK.find((o) => o.id === id).note); }
+function pickLook(id) { A.P.look = id; renderLife(); }
 function renderProfileStep() {
   if (document.activeElement !== $('pfHead')) $('pfHead').value = A.P.headline;
   if (document.activeElement !== $('pfBuild')) $('pfBuild').value = A.P.building;
@@ -822,8 +826,9 @@ function tableWho(t) {
 }
 // what a seal says: the kind of table, or the round
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
-function envHTML(t) {
-  return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i><span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
+function envHTML(t, many) {
+  const job = t.captain && t.captain.me && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : '';
+  return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
 const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
@@ -881,8 +886,8 @@ function renderHome() {
   if (v.counts && v.counts.introsIn) out.push(`<button class="cardg row" style="width:100%;text-align:left" onclick="A.bseg='roles';tab('board')"><span class="orb md"></span><div class="grow"><b style="font-size:15px">${v.counts.introsIn} intro ${v.counts.introsIn > 1 ? 'requests' : 'request'}</b><div class="sub2">Someone asked you about a role you shared</div></div>${ICON.chev}</button><div class="sp"></div>`);
   // tables first: your invitations, or how your first one happens; then next week's plan; then hangs
   out.push(`<div class="sechead"><h3>Your tables</h3></div>`);
-  out.push(I.length ? I.map((t) => (t.opened ? invMiniHTML(t) + gameNudgeHTML(t) : envHTML(t))).join('<div class="sp"></div>') : v.standby ? '' : firstTableHTML());
-  v.tables.filter((t) => t.capDone != null && (t.phase === 'set' || t.phase === 'tonight') && !t.left).forEach((t) => out.push(`<div class="sp"></div><button class="cardg capmini" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>Captain on ${esc(t.day)}</b><small>${t.capDone === 3 ? 'All three missions done' : t.capDone ? `${cap(nw(t.capDone))} of three missions done` : 'Three missions, one stripe'}</small></div>${t.capDone ? capBar(t.capDone, true) : ''}</button>`));
+  // a captain's job shows once the invitation is open, right under it; sealed, the envelope only says to open it soon
+  out.push(I.length ? I.map((t) => (t.opened ? invMiniHTML(t) + capStripHTML(t) + gameNudgeHTML(t) : envHTML(t, sealed > 1))).join('<div class="sp"></div>') : v.standby ? '' : firstTableHTML());
   if (v.standby) out.push(`<div class="sp"></div>${standbyHTML(v.standby)}`);
   if (v.month) out.push(`<div class="sp"></div>${monthHTML()}`);
   out.push(`<div class="sp"></div><div class="cardg plan-card" id="availCard">${availHTML()}</div>`);
@@ -909,6 +914,13 @@ function renderHome() {
   const cs = v.campus;
   if (cs.first) out.push(`<div class="sp"></div><div class="cardg row"><div class="grow"><div class="ctitle" style="margin-bottom:4px">Across the Charles so far</div><div style="font-size:14px;color:var(--ink-soft)"><b style="font-size:22px;color:var(--ink);letter-spacing:-.02em">${cs.first}</b> first meetings${cs.third ? ` and <b style="color:var(--ink)">${cs.third}</b> third ones` : ''}</div></div></div>`);
   $('homeBody').innerHTML = out.join('');
+}
+// under an open invitation: you're the captain, and the next mission
+function capStripHTML(t) {
+  if (!t.captain || !t.captain.me || t.left) return '';
+  const J = t.capJobs || {};
+  const next = J.spotBy ? `Next: book the spot by ${J.spotBy}` : J.vote ? `Next: get the table voting, ${J.vote.voted} of ${J.vote.need} so far` : J.checks ? 'Last one: split the check at dinner' : 'All three missions done';
+  return `<button class="capstrip" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${esc(next)}</small></div>${t.capDone ? capBar(t.capDone, true) : ICON.chev}</button>`;
 }
 /* your month as a calendar (tap a dinner to open it). Below: round twos coming up, and the line you're carrying. */
 const LTI = SV('<rect x="2.5" y="10" width="19" height="4" rx="2"/><circle cx="6" cy="6.3" r="1.5"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="18" cy="6.3" r="1.5"/><circle cx="6" cy="17.7" r="1.5"/><circle cx="12" cy="17.7" r="1.5"/><circle cx="18" cy="17.7" r="1.5"/>', 17);
@@ -985,6 +997,13 @@ function openInvite(id) {
   A.inv = t; go('invite'); drawInvite(t.opened);
   if (!t.opened) { t.opened = true; api('POST', '/api/invite-open', { table: id }).catch(() => {}); }
 }
+// a captain's invitation says what the job is: a few small missions, and that it can be passed on
+function capLetterHTML(t) {
+  if (!t.captain || !t.captain.me) return '';
+  const J = t.capJobs || {}, jobs = [J.spotBy && `book the spot by ${J.spotBy}`, J.vote && 'get everyone to vote on tonight’s question', J.checks && 'split the check at the end'].filter(Boolean);
+  if (!jobs.length) return '';
+  return `<div class="icap"><span class="capflag">${FLAG}</span><div><b>You’re the captain this time</b><p>${cap(nw(jobs.length))} small ${jobs.length > 1 ? 'missions' : 'mission'}: ${esc(andList(jobs))}. I’ll walk you through ${jobs.length > 1 ? 'each one' : 'it'}, and you can pass it on if you’d rather not</p></div></div>`;
+}
 function drawInvite(already) {
   const t = A.inv, k = tableKind(t), me = A.view.me, who = tableWho(t).toLowerCase();
   const lines = (t.why || []).filter((l) => who.indexOf(l.replace(/\*/g, '').toLowerCase()) < 0 && l.replace(/\*/g, '').toLowerCase().indexOf(who.split(', and ').pop()) < 0).slice(0, 2);
@@ -1002,6 +1021,7 @@ function drawInvite(already) {
         <p class="who">${esc(tableWho(t))}</p>${t.cross ? `<p class="crossnote">Your ${k === 'social' ? 'tech' : 'social'} evenings were quiet this week, so this one’s a ${k === 'social' ? 'social' : 'tech'} table. Stepping out is free</p>` : ''}
         ${knownHTML(t, 'known')}
         <p class="why">${lines.map(hl).join('<br>')}</p>
+        ${capLetterHTML(t)}
         <div class="sign">Charlie</div>
         ${t.game && t.game.stage !== 'revealed' ? `<p class="ps">P.S. ${t.game.stage === 'vote' ? 'Your table picks tonight’s question in the group chat. Three cards, one winner.' : 'Tonight’s question is in. Pick your side before dinner, it stays sealed until then.'}</p>` : ''}
       </article>

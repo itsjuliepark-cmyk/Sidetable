@@ -1223,7 +1223,10 @@ button.cd:active{transform:scale(.94)}
 .cd.hangday{background:#F4F0FC;color:#6E58B0}
 .cd .hdot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:#A893E0;box-shadow:0 0 0 1.5px #fff}
 .cd sup{position:absolute;top:4px;right:5px;font-size:8.5px;font-weight:700;line-height:1;opacity:.9}
-.cd.today::after{content:"";position:absolute;inset:-4px;border-radius:16px;border:2px solid var(--ink);pointer-events:none}
+/* today: the date in ink with a small dot, nothing louder (on a dinner day the dot sits in the corner) */
+.cd.today b{color:var(--ink);font-weight:750}
+.cd.today::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--accent);pointer-events:none}
+.cd.today.din::after,.cd.today.hangday::after{left:auto;bottom:auto;top:5px;right:5px;margin:0}
 .mlegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 2px 0;font-size:11.5px;color:var(--ink-soft)}
 .mlegend span{display:inline-flex;align-items:center;gap:6px}
 .mlegend .sw{width:12px;height:12px;border-radius:4px;flex:none}
@@ -1316,9 +1319,6 @@ button.cd:active{transform:scale(.94)}
 .mission.done b{color:var(--ink-2)}
 .mission .btn.sm{margin:0;flex:none}
 .capdoor{margin-top:4px;padding:10px 12px;border-radius:12px;background:rgba(235,200,119,.14);font-size:13.5px;color:var(--ink-2)}
-.capmini{display:flex;align-items:center;gap:11px;width:100%;text-align:left}
-.capmini b{display:block;font-size:15px;font-weight:650;color:var(--ink)}
-.capmini small{display:block;font-size:12.5px;color:var(--ink-soft)}
 .spots{display:grid;gap:9px;margin:14px 0 6px}
 .spot{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:14px 15px;border-radius:16px;border:1px solid var(--line-2);background:#fff;transition:border-color .2s,box-shadow .2s,opacity .2s}
 .spot b{display:block;font-family:var(--italic);font-style:italic;font-size:18px;font-weight:400;color:var(--ink)}
@@ -1459,3 +1459,31 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .invite .ikind{display:inline-flex;align-items:center;height:26px;margin:16px auto 0;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:650}
 .invite .ikind.career{color:#3F5C8E;background:rgba(126,152,212,.14);box-shadow:inset 0 0 0 1px rgba(126,152,212,.35)}
 .invite .ikind.social{color:#9F4D5A;background:rgba(213,140,153,.14);box-shadow:inset 0 0 0 1px rgba(213,140,153,.38)}
+
+/* the school line on the first step: the check and the words apart */
+.verified{display:flex;align-items:center;gap:7px}
+.verified svg{flex:none}
+/* Charlie's note: a reaction that pops up as you move on, on a dark glass card, then goes */
+.cfloat{position:absolute;left:14px;right:14px;top:calc(62px + env(safe-area-inset-top,0px));z-index:45;display:flex;gap:11px;align-items:flex-start;padding:14px 16px 15px;border-radius:20px;
+  background:rgba(14,14,16,.8);-webkit-backdrop-filter:blur(16px) saturate(1.05);backdrop-filter:blur(16px) saturate(1.05);box-shadow:0 24px 46px -22px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08) inset;
+  color:#fff;opacity:0;transform:translateY(-10px) scale(.96);pointer-events:none;transition:opacity .3s ease,transform .5s cubic-bezier(.2,1.35,.35,1)}
+.cfloat.on{opacity:1;transform:none;pointer-events:auto;cursor:pointer}
+.cfloat .orb{margin-top:1px;box-shadow:0 0 0 1.5px rgba(255,255,255,.35),0 4px 12px -3px rgba(0,0,0,.45)}
+.cfloat.on .orb{animation:cpulse .8s cubic-bezier(.2,1.4,.4,1) 1}
+.cfloat b{display:block;font-size:12px;font-weight:600;letter-spacing:-.003em;color:rgba(255,255,255,.6);margin-bottom:3px}
+.cfloat p{margin:0;font-family:var(--italic);font-style:italic;font-size:17.5px;line-height:1.36;color:#fff;overflow-wrap:anywhere}
+@keyframes cpulse{0%{transform:scale(.5)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.cfloat{transition:opacity .2s;transform:none}.cfloat.on .orb{animation:none}}
+/* a sealed captain's envelope: a small gold note to open it soon */
+.env .envtag{position:absolute;top:14px;right:14px;z-index:3;display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:11.5px;font-weight:650;letter-spacing:-.003em;color:#8A6420;background:linear-gradient(135deg,#FCF2DA,#F4DEAF);box-shadow:0 6px 14px -8px rgba(170,120,40,.6),0 0 0 1px rgba(214,170,90,.35) inset}
+/* under an open invitation: you're the captain, and what's next */
+.capstrip{display:flex;align-items:center;gap:11px;width:100%;margin-top:8px;padding:11px 14px;border-radius:18px;text-align:left;background:linear-gradient(135deg,#FFFBF1,#FBF0DA);border:1px solid rgba(214,170,90,.3);box-shadow:0 10px 22px -18px rgba(150,105,30,.6)}
+.capstrip .capflag{width:30px;height:30px}
+.capstrip b{display:block;font-size:14.5px;font-weight:650;color:var(--ink)}
+.capstrip small{display:block;font-size:12.5px;color:#7A6447;margin-top:1px;line-height:1.35}
+.capstrip > svg{flex:none;color:#A9884F}
+/* in the letter: what being captain means */
+.invite .icap{display:flex;gap:12px;align-items:flex-start;text-align:left;margin:18px 0 4px;padding:14px 15px;border-radius:16px;background:rgba(244,222,175,.28);box-shadow:inset 0 0 0 1px rgba(214,170,90,.3)}
+.invite .icap .capflag{width:30px;height:30px}
+.invite .icap b{display:block;font-size:14.5px;font-weight:650;color:#4A3A22}
+.invite .icap p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:#6B5A44}

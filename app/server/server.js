@@ -161,8 +161,8 @@ function cleanUrl(v) { const s = clip(v, 200).trim(); if (!s) return ''; const u
 const trOf = (i) => (SX.INTS.find((x) => x.id === i) || {}).tr;
 function cleanProfile(b) {
   b = b || {};
-  const tracks = arr(b.tracks).filter((t, i, a) => SX.TRACKS.some((x) => x.id === t) && a.indexOf(t) === i).slice(0, 2);
-  const interests = arr(b.interests).filter((i, k, a) => SX.INTNAME[i] && tracks.indexOf(trOf(i)) >= 0 && a.indexOf(i) === k).slice(0, 5);
+  const tracks = arr(b.tracks).filter((t, i, a) => SX.TRACKS.some((x) => x.id === t) && a.indexOf(t) === i);
+  const interests = arr(b.interests).filter((i, k, a) => SX.INTNAME[i] && tracks.indexOf(trOf(i)) >= 0 && a.indexOf(i) === k).slice(0, 40);
   const st = ['agree', 'disagree', 'depends'], takes = {};
   ['track', 'code', 'lab'].forEach((k) => { if (b.takes && inList(b.takes[k], st)) takes[k] = b.takes[k]; });
   const answers = {};
@@ -176,7 +176,7 @@ function cleanProfile(b) {
     mix: inList(b.mix, SX.MIX.map((x) => x.id)), perWeek: Math.max(1, Math.min(5, Math.round(+b.perWeek) || 2)),
     next: [].concat(b.next || []).filter((x, i, a) => SX.NEXT.indexOf(x) >= 0 && a.indexOf(x) === i), plan: clip(b.plan, 100).trim(), dream: clip(b.dream, 120).trim()
   };
-  const tech = p.mix === 'social' || (tracks.length && interests.length >= 3 && p.lens && Object.keys(takes).length === 3);
+  const tech = p.mix === 'social' || (tracks.length && interests.length >= 1 && p.lens && Object.keys(takes).length === 3);
   p.done = !!(p.mix && tech && Object.keys(answers).length === SX.QS.length && p.rhythm && p.look && p.next.length);
   return p;
 }
@@ -1129,7 +1129,9 @@ function coolCheck(m) {
 function pickCaptain(t, skip) {
   const pass = arr(t.passed).concat(skip ? [skip] : []), now = Date.now();
   const ok = seatedIds(t).filter((id) => { const m = db.members[id]; return m && !m.deleted && (m.captain || 'maybe') !== 'no' && pass.indexOf(id) < 0; });
-  const score = (id) => { const m = db.members[id], recent = m.captainAt && now - Date.parse(m.captainAt) < 21 * DAY; return (m.captain === 'yes' ? 0 : 1) + (recent ? 2 : 0); };
+  const been = {}; seatedIds(t).forEach((id) => { been[id] = Object.values(db.tables).some((x) => x !== t && x.published && !x.closed && seatedIds(x).indexOf(id) >= 0 && db.events[x.eventId] && eventTimes(db.events[x.eventId]).start < now); });
+  // a volunteer first, then someone who hasn't captained lately; someone who's been to a dinner before beats a first-timer
+  const score = (id) => { const m = db.members[id], recent = m.captainAt && now - Date.parse(m.captainAt) < 21 * DAY; return (m.captain === 'yes' ? 0 : 1) + (recent ? 2 : 0) + (been[id] ? 0 : 1.5); };
   // nobody willing: someone who'd rather not still beats a table with nobody to book it (they can pass it on)
   const pool = ok.length ? ok : seatedIds(t).filter((id) => { const m = db.members[id]; return m && !m.deleted && pass.indexOf(id) < 0; });
   const pick = pool.sort((a, b) => score(a) - score(b) || ((db.members[a].captainAt || '') < (db.members[b].captainAt || '') ? -1 : 1))[0] || null;
@@ -1258,11 +1260,11 @@ function capView(t, me, now) {
   });
 }
 // the brief goes to whoever is captain, once each time it changes hands
-function briefCaptain(t) {
+function briefCaptain(t, quiet) {
   if (!t || !t.captain) return;
   const c = capOf(t); if (c.hadChoice == null) c.hadChoice = !t.venue || spotOptions(t).length > 1;
   const e = db.events[t.eventId]; if (c.briefed === t.captain || !e || eventTimes(e).start < Date.now()) return;
-  c.briefed = t.captain; if (!t.captainNoted) notify(t.captain, 'captainbrief', { day: weekday(eventTimes(e).start), table: t.id }); // on the day, the 'captain' push already went
+  c.briefed = t.captain; if (!quiet && !t.captainNoted) notify(t.captain, 'captainbrief', { day: weekday(eventTimes(e).start), table: t.id }); // on the day, the 'captain' push already went
 }
 function captainSpot(me, b) {
   const t = own(db.tables, b.table); if (!isCaptain(t, me)) fail('you’re not the captain of this table');
@@ -1357,10 +1359,10 @@ function publish(b, quiet) {
   const ts = tablesOf(e.id); if (!ts.length) { if (!quiet) fail('no tables to publish'); arr(e.wait).forEach((id) => { const m = db.members[id]; if (m) m.prio = (m.prio || 0) + 1; }); e.status = 'cancelled'; return { ok: true }; }
   const when = eventTimes(e);
   ts.forEach((t) => {
-    t.published = true; t.publishedAt = new Date().toISOString(); placeTable(t); pickCaptain(t); noPlace(t, when.start); briefCaptain(t);
+    t.published = true; t.publishedAt = new Date().toISOString(); placeTable(t); pickCaptain(t); noPlace(t, when.start); briefCaptain(t, true); // the invitation itself tells the captain
     charlie(t.id, `Welcome, table ${t.no}. Why you ${NUMW(seatedIds(t).length)}:\n${(t.why || []).join('\n')}`, 'why');
     if (when.start > Date.now()) startGame(t); // the menu for tonight's question
-    t.ids.forEach((id) => { const m = db.members[id]; if (db.standby) delete db.standby[id]; if (m) { m.prio = 0; notify(id, 'table', { n: t.ids.length - 1, day: weekday(when.start) }); } });
+    t.ids.forEach((id) => { const m = db.members[id]; if (db.standby) delete db.standby[id]; if (m) { m.prio = 0; notify(id, 'table', { n: t.ids.length - 1, day: weekday(when.start), cap: id === t.captain }); } });
   });
   (e.wait || []).forEach((id) => { const m = db.members[id]; if (m) { m.prio = (m.prio || 0) + 1; notify(id, 'wait', {}); if (!e.generated && eventTimes(e).start > Date.now() + 6 * HOUR) (db.standby = db.standby || {})[id] = { kind: 'any', dates: [e.date], skip: null, until: e.date, at: isoNow() }; } });
   e.status = 'published'; e.publishedAt = new Date().toISOString();
@@ -1623,13 +1625,13 @@ function roundTwo(t) {
   ids.forEach((id) => { db.seats[ne.id][id] = { at: now, size: 'either', diet: ((db.members[id].profile || {}).diet) || [], status: 'held' }; });
   const nt = { id: 't' + rid(5), eventId: ne.id, no: 1, track: t.track, ids: ids.slice(), round, want: Math.min(6, seatedIds(t).length), root: t.root || t.id, prev: t.id, venue: t.venue && !t.venue.id && !t.venue.pid ? Object.assign({}, t.venue) : null,
     published: true, publishedAt: now, attended: {}, createdAt: now, score: t.score, flags: [], split: t.split || null };
-  db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); noPlace(nt, tzMs(date, e.time)); briefCaptain(nt); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
+  db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); noPlace(nt, tzMs(date, e.time)); briefCaptain(nt, true); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
   const when = eventTimes(ne).start, spot = nt.same ? 'same spot' : nt.venue ? 'a new spot this time' : 'your captain books the spot';
   charlie(nt.id, `Round ${NUMW(round)}, ${spot}. Why you’re back:\n${nt.why.join('\n')}`, 'why');
   const open = roundOpen(nt);
   charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}, the ${NUMW(ids.length)} of you who said yes${open ? `, and ${NUMW(open)} new ${open > 1 ? 'people' : 'person'} in the empty ${open > 1 ? 'chairs' : 'chair'}. I pick them from who marks that evening, and you’ll see who on Sunday` : ''}. It’s on Tables.`);
   startGame(nt);
-  ids.forEach((id) => notify(id, 'again', { day: weekday(when), n: round }));
+  ids.forEach((id) => notify(id, 'again', { day: weekday(when), n: round, cap: id === nt.captain }));
   log('round', nt.id, String(round));
   return nt;
 }
@@ -1765,6 +1767,11 @@ function themeOf(t) {
   return a && c[a] >= 2 ? { act: a, n: c[a] } : null;
 }
 function sidesOf(t) { const ids = seatedIds(t), h = ids.filter((id) => (db.members[id] || {}).school === 'harvard').length; return { harvard: h, mit: ids.length - h }; }
+// a captain's missions still to do: the spot (and by when), the vote, the checks
+function capJobs(t) {
+  const M = missions(t, Date.now(), true), at = (ms) => weekday(ms) + ' at ' + atTime(ms);
+  return { spotBy: !M.spot.done && M.spot.state !== 'missed' ? at(M.spot.by) : null, vote: !M.vote.done && !M.vote.closed ? { voted: M.vote.voted, need: M.vote.need } : null, checks: !M.checks.done };
+}
 function tableSummary(t, me, tog) {
   advanceGame(t); tog = tog || together(me);
   const e = db.events[t.eventId], tm = eventTimes(e), ph = tablePhase(t, e), fb = (db.feedback[t.id] || {})[me.id], g = t.game;
@@ -1775,6 +1782,7 @@ function tableSummary(t, me, tog) {
     game: g ? gameSum(t, me) : null, round: t.round || 1, same: !!t.same, back: (t.round || 1) > 1 ? backIds(t).length : 0, newcomer: (t.round || 1) > 1 && backIds(t).indexOf(me.id) < 0, closed: t.closed && t.closed !== 'merged' && arr(t.closedFor).indexOf(me.id) >= 0 ? t.closed : null, offSeen: !!me.read['off:' + t.id], freeUntil: new Date(freeFor(e, me)).toISOString(), freeLabel: freeFor(e, me) === freeUntil(e) ? weekday(freeUntil(e)) + ' at ' + atTime(freeUntil(e)) : (ymdTz(freeFor(e, me)) === ymdTz(Date.now()) ? 'today' : weekday(freeFor(e, me))) + ' at ' + timeLabel(freeFor(e, me)),
     captain: t.captain && seatedIds(t).indexOf(t.captain) >= 0 && db.members[t.captain] ? { id: t.captain, first: firstOf(db.members[t.captain]), me: t.captain === me.id } : null, known: knownAt(t, me, tog, tm.start),
     spotIn: Date.now() >= tm.reveal && spotSet(t) && !(t.out && t.out[me.id]),
+    capJobs: t.captain === me.id && !(t.out && t.out[me.id]) && !t.closed ? capJobs(t) : null,
     capDone: t.captain === me.id && !(t.out && t.out[me.id]) && !t.closed ? (() => { const M = missions(t); return [M.spot.done, M.vote.done, M.checks.done].filter(Boolean).length; })() : null };
 }
 // people at this table you've already shared a table or a hang with, and how many times
@@ -2026,7 +2034,7 @@ function campusStats() {
 /* ---------- notifications ---------- */
 const PUSH_TEXT = {
   event: (o) => ({ body: `Seats are open for ${o.type === 'kindred' ? 'a social table' : 'tech tables'} on ${o.label}.`, url: './#home' }),
-  table: (o) => ({ body: `Charlie sent you a private invitation for ${o.day}: ${o.n === 1 ? 'one other person' : NUMW(o.n) + ' others'} and one good question`, url: './#home' }),
+  table: (o) => ({ body: `Charlie sent you a private invitation for ${o.day}: ${o.n === 1 ? 'one other person' : NUMW(o.n) + ' others'} and one good question${o.cap ? '. There’s a small job inside for you' : ''}`, url: './#home' }),
   wait: () => ({ body: 'No seat for you this time, sorry. You’re first in line next time.', url: './#home' }),
   reveal: (o) => ({ body: 'Tonight’s spot is in. Tap for the address', url: o.table ? './#table=' + o.table : './#table' }),
   feedback: (o) => ({ body: 'How was the table? Your picks stay private unless they’re mutual', url: o.table ? './#after=' + o.table : './#table' }),
@@ -2056,7 +2064,7 @@ const PUSH_TEXT = {
   industry: (o) => ({ body: `Captains first: an industry table with ${o.guest} on ${o.label}. You get 48 hours before anyone else`, url: './#home' }),
   industryopen: (o) => ({ body: `Seats are open for an industry table with ${o.guest} on ${o.label}`, url: './#home' }),
   captain: (o) => ({ body: `You’re the captain for ${o.day}: get there five minutes early and give the name at the door.`, url: './#home' }),
-  again: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} is booked: your table again, ${o.day} two weeks from now.`, url: './#home' }),
+  again: (o) => ({ body: `Round ${o.n === 2 ? 'two' : o.n === 3 ? 'three' : o.n} is booked: your table again, ${o.day} two weeks from now.${o.cap ? ' You’re captain this time' : ''}`, url: './#home' }),
   unmatched: () => ({ body: 'Nobody else picked your evenings this week, so there’s no table yet. If a chair opens on one of them, it’s yours, and you’re first in line next week', url: './#home' }),
   popjoin: (o) => ({ body: `${o.other || 'Someone'} is in for your hang: ${o.title || ''}`, url: './#hangs' }),
   popcancel: (o) => ({ body: `${o.other || 'The host'} called off “${o.title || 'the hang'}”.`, url: './#hangs' })

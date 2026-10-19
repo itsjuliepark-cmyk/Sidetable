@@ -124,6 +124,10 @@ npm run film
 - 디너 종류는 Tech + social(기본), Tech tables only, Mostly social 중 선택
 - 성향 질문은 네 축: Listen↔Spark, Playful↔Deep, Easygoing↔Planner, Ritual↔Adventure
 - 테이블은 Harvard와 MIT 반반, 한 학교가 절반을 넘지 않게 구성
+- 고른 답에 대한 Charlie의 반응은 화면 안에 박히지 않고, Continue를 누르면 다음 화면 위에 잠깐 떴다가 사라짐 (반투명 검은 카드, 탭하면 바로 닫힘)
+- 대상: 테이블 종류, 앵글, 핫테이크, 연결 방식 질문(답하자마자), 생활 단계, 앞으로의 방향
+- 트랙은 원하는 만큼 선택, 첫 선택이 주로 앉는 트랙
+- 세부 관심사도 개수 제한 없이 최소 하나, 첫 선택이 앵커
 
 ## Tonight’s question
 
@@ -251,8 +255,13 @@ npm run film
 
 ## 캡틴: 세 가지 미션
 
-- 테이블마다 회원 한 명이 돌아가며 캡틴, 정해지면 캡틴 브리핑 알림
-- 테이블 화면의 브리핑 카드에 미션 셋과 진행 막대, 홈에는 "Captain on Friday" 카드
+- 테이블마다 회원 한 명이 돌아가며 캡틴, 디너에 와 본 사람을 첫 디너인 사람보다 우선 (첫 초대장부터 일을 맡기지 않도록)
+- 처음 공개될 때는 별도 캡틴 알림 없이 초대장 알림에 "There’s a small job inside for you" 한 줄 추가
+- 봉인된 초대장에는 금색 "Open this one first"(초대장이 하나면 "Open soon")만 표시, 캡틴이라는 말은 열기 전에 꺼내지 않음
+- 초대장 안에서 캡틴 역할을 쉬운 말로 설명: 남은 미션과 예약 마감, 원하면 넘길 수 있다는 것
+- 초대장을 연 뒤에만 홈의 그 초대장 바로 아래에 "You’re the captain" 줄과 다음 미션 표시 (예: Next: book the spot by Sunday at noon)
+- 테이블 화면의 브리핑 카드에 미션 셋과 진행 막대
+- 중간에 캡틴이 바뀌면 그때는 캡틴 알림 발송
 - 미션 1, 장소 예약: 목록에서 최대 4곳 중 골라 직접 예약하고 "I booked it"으로 시간과 예약자 이름 입력
   - 원래 시간이 없으면 앞뒤 1시간 안에서 예약 가능, 테이블 화면과 초대장에 예약한 시간 표시
   - 테이블에는 캡틴이 장소를 예약했다는 사실만 알리고, 장소는 당일 정오에 공개
@@ -402,6 +411,6 @@ art/make-film.js   첫 화면 영상 제작
 scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)
 scripts/dev.js     로컬 개발용 실행
 scripts/build-demo.js  폰 데모 생성 (dist/와 저장소의 demo/)
-test/              npm test (테이블 구성 11개, 서버 50개)
+test/              npm test (테이블 구성 11개, 서버 52개)
 scripts/simulate.js  50명 4주 리허설 (npm run simulate)
 ```

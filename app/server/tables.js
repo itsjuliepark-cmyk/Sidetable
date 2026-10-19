@@ -25,7 +25,7 @@ function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>>
 function prep(m) {
   const p = m.profile || {}, ax = SX.axes(p.answers);
   return {
-    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', tracks: (p.tracks || []).length ? p.tracks.slice(0, 3) : ['genai'], ints: new Set(p.interests || []), lens: p.lens || 'build', lensSet: !!p.lens,
+    id: m.id, school: m.school || 'other', track: (p.tracks || [])[0] || 'genai', tracks: (p.tracks || []).length ? p.tracks.slice() : ['genai'], ints: new Set(p.interests || []), lens: p.lens || 'build', lensSet: !!p.lens,
     ax, code: SX.codeOf(ax), rhythm: p.rhythm || '', look: p.look || '', life: new Set(p.life || []), acts: new Set(p.acts || []), takes: p.takes || {}, next: new Set([].concat(p.next || [])),
     size: m.size || 'either', prio: m.prio || 0, at: m.at || ''
   };

@@ -65,8 +65,8 @@ test('joining: a 6-digit code to a Harvard or MIT email; the same email signs yo
 
 test('the profile keeps only known answers, and is done only when complete', () => {
   const p = S.cleanProfile({ tracks: ['genai', 'bogus', 'hcai', 'climate'], interests: ['agents', 'clinical', 'grid', 'made-up'], lens: 'wizard', takes: { track: 'yes' }, answers: { 0: 9 } });
-  assert.deepStrictEqual(p.tracks, ['genai', 'hcai']);
-  assert.deepStrictEqual(p.interests, ['agents', 'clinical']);
+  assert.deepStrictEqual(p.tracks, ['genai', 'hcai', 'climate'], 'as many tracks as are true');
+  assert.deepStrictEqual(p.interests, ['agents', 'clinical', 'grid']);
   assert.strictEqual(p.lens, null);
   assert.strictEqual(p.done, false);
   assert.strictEqual(S.cleanProfile(fullProfile(1)).done, true);
@@ -1099,4 +1099,21 @@ test('round two with three back: people who marked that evening fill the other t
     const dinner = (m) => Object.values(db().tables).some((x) => x.published && !x.closed && (db().events[x.eventId] || {}).date === ne.date && x.ids.indexOf(m.id) >= 0);
     assert.ok(others.every(dinner), 'nobody left out');
   } finally { Date.now = real; }
+});
+
+test('nobody’s first dinner comes with a job when someone at the table has been before, and the captain hears it inside the invitation', () => {
+  const vets = people(2, 'Vet'), pals = people(2, 'VetPal'), news = people(3, 'Newbie');
+  night(vets.concat(pals), 'topic', day(-7));
+  vets.concat(news).forEach((m) => { delete m.captainAt; m.captain = 'maybe'; m.push = []; });
+  news[0].captain = 'yes'; // a volunteer, but it's their very first dinner
+  const out = [], log = console.log; console.log = (...a) => { if (/^\[mail to /.test(String(a[0]))) out.push(String(a[0])); else log(...a); };
+  let t;
+  try { t = night(vets.concat(news), 'topic', day(5)).t; } finally { console.log = log; }
+  assert.ok(vets.some((m) => m.id === t.captain), 'someone who has been to a dinner is captain');
+  const cm = db().members[t.captain], mine = out.filter((s) => s.indexOf(cm.email) >= 0);
+  assert.ok(mine.some((s) => /small job inside/.test(s)), 'the invitation says there’s a job inside');
+  assert.ok(!mine.some((s) => /you’re captain/.test(s)), 'and no second notice before they open it');
+  const v = S.view(cm).tables.find((x) => x.id === t.id);
+  assert.ok(v.capJobs && v.capJobs.spotBy && v.capJobs.checks, 'the captain sees what’s left: the spot (and by when), the checks');
+  assert.strictEqual(S.view(news[1]).tables.find((x) => x.id === t.id).capJobs, null, 'nobody else does');
 });
