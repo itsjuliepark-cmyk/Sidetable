@@ -37,6 +37,13 @@ const demoCss = `
 .demobtn{position:absolute;right:0;top:44%;z-index:25;writing-mode:vertical-rl;transform:rotate(180deg);padding:12px 6px;border-radius:0 12px 12px 0;background:rgba(28,32,36,.72);backdrop-filter:blur(10px);color:#fff;font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 10px 24px -12px rgba(18,28,38,.6)}
 .demobtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .phone:has(.land.sheet-open) .demobtn{opacity:0;pointer-events:none}
+/* the three ways into the demo, on the film's Join sheet */
+.ls-opts{display:grid;gap:8px;margin-top:2px}
+.ls-opt{display:block;width:100%;text-align:left;padding:13px 16px 14px;border-radius:18px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#fff;font-family:var(--sans);font-size:15.5px;font-weight:600;letter-spacing:-.01em;transition:transform .15s}
+.ls-opt:active{transform:scale(.98)}
+.ls-opt small{display:block;margin-top:3px;font-size:12.5px;font-weight:400;letter-spacing:0;line-height:1.4;color:rgba(255,255,255,.68)}
+.ls-opt.main{background:#FFFBF5;color:#2A1C14;border-color:transparent;box-shadow:0 14px 34px -16px rgba(255,180,120,.6)}
+.ls-opt.main small{color:#7A6658}
 `;
 const out = `<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

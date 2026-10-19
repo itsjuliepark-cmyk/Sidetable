@@ -16,7 +16,8 @@
     if (typeof landSheet === 'function') landSheet(false);
     A.token = m.token; store.set(m.token); A.view = null; A.table = null; A.tableId = null; hist.length = 0; closeSheet(); boot();
   };
-  D.join = function () {
+  // next week starts unbuilt, so a new member's first invitations are built around them (their own sign-up or a finished one)
+  function freshWeek() {
     if (typeof landSheet === 'function') landSheet(false);
     var wk = S.targetWeek(), w = db().weeks[wk];
     if (w && w.published) {
@@ -31,7 +32,24 @@
     Object.values(db().members).forEach(function (m) { if (!m.deleted && /^club:/.test(m.via || '') && m.email && m.email.indexOf('+demo') < 0) m.email = m.email.replace('@', '+demo' + m.id + '@'); });
     S.save(true);
     D.newcomer = true;
-    store.clear(); A.token = ''; A.view = null; hist.length = 0; closeSheet(); openJoin(club().code); };
+  }
+  // 1. start as someone new: the whole sign-up, from the club link
+  D.join = function () { freshWeek(); store.clear(); A.token = ''; A.view = null; hist.length = 0; closeSheet(); openJoin(club().code); };
+  // 2. someone new whose sign-up is already done: straight to Tables, where the first invitations are about to arrive
+  var FIRST = ['Alex', 'Sam', 'Riley', 'Casey', 'Jamie'], LAST = ['Morgan', 'Brooks', 'Ellis', 'Hayes', 'Reed'];
+  D.signedUp = function () {
+    freshWeek();
+    var rnd = function (a) { return a[Math.floor(Math.random() * a.length)]; }, first = rnd(FIRST), name = first + ' ' + rnd(LAST), school = Math.random() < 0.5 ? 'mit' : 'harvard';
+    var m = S.newMember(name, first.toLowerCase() + '.' + Date.now().toString(36) + '@' + (school === 'mit' ? 'mit.edu' : 'college.harvard.edu'), school, 'club:' + club().code);
+    m.verified = true; m.verifiedAt = new Date().toISOString();
+    var tr = 'genai', ints = SX.INTS.filter(function (x) { return x.tr === tr; }).slice(0, 3).map(function (x) { return x.id; });
+    S.saveProfile(m, { first: first, school: school, program: SX.SCHOOLS[school].programs[0], year: SX.YEARS[1], photo: 'data:image/jpeg;base64,' + newFace(),
+      profile: { mix: 'both', perWeek: 2, tracks: [tr, 'founders'], interests: ints, lens: 'build', before: SX.BEFORE[0], takes: { track: 'agree', code: 'disagree', lab: 'depends' },
+        answers: { 0: 0, 1: 0, 2: 0, 3: 1 }, rhythm: SX.RHYTHM[0][0], acts: [SX.ACTS[0]], look: 'crew', next: ['Start a company'], headline: 'Building an AI tool for small clinics' } });
+    S.save(true); store.set(m.token); A.token = m.token; A.view = null; A.table = null; hist.length = 0; closeSheet(); boot();
+  };
+  // a face for someone new: one of the sample members who sit out next week, so it never shows up twice at their first tables
+  function newFace() { var F = D.faces, spare = [6, 18, 24, 30, 36].filter(function (i) { return F[i]; }); return F[spare.length ? spare[Math.floor(Math.random() * spare.length)] : Math.floor(Math.random() * F.length)]; }
   // Charlie sets next week's tables (the person asking is seated first), a few tablemates vote and say hi, venues go in
   function setWeek(m, wk) {
     m.prio = 9; S.matchWeek({ week: wk }); S.publishWeek({ week: wk });
@@ -194,7 +212,8 @@
       : '<div class="label">Be someone</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'jordan\')">Jordan Park, Harvard<small>Two sealed invitations, round two with last week’s table, and two friends</small></button>'
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new<small>Join through a club link and do the whole sign-up</small></button>')
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new, from the start<small>Join through a club link and do the whole sign-up</small></button>'
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.signedUp()">Someone new, signed up<small>Skip the sign-up and see what comes next: your first invitations</small></button>')
       + '<div class="label">Behind the scenes</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.captain()">Make me captain of my next dinner<small>Book the spot, rally the vote, settle up, and earn a stripe</small></button>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.dropOuts()">Most of my next table cancels<small>The people left join another table that night, or it’s called off</small></button>'
@@ -212,8 +231,10 @@
     if (D.fresh) { $('lSign').style.display = 'none'; $('lJoin').textContent = 'Start'; } // nobody to sign in as yet
     $('startBox').innerHTML = D.fresh
       ? '<div class="ls-note">A working demo: you’re new here. Sign up the way a real member would, meet Charlie, and get your first invitations. It runs on your phone only, and nothing is sent anywhere.</div><button class="btn" onclick="SIXTOP_DEMO.join()">Start as someone new</button>'
-      : '<div class="ls-note">This is a working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere.</div>'
-      + '<button class="btn" onclick="SIXTOP_DEMO.as(\'jordan\')">Try it as Jordan</button><button class="btn ghost" onclick="SIXTOP_DEMO.join()">Join as someone new</button>';
+      : '<div class="ls-note">A working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere. Pick a way in</div><div class="ls-opts">'
+      + '<button class="ls-opt main" onclick="SIXTOP_DEMO.join()">Start as someone new<small>The whole sign-up with Charlie, from the first question</small></button>'
+      + '<button class="ls-opt" onclick="SIXTOP_DEMO.signedUp()">Skip to after sign-up<small>You’re new and already signed up: see your first invitations</small></button>'
+      + '<button class="ls-opt" onclick="SIXTOP_DEMO.as(\'jordan\')">Try it as Jordan<small>A week in: invitations, round two, friends, captain</small></button></div>';
   };
   if (cur === 'start') renderStart();
   // the demo skips the school email code: the code fills itself in and you go straight on
@@ -266,7 +287,7 @@
     if (!document.getElementById('demoFace')) $('photoHint').insertAdjacentHTML('afterend', '<div style="text-align:center"><button class="link" id="demoFace" style="margin-top:0" onclick="SIXTOP_DEMO.face()">Demo: use a sample face instead</button></div>');
   };
   RENDER.card = renderCard;
-  D.face = function () { var F = D.faces; A.P.photo = 'data:image/jpeg;base64,' + F[Math.floor(Math.random() * F.length)]; renderCard(); };
+  D.face = function () { A.P.photo = 'data:image/jpeg;base64,' + newFace(); renderCard(); };
   enablePush = function () { toast('Notifications', 'They work in the real app. This demo runs on your phone only.'); };
   var btn = document.createElement('button');
   btn.className = 'demobtn'; btn.type = 'button'; btn.textContent = 'Demo'; btn.setAttribute('aria-label', 'Demo controls'); btn.onclick = D.menu;
