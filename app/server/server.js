@@ -272,6 +272,28 @@ function matchWeek(b) {
   const created = []; let tables = 0, seatedN = 0, flip = 0;
   const pref = (m) => (m.profile && m.profile.mix) || 'both';
   const mkEvent = (type, date, meal) => { const e = { id: 'e' + rid(4), type, date, time: MEALS[meal].time, meal, week, generated: true, area: AREA, status: 'open', createdAt: new Date().toISOString(), notified: {}, wait: [] }; db.events[e.id] = e; db.seats[e.id] = {}; return e; };
+  // round tables this week with empty chairs (see roundTwo): new people who marked that evening take them, picked for the
+  // table (the kind they asked for, the tech table's track, people they haven't sat with yet, the school mix, nobody kept
+  // apart). First from evenings with plenty of others, so nobody else is left short of a table, then from whoever is still
+  // free after the regular matching. They're seated when the week is published, so they hear with everyone else
+  const rounds = Object.values(db.tables).filter((t) => (t.round || 1) > 1 && t.published && !t.closed && t.want && db.events[t.eventId] && db.events[t.eventId].week === week && db.events[t.eventId].status === 'published');
+  const plan = [];
+  const fillRounds = (late) => rounds.forEach((t) => {
+    const e = db.events[t.eventId], sid = e.date + '|' + (e.meal || 'dinner'), ids = seatedIds(t).concat(plan.filter((p) => p.t === t.id).map((p) => p.id));
+    const back = backIds(t).length, was = earlierIds(t), room = () => Math.min(t.want, tableCap(t)) - ids.length;
+    const free = () => (pools[sid] || []).filter((m) => cap[m.id] > 0 && !usedDay[m.id][e.date]);
+    const cands = free().filter((m) => mixFor(m, e.type) && was.indexOf(m.id) < 0 && t.ids.indexOf(m.id) < 0).map((m) => {
+      const tg = together(m); return { m, tr: t.track && ((m.profile && m.profile.tracks) || []).indexOf(t.track) >= 0 ? 1 : 0, k: ids.filter((x) => tg[x]).length };
+    }).sort((a, b) => (b.tr - a.tr) || ((b.m.prio || 0) - (a.m.prio || 0)) || (a.k - b.k) || ((a.m.avail.at || '') < (b.m.avail.at || '') ? -1 : 1));
+    for (const { m } of cands) {
+      if (room() <= 0 || ids.length - back >= back) break;
+      if (!late && free().length <= 8) break;
+      if (ids.some((x) => apart(x, m.id))) continue;
+      const same = ids.filter((x) => (db.members[x] || {}).school === m.school).length; if (same + 1 > Math.ceil((ids.length + 1) / 2)) continue;
+      plan.push({ t: t.id, id: m.id }); ids.push(m.id); cap[m.id]--; usedDay[m.id][e.date] = 1; had[m.id][e.type]++;
+    }
+  });
+  fillRounds(false);
   order.forEach((sid) => {
     const [date, meal] = sid.split('|');
     const pool = pools[sid].filter((m) => cap[m.id] > 0 && !usedDay[m.id][date]);
@@ -322,13 +344,14 @@ function matchWeek(b) {
   // order, from the gentlest give to the biggest: an open chair at the kind of table they asked for, a new table of three or
   // more with others still waiting that evening, a table where the school mix is looser (two schools still at it), a chair
   // at the other kind of table, and last of all a table from one school when nobody from the other marked that evening
+  fillRounds(true);
   rescueWeek({ L, want, cap, usedDay, had, created, week, pref, mkEvent, edges });
   tables = created.reduce((n, eid) => n + tablesOf(eid).length, 0);
   seatedN = created.reduce((n, eid) => n + tablesOf(eid).reduce((k, t) => k + t.ids.length, 0), 0);
   const unmatched = L.filter((m) => want[m.id] > 0 && cap[m.id] === want[m.id]).map((m) => m.id);
-  db.weeks[week] = { matchedAt: new Date().toISOString(), published: false, events: created, unmatched };
+  db.weeks[week] = { matchedAt: new Date().toISOString(), published: false, events: created, unmatched, rounds: plan };
   log('match-week', week, tables + ' tables');
-  return { week, slots: created.length, tables, seated: seatedN, people: L.length, unmatched: unmatched.length };
+  return { week, slots: created.length, tables, seated: seatedN, people: L.length, unmatched: unmatched.length, rounds: plan.length };
 }
 function rescueWeek(W) {
   const { L, want, cap, usedDay, had, created, pref, mkEvent, edges } = W;
@@ -422,6 +445,8 @@ function publishWeek(b) {
   const week = (b && b.week) || pendingWeek() || targetWeek(), w = db.weeks[week]; if (!w) fail('build the week first');
   if (w.published) fail('already published');
   w.events.forEach((eid) => { const e = db.events[eid]; if (e && e.status === 'draft') publish({ event: eid }, true); });
+  // round tables' empty chairs, picked when the week was matched: the new people hear now, with everyone else
+  arr(w.rounds).forEach((p) => { const t = db.tables[p.t], e = t && db.events[t.eventId], m = db.members[p.id]; if (!t || !e || !m || !chairFits(m, t, e, [e.date], null)) return; seatAt(m, t, e); const s = db.seats[e.id][m.id]; delete s.moved; s.fresh = week; });
   w.published = true; w.publishedAt = new Date().toISOString(); resolveAlerts('week:' + week); resolveAlerts('autoweek:' + week);
   w.unmatched.forEach((id) => { const m = db.members[id]; if (m && !Object.values(db.tables).some((t) => t.published && seatedIds(t).indexOf(id) >= 0 && (db.events[t.eventId] || {}).week === week)) {
     m.prio = (m.prio || 0) + 1; notify(id, 'unmatched');
@@ -555,7 +580,7 @@ function chairFits(m, t, e, dates, skip) {
   if (tablesOf(e.id).some((x) => x.ids.indexOf(m.id) >= 0)) return false;
   if (Object.keys(db.seats).some((eid) => eid !== e.id && ((db.seats[eid] || {})[m.id] || {}).status === 'held' && (db.events[eid] || {}).date === e.date)) return false;
   if (e.date === skip || eventTimes(e).start < Date.now() + 6 * HOUR || eventTimes(e).start > Date.now() + 8 * DAY) return false;
-  if ((t.round || 1) > 1) return false; // round two is the same table meeting again
+  if ((t.round || 1) > 1 && (roundOpen(t) < 1 || earlierIds(t).indexOf(m.id) >= 0)) return false; // round two: new people only in the chairs left open
   const ids = seatedIds(t); if (ids.length >= tableCap(t) || t.ids.indexOf(m.id) >= 0) return false;
   if (ids.some((id) => apart(m.id, id))) return false;
   if (Object.values(db.tables).some((x) => x !== t && x.published && seatedIds(x).indexOf(m.id) >= 0 && (db.events[x.eventId] || {}).date === e.date)) return false;
@@ -577,7 +602,9 @@ function openChair(m, kind, dates, skip) {
 function seatAt(m, t, e) {
   t.ids.push(m.id); if (t.out) delete t.out[m.id]; m.prio = 0;
   (db.seats[e.id] = db.seats[e.id] || {})[m.id] = { at: new Date().toISOString(), size: 'either', diet: (m.profile && m.profile.diet) || [], status: 'held', moved: true };
-  charlie(t.id, `${firstOf(m)} pulled up a chair, so you’re ${NUMW(seatedIds(t).length)} now.${m.profile && m.profile.headline ? ' ' + m.profile.headline + '.' : ''}`);
+  const rt = (t.round || 1) > 1, n = NUMW(seatedIds(t).length), hl = m.profile && m.profile.headline ? ' ' + m.profile.headline + '.' : '';
+  charlie(t.id, rt && backIds(t).indexOf(m.id) >= 0 ? `${firstOf(m)} is in after all, so you’re ${n} now.` : rt ? `${firstOf(m)} joins you for round ${NUMW(t.round)}, new to the table, so you’re ${n} now.${hl}` : `${firstOf(m)} pulled up a chair, so you’re ${n} now.${hl}`);
+  if (rt) t.why = roundWhy(t);
   notify(m.id, 'table', { n: seatedIds(t).length - 1, day: weekday(eventTimes(e).start) });
   if (db.standby) delete db.standby[m.id];
   if (t.venue && t.venue.id) syncBooking(t.venue.id, e.date);
@@ -1539,10 +1566,12 @@ function feedback(me, b) {
 }
 
 /* ---------- round two: the same table, two weeks later ----------
-   The morning after, everyone answers "same table in two weeks?". Once most of the table says yes (three of four or five,
-   four of six), Charlie books round two: the same weekday two weeks on, the same spot, everyone who said yes, and only
-   them. It's the same table meeting again, so no new chairs are added. Round two can lead to round three the same way. */
-const againNeed = (n) => Math.max(3, Math.ceil(n * 0.6));
+   The morning after, everyone answers "same table in two weeks?". Once three say yes (all three at a table of three),
+   Charlie books round two: the same weekday two weeks on, the same spot, everyone who said yes. The chairs the others
+   leave go to new people who marked that evening, picked when that week is matched and told with everyone else on
+   Sunday: up to the first table's size, never more new people than people back, and never someone from an earlier round.
+   Round two can lead to round three the same way. */
+const againNeed = (n) => Math.min(3, n);
 // how many a table can seat: six, or fewer if its restaurant only holds fewer
 const tableCap = (t) => Math.min(6, (t && t.venue && t.venue.id && ((db.places || {})[t.venue.id] || {}).seats) || 6);
 const ROUND_AHEAD = 3 * DAY; // round two is only booked while it's still at least three days away
@@ -1563,15 +1592,21 @@ function busyOn(id, date) {
 }
 // who is back at a round table: the people seated there who said yes at the table before it
 function backIds(t) { const prev = db.tables[t.prev], yes = prev ? againIds(prev) : []; return seatedIds(t).filter((id) => yes.indexOf(id) >= 0); }
+// everyone seated at the rounds before this one (a no stays a no, so none of them comes back as someone new)
+function earlierIds(t) { const out = []; let p = db.tables[t.prev]; for (let i = 0; p && i < 20; i++) { p.ids.forEach((id) => { if (out.indexOf(id) < 0) out.push(id); }); p = db.tables[p.prev]; } return out; }
+// chairs still open for new people: up to the first table's size, and never more new than back
+function roundOpen(t) { const ids = seatedIds(t), back = backIds(t).length; return Math.max(0, Math.min(Math.min(t.want || 0, tableCap(t)) - ids.length, back - (ids.length - back))); }
 function roundWhy(t) {
   const prev = db.tables[t.prev], g = prev && prev.game, c = g && g.pick && cardOf(g, g.pick), was = prev ? seatedIds(prev) : [], ids = seatedIds(t);
-  const back = backIds(t), fresh = ids.filter((id) => back.indexOf(id) < 0), out = [];
-  out.push(`*${capFirst(NUMW(back.length))} of you* said yes to round ${NUMW(t.round)} the morning after`);
-  if (c && g.revealed) { const A = was.filter((id) => g.sides[id] === 'a').length, B = was.filter((id) => g.sides[id] === 'b').length; if (A + B) out.push(`Last time you argued *${c.kw || c.q}*${A === B ? `, and it ended ${A} to ${B}. Tonight settles it` : `, and it went ${Math.max(A, B)} to ${Math.min(A, B)}`}`); }
+  const back = backIds(t), fresh = ids.filter((id) => back.indexOf(id) < 0), open = roundOpen(t), out = [];
+  // who's back, then who's new (the two lines an invitation shows), then how last time's question ended
+  out.push(`*${capFirst(NUMW(back.length))} from last time* said yes to round ${NUMW(t.round)} the morning after`);
+  if (fresh.length) out.push(`*${listNames(fresh)}* ${fresh.length > 1 ? 'are' : 'is'} new to the table, picked from who marked the same evening`);
+  else if (open) out.push(`${capFirst(NUMW(open))} empty ${open > 1 ? 'chairs go' : 'chair goes'} to new people who mark that evening, picked on Sunday`);
+  if (c && g.revealed) { const A = was.filter((id) => g.sides[id] === 'a').length, B = was.filter((id) => g.sides[id] === 'b').length; if (A + B) out.push(`Last time the table argued *${c.kw || c.q}*${A === B ? `, and it ended ${A} to ${B}. Tonight settles it` : `, and it went ${Math.max(A, B)} to ${Math.min(A, B)}`}`); }
   const moved = g && g.revealed ? back.filter((id) => g.final[id] && g.sides[id] && g.final[id] !== g.sides[id]).length : 0;
-  if (moved) out.push(`${capFirst(NUMW(moved))} of you changed sides by the morning, so tonight is a rematch`);
-  if (fresh.length) out.push(`*${listNames(fresh)}* ${fresh.length > 1 ? 'are' : 'is'} back too`);
-  else out.push(`Just the ${NUMW(ids.length)} of you, *the same table* again`);
+  if (moved) out.push(`${capFirst(NUMW(moved))} changed sides by the morning, so tonight is a rematch`);
+  if (!fresh.length && !open) out.push(`Just the ${NUMW(ids.length)} of you, *the same table* again`);
   return out.slice(0, 4);
 }
 function roundTwo(t) {
@@ -1586,12 +1621,13 @@ function roundTwo(t) {
   const ne = { id: 'e' + rid(4), type: e.type, date, time: e.time, meal: e.meal || 'dinner', week: mondayOf(date), generated: true, round, area: e.area, status: 'published', createdAt: now, publishedAt: now, notified: {}, wait: [] };
   db.events[ne.id] = ne; db.seats[ne.id] = {};
   ids.forEach((id) => { db.seats[ne.id][id] = { at: now, size: 'either', diet: ((db.members[id].profile || {}).diet) || [], status: 'held' }; });
-  const nt = { id: 't' + rid(5), eventId: ne.id, no: 1, track: t.track, ids: ids.slice(), round, root: t.root || t.id, prev: t.id, venue: t.venue && !t.venue.id && !t.venue.pid ? Object.assign({}, t.venue) : null,
+  const nt = { id: 't' + rid(5), eventId: ne.id, no: 1, track: t.track, ids: ids.slice(), round, want: Math.min(6, seatedIds(t).length), root: t.root || t.id, prev: t.id, venue: t.venue && !t.venue.id && !t.venue.pid ? Object.assign({}, t.venue) : null,
     published: true, publishedAt: now, attended: {}, createdAt: now, score: t.score, flags: [], split: t.split || null };
   db.tables[nt.id] = nt; t.next = nt.id; placeTable(nt, t.venue && t.venue.id); pickCaptain(nt); noPlace(nt, tzMs(date, e.time)); briefCaptain(nt); nt.same = !!(nt.venue && t.venue && nt.venue.name === t.venue.name); nt.why = roundWhy(nt);
   const when = eventTimes(ne).start, spot = nt.same ? 'same spot' : nt.venue ? 'a new spot this time' : 'your captain books the spot';
   charlie(nt.id, `Round ${NUMW(round)}, ${spot}. Why you’re back:\n${nt.why.join('\n')}`, 'why');
-  charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}, just the ${NUMW(ids.length)} of you who said yes. It’s on Tables.`);
+  const open = roundOpen(nt);
+  charlie(t.id, `Booked. Round ${NUMW(round)} is ${dayLabel(when)} at ${timeLabel(when)}, ${spot}, the ${NUMW(ids.length)} of you who said yes${open ? `, and ${NUMW(open)} new ${open > 1 ? 'people' : 'person'} in the empty ${open > 1 ? 'chairs' : 'chair'}. I pick them from who marks that evening, and you’ll see who on Sunday` : ''}. It’s on Tables.`);
   startGame(nt);
   ids.forEach((id) => notify(id, 'again', { day: weekday(when), n: round }));
   log('round', nt.id, String(round));
@@ -1691,7 +1727,7 @@ function monthView(me, tog) {
   return { key: mo, name: MONTHS[m - 1], from: sp.from, span: at(sp.to) + 1, today: today >= sp.from && today <= sp.to ? at(today) : -1, fromLabel: short(sp.from), toLabel: short(sp.to), beads,
     tables: mine.length, people: met.size, picked, loose: l ? l.text : '',
     // round twos coming up: the same table meeting again
-    again: Object.values(db.tables).filter((t) => t.published && !t.closed && (t.round || 1) > 1 && seatedIds(t).indexOf(me.id) >= 0 && db.events[t.eventId] && eventTimes(db.events[t.eventId]).start > now).map((t) => ({ t, e: db.events[t.eventId] })).sort((a, b) => (a.e.date < b.e.date ? -1 : 1)).map(({ t, e }) => ({ id: t.id, label: short(e.date), round: t.round, faces: seatedIds(t).filter((x) => x !== me.id).slice(0, 5).map((x) => mini(db.members[x], me)) })) };
+    again: Object.values(db.tables).filter((t) => t.published && !t.closed && (t.round || 1) > 1 && seatedIds(t).indexOf(me.id) >= 0 && db.events[t.eventId] && eventTimes(db.events[t.eventId]).start > now).map((t) => ({ t, e: db.events[t.eventId] })).sort((a, b) => (a.e.date < b.e.date ? -1 : 1)).map(({ t, e }) => ({ id: t.id, label: short(e.date), round: t.round, newcomer: backIds(t).indexOf(me.id) < 0, faces: seatedIds(t).filter((x) => x !== me.id).slice(0, 5).map((x) => mini(db.members[x], me)) })) };
 }
 function dmKey(a, b) { return pk(a, b); }
 const blockedEither = (a, b) => !!(((db.members[a] || {}).never || {})[b] || ((db.members[b] || {}).never || {})[a]);
@@ -1736,7 +1772,7 @@ function tableSummary(t, me, tog) {
     day: weekday(tm.start), date: e.date, time: timeLabel(t.time ? tzMs(e.date, t.time) : tm.start), area: e.area, phase: ph, left: !!(t.out && t.out[me.id]), feedbackOpen: Date.now() >= tableStart(t) + 2 * HOUR && !(t.out && t.out[me.id]), feedbackDone: !!fb,
     unread: unread(me, 't:' + t.id, db.chats[t.id]), start: new Date(tableStart(t)).toISOString(), size: seatedIds(t).length, meal: e.meal || '', mealName: e.meal ? MEALS[e.meal].t : 'Dinner', generated: !!e.generated,
     opened: !!me.read['inv:' + t.id], theme: e.type === 'kindred' ? themeOf(t) : null, faces: seatedIds(t).filter((x) => x !== me.id).slice(0, 5).map((x) => mini(db.members[x], me)), why: (t.why || []).slice(0, 2), sides: sidesOf(t),
-    game: g ? gameSum(t, me) : null, round: t.round || 1, same: !!t.same, closed: t.closed && t.closed !== 'merged' && arr(t.closedFor).indexOf(me.id) >= 0 ? t.closed : null, offSeen: !!me.read['off:' + t.id], freeUntil: new Date(freeFor(e, me)).toISOString(), freeLabel: freeFor(e, me) === freeUntil(e) ? weekday(freeUntil(e)) + ' at ' + atTime(freeUntil(e)) : (ymdTz(freeFor(e, me)) === ymdTz(Date.now()) ? 'today' : weekday(freeFor(e, me))) + ' at ' + timeLabel(freeFor(e, me)),
+    game: g ? gameSum(t, me) : null, round: t.round || 1, same: !!t.same, back: (t.round || 1) > 1 ? backIds(t).length : 0, newcomer: (t.round || 1) > 1 && backIds(t).indexOf(me.id) < 0, closed: t.closed && t.closed !== 'merged' && arr(t.closedFor).indexOf(me.id) >= 0 ? t.closed : null, offSeen: !!me.read['off:' + t.id], freeUntil: new Date(freeFor(e, me)).toISOString(), freeLabel: freeFor(e, me) === freeUntil(e) ? weekday(freeUntil(e)) + ' at ' + atTime(freeUntil(e)) : (ymdTz(freeFor(e, me)) === ymdTz(Date.now()) ? 'today' : weekday(freeFor(e, me))) + ' at ' + timeLabel(freeFor(e, me)),
     captain: t.captain && seatedIds(t).indexOf(t.captain) >= 0 && db.members[t.captain] ? { id: t.captain, first: firstOf(db.members[t.captain]), me: t.captain === me.id } : null, known: knownAt(t, me, tog, tm.start),
     spotIn: Date.now() >= tm.reveal && spotSet(t) && !(t.out && t.out[me.id]),
     capDone: t.captain === me.id && !(t.out && t.out[me.id]) && !t.closed ? (() => { const M = missions(t); return [M.spot.done, M.vote.done, M.checks.done].filter(Boolean).length; })() : null };

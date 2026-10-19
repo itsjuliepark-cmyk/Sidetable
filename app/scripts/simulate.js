@@ -86,7 +86,11 @@ function check(label) {
     // a captain-booked spot is always backed by the booking that made it (round two never inherits last time's)
     if (t.venue && t.venue.pid && !(t.cap && t.cap.booking && t.cap.booking.pid === t.venue.pid)) problem('ghost', `${label}: table ${t.id} shows a booked spot nobody booked`);
     // nobody sits at a kind of table they didn't ask for, unless the second pass said so (and made stepping out free)
-    ids.forEach((id) => { const mx = ((db().members[id] || {}).profile || {}).mix || 'both', st = (db().seats[e.id] || {})[id] || {}; if ((t.round || 1) === 1 && mx !== 'both' && (mx === 'topic') !== (e.type === 'topic') && st.rescued !== 'cross') problem('choice', `${label}: someone who asked for ${mx} tables sits at a ${e.type} table${process.env.SIM_DEBUG ? ' ' + JSON.stringify(st) : ''}`); });
+    ids.forEach((id) => { const mx = ((db().members[id] || {}).profile || {}).mix || 'both', st = (db().seats[e.id] || {})[id] || {}; if (((t.round || 1) === 1 || st.fresh) && mx !== 'both' && (mx === 'topic') !== (e.type === 'topic') && st.rescued !== 'cross') problem('choice', `${label}: someone who asked for ${mx} tables sits at a ${e.type} table${process.env.SIM_DEBUG ? ' ' + JSON.stringify(st) : ''}`); });
+    // a round table: new people only in the chairs the others left, never more new than back, never someone from an earlier round
+    if ((t.round || 1) > 1 && !past) { const prev = db().tables[t.prev], fb = db().feedback[t.prev] || {}, back = ids.filter((id) => (fb[id] || {}).again), fresh = ids.filter((id) => back.indexOf(id) < 0);
+      if (fresh.length > back.length) problem('round', `${label}: round table ${t.id} has ${fresh.length} new and ${back.length} back`);
+      let p = prev; for (let i = 0; p && i < 20; i++, p = db().tables[p.prev]) if (fresh.some((id) => p.ids.indexOf(id) >= 0)) problem('round', `${label}: someone from an earlier round came back as new at ${t.id}`); }
     if (!past && (!t.captain || ids.indexOf(t.captain) < 0)) problem('captain', `${label}: table ${t.id} has no seated captain`);
     else if (!past && db().members[t.captain].captain === 'no' && ids.some((id) => (db().members[id].captain || 'maybe') !== 'no' && (t.passed || []).indexOf(id) < 0 && (t.cap || {}).handedFrom !== id)) problem('captain', `${label}: a captain who said no, with others willing`);
   });
@@ -96,6 +100,8 @@ function weekCheck(week) {
   const w = db().weeks[week]; if (!w) { problem('week', 'week ' + week + ' was never built'); return {}; }
   const count = {}, asked = {};
   people.forEach(({ m }) => { if (m.avail && m.avail.week === week) asked[m.id] = m.avail; });
+  const roundEvs = Object.values(db().tables).filter((t) => (t.round || 1) > 1 && evOf(t) && evOf(t).week === week).map((t) => t.eventId);
+  roundEvs.forEach((eid) => Object.keys(db().seats[eid] || {}).forEach((id) => { if ((db().seats[eid][id] || {}).fresh !== week) return; count[id] = (count[id] || 0) + 1; stats.roundNew = (stats.roundNew || 0) + 1; const a = asked[id]; if (!a || a.slots.indexOf(db().events[eid].date + '|dinner') < 0) problem('plan', `week ${week}: someone new at a round table didn't mark that evening`); }));
   w.events.forEach((eid) => Object.values(db().tables).filter((t) => t.eventId === eid && t.published).forEach((t) => t.ids.forEach((id) => {
     if (((db().seats[eid] || {})[id] || {}).moved) return; // a chair taken later, by someone who asked for another evening
     if (t.closed === 'merged' && (t.out || {})[id]) return; // moved to the table this one merged into, counted there
@@ -219,7 +225,7 @@ const resc = {}; Object.keys(db().seats).forEach((eid) => Object.values(db().sea
 const threes = Object.values(db().tables).filter((t) => t.published && !t.closed && t.ids.length === 3 && (t.round || 1) === 1).length;
 console.log(`  seated by the nobody-left-out pass: ${resc.strict || 0} at the usual rules, ${resc.two || 0} with a looser school mix, ${resc.cross || 0} at the other kind of table, ${resc.any || 0} from one school, ${resc.shift || 0} moved to open a table for someone alone; tables of three at publish: ${threes}`);
 console.log(`  bookings that fell through on the day ${stats.fell || 0}, booked again ${stats.rebooked || 0}`);
-console.log(`  late cancels ${stats.late}, no-shows ${stats.noshow}, another-evening requests ${stats.reinvites}, round twos ${stats.roundTwos}, hangs ${stats.hangs}`);
+console.log(`  late cancels ${stats.late}, no-shows ${stats.noshow}, another-evening requests ${stats.reinvites}, round twos ${stats.roundTwos} (new people in their empty chairs ${stats.roundNew || 0}), hangs ${stats.hangs}`);
 console.log(`  paused for late changes: ${people.filter(({ m }) => S.cooling(m)).length}, tables that reached dinner with no spot: ${stats.nospot || 0}`);
 console.log(`  alerts for whoever is on duty: ${Object.keys(alertKinds).map((k) => k + ' ' + alertKinds[k]).join(', ') || 'none'}`);
 console.log(`  member view: median ${pct(0.5)} ms, 95th percentile ${pct(0.95)} ms, slowest ${req[req.length - 1] || 0} ms (${req.length} calls)`);

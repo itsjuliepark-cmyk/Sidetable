@@ -435,11 +435,11 @@ function night(ms, type, date, time) {
   return { e, t: db().tables[d.tables[0].id] };
 }
 
-test('round two: once most of the table says yes, Charlie books the same table two weeks later, and the open chairs go to people free that night', () => {
+test('round two: once three say yes, Charlie books the same table two weeks later, and the empty chairs go to new people free that night', () => {
   const ms = people(6, 'Round');
   // a weekday, so round two two weeks later lands inside a Monday-to-Friday week whatever the hour the tests run
   const base = [-8, -9, -10, -11, -12].map(day).find((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(); return w >= 1 && w <= 5; });
-  const { e, t } = night(ms, 'topic', base), seated = t.ids.map((id) => db().members[id]), need = Math.max(3, Math.ceil(seated.length * 0.6));
+  const { e, t } = night(ms, 'topic', base), seated = t.ids.map((id) => db().members[id]), need = 3;
   assert.ok(seated.length >= 4);
   seated.slice(0, need - 1).forEach((m) => S.feedback(m, { table: t.id, rating: 5, picks: [], again: true }));
   assert.ok(!t.next, 'not booked one yes short');
@@ -460,13 +460,19 @@ test('round two: once most of the table says yes, Charlie books the same table t
   S.feedback(no, { table: t.id, rating: 3, picks: [], again: true });
   assert.strictEqual(db().tables[t.next], nt, 'still the same round two');
   assert.ok(nt.ids.indexOf(no.id) >= 0, 'a late yes still gets a chair');
-  // round two is the same table meeting again: someone new who marked that evening never takes a chair there
+  assert.ok(db().chats[nt.id].some((x) => /is in after all/.test(x.text)), 'the table hears they’re back');
+  // the empty chairs: someone new who's free that evening can take one, up to the first table's size and never more new than back
   const wk = ne.week, fresh = people(4, 'Chair');
   fresh.forEach((m) => { m.avail = { week: wk, slots: [ne.date + '|dinner'], max: 1, at: new Date().toISOString() }; });
   fresh.forEach((m) => { db().standby = db().standby || {}; db().standby[m.id] = { kind: 'any', dates: [ne.date], skip: null, until: ne.date, at: new Date().toISOString() }; });
-  S.fillChair(nt, ne);
-  assert.ok(!nt.ids.some((id) => fresh.some((m) => m.id === id)), 'nobody new at round two');
-  assert.ok(nt.why.some((l) => /same table/.test(l) || /back too/.test(l)), 'the why line says it is the same table');
+  for (let i = 0; i < 4; i++) S.fillChair(nt, ne);
+  const newIds = nt.ids.filter((id) => fresh.some((m) => m.id === id));
+  assert.strictEqual(nt.ids.length, Math.min(6, seated.length), 'filled back to the first table’s size');
+  assert.ok(newIds.length >= 1 && newIds.length <= need + 1, 'some new people, never more than came back');
+  assert.ok(nt.why.some((l) => /new to the table/.test(l)), 'the why line names who’s new');
+  assert.ok(db().chats[nt.id].some((x) => /new to the table/.test(x.text)), 'the table hears who joined');
+  const nv = S.view(db().members[newIds[0]]).tables.find((x) => x.id === nt.id), rv = S.view(seated[0]).tables.find((x) => x.id === nt.id);
+  assert.ok(nv && nv.newcomer && !rv.newcomer && rv.back === nv.back && nv.back === need + 1, 'the new person knows they’re new, and how many are back');
 });
 
 test('before next time: one line the morning after shows at your next table, Charlie brings it up on the day, and you say whether it happened', () => {
@@ -528,7 +534,7 @@ test('a round table that drops to two is called off, so nobody ends up at a dinn
   assert.ok(Object.values(db().seats[ne.id]).every((x) => x.status === 'cancelled'), 'nobody is held for that evening any more');
 });
 
-test('round two keeps people apart who must be, never books in the past, and is only the people who said yes', () => {
+test('round two keeps people apart who must be, never books in the past, and never brings back someone who said no', () => {
   // blocked pair: both say yes, only one is seated
   const ms = people(6, 'Apart');
   const a1 = night(ms, 'topic', day(-2)), seated = a1.t.ids.map((id) => db().members[id]);
@@ -542,12 +548,14 @@ test('round two keeps people apart who must be, never books in the past, and is 
   assert.ok(!o.t.next, 'no round two in the past');
   assert.strictEqual(S.tableView(old[0], o.t.id).again.open, false);
   // someone who said no, free that evening, stays out
-  const six = people(6, 'Chairs'), c = night(six, 'topic', day(-8)), cs = c.t.ids.map((id) => db().members[id]), need = Math.max(3, Math.ceil(cs.length * 0.6));
+  const six = people(6, 'Chairs'), c = night(six, 'topic', day(-8)), cs = c.t.ids.map((id) => db().members[id]), need = 3;
   cs.forEach((m, k) => S.feedback(m, { table: c.t.id, rating: 4, picks: [], again: k < need }));
   const nt = db().tables[c.t.next], ne = db().events[nt.eventId], no = cs[cs.length - 1];
   no.avail = { week: ne.week, slots: [ne.date + '|dinner'], max: 1, at: new Date().toISOString() };
+  (db().standby = db().standby || {})[no.id] = { kind: 'any', dates: [ne.date], skip: null, until: ne.date, at: new Date(0).toISOString() };
   S.fillChair(nt, ne);
   assert.ok(nt.ids.indexOf(no.id) < 0, 'a no stays a no, even with a free evening');
+  delete db().standby[no.id]; // (so later tests on that evening start clean)
   // called off: the old table's switch says it's off, not booked
   nt.ids.slice().forEach((id, k) => { if (k < nt.ids.length - 2) S.cancelSeat(db().members[id], { event: ne.id }); });
   if (ne.status === 'cancelled') { const v = S.tableView(cs[cs.length - 2], c.t.id).again; assert.ok(v.off && !v.booked, 'off, not booked'); }
@@ -587,7 +595,7 @@ const mondayOf = (d) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.g
 const mails = (vid, re) => db().log.filter((l) => l.kind === 'place-mail' && l.a === vid && re.test(l.b)).length;
 
 test('a standing hold: the week’s plan on Sunday night (with what to release), the final count at noon the day before, an update, and a release', () => {
-  const date = day(12), dow = new Date(date + 'T12:00:00Z').getUTCDay(), other = (dow + 1) % 7, ms = people(5, 'Hold');
+  const date = [12, 13, 14, 15, 16].map(day).find((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(); return w >= 1 && w <= 4; }), dow = new Date(date + 'T12:00:00Z').getUTCDay(), other = (dow + 1) % 7, ms = people(5, 'Hold');
   const v = S.savePlace({ name: 'Hold Place', address: '5 Hold St', area: 'Central Square', nights: [dow, other], tables: 2, seats: 6, email: 'hold@example.com', contact: 'Rae' }).id;
   const { e } = night(ms, 'kindred', date), t = Object.values(db().tables).find((x) => x.eventId === e.id);
   assert.strictEqual(t.venue.id, v);
@@ -1058,4 +1066,37 @@ test('with notifications off, the few notices that matter come by email, three a
   const mine = out.filter((s) => s.indexOf(m.email) >= 0);
   assert.strictEqual(mine.length, 3, 'three a day, and never a chat message');
   assert.ok(/a private invitation/.test(mine[0]) && /\/#home/.test(mine[0]) && /#table=t1/.test(mine[1]), 'each with a link into the app');
+});
+
+test('round two with three back: people who marked that evening fill the other three chairs when the week goes out', () => {
+  const real = Date.now, OFF = 70 * 864e5; Date.now = () => real() + OFF; // a quiet week of its own, far from the other tests
+  try {
+    const ms = people(6, 'Refill');
+    const base = [-9, -10, -11, -12].map((n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10)).find((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(); return w >= 1 && w <= 5; });
+    const { t } = night(ms, 'topic', base), seated = t.ids.map((id) => db().members[id]);
+    assert.strictEqual(seated.length, 6);
+    seated.forEach((m, k) => S.feedback(m, { table: t.id, rating: 5, picks: [], again: k < 3 }));
+    const nt = db().tables[t.next], ne = db().events[nt.eventId];
+    assert.ok(nt && nt.ids.length === 3 && nt.want === 6, 'three of six is enough for round two');
+    assert.ok(db().chats[t.id].some((x) => /three new people in the empty chairs/.test(x.text)), 'the old chat hears new people will join');
+    // twelve others mark that evening; two of the people who said no do too
+    const others = people(12, 'Fresh'), at = new Date(Date.now()).toISOString();
+    others.forEach((m) => { m.avail = { week: ne.week, slots: [ne.date + '|dinner'], max: 1, at }; });
+    seated.slice(3, 5).forEach((m) => { m.avail = { week: ne.week, slots: [ne.date + '|dinner'], max: 1, at }; });
+    const r = S.matchWeek({ week: ne.week });
+    assert.strictEqual(r.rounds, 3, 'three chairs planned');
+    assert.strictEqual(nt.ids.length, 3, 'nobody hears before Sunday');
+    S.publishWeek({ week: ne.week });
+    const ids = nt.ids.filter((id) => !(nt.out || {})[id]), fresh = ids.filter((id) => seated.slice(0, 3).every((m) => m.id !== id));
+    assert.strictEqual(ids.length, 6, 'six at round two');
+    assert.ok(fresh.every((id) => others.some((m) => m.id === id)), 'the new people are people who marked that evening, never someone who said no');
+    const h = ids.filter((id) => db().members[id].school === 'harvard').length;
+    assert.ok(Math.max(h, 6 - h) <= 4, 'both schools still at the table');
+    const nv = S.view(db().members[fresh[0]]).tables.find((x) => x.id === nt.id);
+    assert.ok(nv && nv.newcomer && nv.back === 3 && nv.round === 2, 'the invitation tells them they’re joining a table meeting again');
+    assert.ok(nt.why.some((l) => /new to the table/.test(l)), 'the table’s why names who’s new');
+    // everyone who marked that evening has a dinner: round two or a table of their own
+    const dinner = (m) => Object.values(db().tables).some((x) => x.published && !x.closed && (db().events[x.eventId] || {}).date === ne.date && x.ids.indexOf(m.id) >= 0);
+    assert.ok(others.every(dinner), 'nobody left out');
+  } finally { Date.now = real; }
 });

@@ -134,12 +134,13 @@ const social2 = weekly(S.createEvent({ type: 'kindred', date: day(5), time: '19:
 holdSeats(social2, members.slice(1, 40).filter((m, i) => i % 4 === 3 || i % 4 === 0).slice(0, 10), 4);
 S.draft({ event: social2.id }); S.publish({ event: social2.id });
 
-// round two: most of Jordan's table from a week ago said yes the morning after, so Charlie booked the same table again, two
-// weeks on (in seven days, the same spot). Booked after this week's tables, so it skips anyone who already has a dinner that night.
+// round two: three of Jordan's table from a week ago said yes the morning after, so Charlie booked the same table again, two
+// weeks on (in seven days, the same spot), and the three empty chairs went to new people free that evening (in the app
+// that happens when the week is matched on Sunday). Booked after this week's tables, so it skips anyone with a dinner that night.
 // Jordan and two tablemates each left a line for their next table, which their next tables see.
 {
-  const fb = db.feedback[pastTable.id], ids = pastTable.ids, need = Math.max(3, Math.ceil(ids.length * 0.6));
-  [demo.id].concat(demoTwo, ids.filter((x) => x !== demo.id && demoTwo.indexOf(x) < 0)).slice(0, need + 1).forEach((id) => { if (fb[id]) fb[id].again = true; });
+  const fb = db.feedback[pastTable.id], ids = pastTable.ids;
+  [demo.id].concat(demoTwo).forEach((id) => { if (fb[id]) fb[id].again = true; });
   const start = new Date(S.eventTimes(past).start).toISOString(), LINES = ['ship the eval harness to two more teams', 'email my old manager about the pilot', 'run the Charles loop under 30 minutes', 'finish the grant draft'];
   [demo.id].concat(ids.filter((x) => x !== demo.id).slice(0, 3)).forEach((id, k) => { db.members[id].loose = [{ id: 'l' + k, text: LINES[k], from: pastTable.id, start, at: ago(24 * 7 + k) }]; });
   // last time's question, played out: a 4 to 2 split, and one of them changed their mind by the morning
@@ -153,7 +154,13 @@ S.draft({ event: social2.id }); S.publish({ event: social2.id });
   pastTable.cap = { booking: { pid: sp.id, at: ago(24 * 9), size: ids.length, warned: ids.length, time: '19:00', name: demo.name, code: '', via: sp.bookVia }, spot: { vid: sp.id, at: ago(24 * 9), booked: true }, nudges: [ago(24 * 8)], checks: { at: ago(24 * 7) }, salutes: {}, hadChoice: true, briefed: demo.id, thanked: true };
   ids.filter((x) => x !== demo.id).slice(0, 3).forEach((id, k) => { pastTable.cap.salutes[id] = ago(24 * 6 + k); });
   const nt = S.roundTwo(pastTable);
-  if (nt) { demo.read['inv:' + nt.id] = ago(24 * 6); nt.ids.filter((id) => id !== demo.id).slice(0, 2).forEach((id, j) => db.chats[nt.id].push({ id: 'r' + j, from: id, text: ['Round two! I have a rebuttal ready.', 'Same seat as last time, I’m calling it.'][j], at: ago(30 - j * 6) })); }
+  if (nt) {
+    const ne = db.events[nt.eventId], mine = members.filter((m) => ids.indexOf(m.id) < 0 && m.id !== demo.id).slice(16, 40).map((m) => m.id);
+    db.standby = db.standby || {}; mine.forEach((id, k) => { db.standby[id] = { kind: 'any', dates: [ne.date], skip: null, until: ne.date, at: ago(48 - k) }; });
+    for (let i = 0; i < 3; i++) S.fillChair(nt, ne);
+    mine.forEach((id) => { delete db.standby[id]; });
+  }
+  if (nt) { demo.read['inv:' + nt.id] = ago(24 * 6); nt.ids.filter((id) => id !== demo.id).slice(0, 2).forEach((id, j) => db.chats[nt.id].push({ id: 'r' + j, from: id, text: ['Round two! I have a rebuttal ready, and three new people to convince.', 'Same seat as last time, I’m calling it.'][j], at: ago(30 - j * 6) })); }
 }
 // an industry table next week: a guest from the industry, open to captains with a stripe for the first 48 hours (Jordan has one)
 S.createEvent({ type: 'topic', date: day(9), time: '19:00', area: 'Kendall Square', industry: true, guest: 'A seed-fund partner (sample guest)', role: 'Invests in early AI teams. Made up for the demo', about: 'No pitching: what investors actually look for in a first AI hire, and what they get wrong' });

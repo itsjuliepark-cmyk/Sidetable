@@ -812,12 +812,16 @@ function myHangs() { return (A.view.pops || []).filter((u) => u.mine || u.joined
 const tableKind = (t) => (t.type === 'kindred' ? 'social' : 'career');
 const nw = (n) => NUMW[n] || String(n);
 function tableWho(t) {
-  if (t.round > 1) return `Your ${t.type === 'kindred' ? 'social' : 'tech'} table again, two weeks on${t.same ? ' and in the same spot' : ', at a new spot'}, ${nw(t.size)} of you this time`;
+  if (t.round > 1) {
+    const kw = t.type === 'kindred' ? 'social' : 'tech', nu = Math.max(0, t.size - (t.back || 0));
+    if (t.newcomer) return `A ${kw} table meeting again: ${nw(t.back)} back from last time, and ${nu > 1 ? `you’re one of ${nw(nu)} new faces` : 'you’re the new face'}`;
+    return `Your ${kw} table again, two weeks on${t.same ? ' and in the same spot' : ', at a new spot'}, ${nu ? `with ${nw(nu)} new ${nu > 1 ? 'faces' : 'face'}` : `${nw(t.size)} of you this time`}`;
+  }
   if (t.type !== 'kindred') return `A tech table of ${nw(t.size)} who love ${t.trackName}`;
   return t.theme ? `A social table of ${nw(t.size)}, and ${nw(t.theme.n)} of you want to ${SX.ACTV[t.theme.act] || t.theme.act.toLowerCase()}` : `A social table of ${nw(t.size)}, seated for how you click, not what you do`;
 }
 // what a seal says: the kind of table, or the round
-const sealWord = (t) => (t.round > 1 ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
+const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t) {
   return `<button class="env ${tableKind(t)}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i><span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
@@ -827,7 +831,7 @@ const ORDW = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seven
 const ordw = (n) => ORDW[n] || n + 'th';
 function knownLine(t) {
   const k = t.known || []; if (!k.length) return '';
-  if (t.round > 1) return `Back together with ${andList(k.map((p) => p.first))}`;
+  if (t.round > 1 && !t.newcomer) return `Back together with ${andList(k.map((p) => p.first))}`;
   return k.length === 1 ? `${k[0].first} again, your ${ordw(k[0].n + 1)} table together` : `${andList(k.map((p) => p.first))} again`;
 }
 const knownHTML = (t, cls) => (t.known && t.known.length ? `<div class="${cls}"><span class="avs">${t.known.slice(0, 3).map((p) => av(p, 'xs')).join('')}</span><span>${esc(knownLine(t))}</span></div>` : '');
@@ -934,7 +938,7 @@ function monthHTML() {
   const kinds = new Set(M.beads.map((x) => x.kind));
   const legend = `<div class="mlegend"><span><i class="sw tech"></i>Tech table</span><span><i class="sw social"></i>Social table</span>${kinds.has('hang') ? '<span><i class="sw hang"></i>Hang</span>' : ''}${M.beads.some((x) => !x.past && x.kind !== 'hang') ? '<span><i class="sw soon"></i>Coming up</span>' : ''}</div>`;
   const stat = M.people ? `${M.people} ${M.people === 1 ? 'person' : 'people'} so far${M.picked ? `, ${M.picked} picked you back` : ''}` : M.tables ? `${cap(nw(M.tables))} ${M.tables > 1 ? 'tables' : 'table'} on the way` : 'Every table you sit at shows up on this calendar';
-  const again = (M.again || []).map((g) => `<button class="longrow" onclick="openTable('${g.id}')"><span class="avs">${g.faces.map((f) => av(f, 'xs')).join('')}</span><div class="grow"><b>Round ${nw(g.round)}, ${esc(g.label)}</b><small>The same table, together again</small></div></button>`).join('');
+  const again = (M.again || []).map((g) => `<button class="longrow" onclick="openTable('${g.id}')"><span class="avs">${g.faces.map((f) => av(f, 'xs')).join('')}</span><div class="grow"><b>Round ${nw(g.round)}, ${esc(g.label)}</b><small>${g.newcomer ? 'A table meeting again, and you’re new' : 'Your table, together again'}</small></div></button>`).join('');
   return `<div class="cardg month"><div class="mhead"><h3>Your <span class="it">${esc(M.name)}</span></h3><div class="sub2">${esc(stat)}</div></div>
     <div class="cal" aria-label="Your tables this month"><div class="dow">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((x) => `<span>${x}</span>`).join('')}</div>${weeks.join('')}</div>
     ${legend}
@@ -990,7 +994,7 @@ function drawInvite(already) {
         <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
-        <h2>${t.round > 1 ? `you’re invited to <span class="it">round ${nw(t.round)}</span>` : `you’re invited to a <span class="it">${k === 'social' ? 'small dinner' : 'tech table'}</span>`}</h2>
+        <h2>${t.round > 1 && !t.newcomer ? `you’re invited to <span class="it">round ${nw(t.round)}</span>` : `you’re invited to a <span class="it">${k === 'social' ? 'small dinner' : 'tech table'}</span>`}</h2>
         <div class="ikind ${k}">${k === 'social' ? 'Social table' : 'Tech table'}${t.round > 1 ? `, round ${nw(t.round)}` : ''}</div>
         <div class="rule"></div>
         <div class="when"><b>${esc(t.label)}</b><span>${esc(t.time)} in ${esc(t.area)}</span><small>${t.phase === 'tonight' ? (t.spotIn ? 'Tonight. The spot is on your table.' : 'Tonight. The exact spot arrives at noon.') : 'The exact spot arrives on the day, at noon.'}</small></div>
@@ -1119,7 +1123,7 @@ function drawTable() {
     : `<div class="cardg venuebox"><span style="flex:none">${ICON.pin}</span><div><b>${esc(t.area)}</b><br><span class="sub2">${t.spotPending ? (t.spotByCaptain ? 'Your captain is still booking tonight’s spot. It shows up here, with a notification, the moment it’s set' : 'I’m confirming the spot with the restaurant. It shows up here, with a notification, the moment it’s set') : `The exact spot is revealed ${esc(t.revealLabel)}.`}</span></div></div>`;
   $('tableBody').innerHTML = `<div class="ph" aria-hidden="true"></div>
     <div class="kick">${t.type === 'kindred' ? 'Social dinner' : 'Tech dinner'} on ${esc(t.short)} at ${esc(t.time)}</div>
-    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>' : t.round > 1 ? `Round ${nw(t.round)}, <span class="it">together again</span>` : t.type === 'kindred' ? 'Your social <span class="it">table</span>' : `${esc(t.trackName)} <span class="it">table</span>`}</h2>
+    <h2 class="q" style="margin-top:8px;font-size:30px">${t.left ? 'You stepped out of this one' : t.phase === 'past' || t.phase === 'after' ? 'Your table, <span class="it">remembered</span>' : t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}, <span class="it">together again</span>` : t.type === 'kindred' ? 'Your social <span class="it">table</span>' : `${esc(t.trackName)} <span class="it">table</span>`}</h2>
     ${before ? venue : ''}
     ${before && !t.left ? captainHTML(t) : ''}
     ${gameSumHTML(t)}
@@ -1128,7 +1132,7 @@ function drawTable() {
       ${chips.length ? `<div class="whoshare"><div class="label">What you share <span>tap one</span></div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div><p class="tvcap" id="tvCap"></p></div>` : ''}
     </div>
     <div class="sp"></div>
-    <div class="cardg why"><div class="ctitle">${t.round > 1 ? 'Why you’re back' : 'Why I put you together'}</div>${t.why.map((l) => `<p>${hl(l)}</p>`).join('')}</div>
+    <div class="cardg why"><div class="ctitle">${t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together'}</div>${t.why.map((l) => `<p>${hl(l)}</p>`).join('')}</div>
     ${sinceHTML(t)}
     <div class="sp"></div>
     ${people.filter((p) => !p.me).map((p) => pcardHTML(p, mine, { n: ((t.known || []).find((k) => k.id === p.id) || {}).n })).join('')}
@@ -1668,7 +1672,7 @@ function againHTML(t, F) {
   if (G.open === false) return '';
   if (G.busy) return `<div class="cardg again"><div class="grow"><b>Round ${rd} didn’t fit</b><div class="sub2">Most of you already have a dinner that evening. Pick each other and mark the same evening, and I’ll seat you together.</div></div></div>`;
   const yes = F.again === true, n = Math.max(0, Math.min(G.need, G.yes + (yes && !G.mine ? 1 : 0) - (!yes && G.mine ? 1 : 0)));
-  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for the same table, just the people who said yes, at the same spot if it has room.</div>
+  return `<div class="cardg again"><b>Round ${rd} in two weeks?</b><div class="sub2">If ${nw(G.need)} of you say yes, I’ll book ${esc(G.when)} for everyone who said yes, at the same spot if it has room. New people who marked that evening take the empty chairs.</div>
     <div class="seg two agpick">${[[true, `Yes, round ${rd}`], [false, 'Not this time']].map(([v, l]) => `<button class="${F.again === v ? 'sel' : ''}" aria-pressed="${F.again === v}" onclick="A.fb.again=${v};drawAfter()">${l}</button>`).join('')}</div>
     <div class="agbar">${Array.from({ length: G.need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}<span>${n} of ${G.need} said yes${yes && !G.mine ? ', counting you' : ''}</span></div></div>`;
 }
