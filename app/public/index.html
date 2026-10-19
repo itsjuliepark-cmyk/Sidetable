@@ -885,8 +885,10 @@ function firstTableHTML() {
 }
 function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 function renderHome() {
-  // tonight's dinner first, then tech tables before social ones (Hash Table leads with the tech talk), each by date
-  const v = A.view, me = v.me, out = [], I = invitations().sort((a, b) => ((b.phase === 'tonight') - (a.phase === 'tonight')) || ((a.type === 'kindred') - (b.type === 'kindred')) || (a.start < b.start ? -1 : 1)), H = myHangs();
+  // tonight's dinner first, then the sealed ones still to open (a captain's on top, since it says "open this one first"),
+  // then the ones already open; in each, tech tables before social ones (Hash Table leads with the tech talk), then by date
+  const order = (t) => (t.phase === 'tonight' ? 0 : !t.opened ? (t.captain && t.captain.me ? 1 : 2) : 3);
+  const v = A.view, me = v.me, out = [], I = invitations().sort((a, b) => (order(a) - order(b)) || ((a.type === 'kindred') - (b.type === 'kindred')) || (a.start < b.start ? -1 : 1)), H = myHangs();
   const sealed = I.filter((t) => !t.opened).length, dinners = I.length === 1 ? 'one dinner' : nw(I.length) + ' dinners', hangs = H.length === 1 ? 'one hang' : nw(H.length) + ' hangs';
   const line = sealed ? `Charlie has ${sealed === 1 ? 'a private invitation' : nw(sealed) + ' private invitations'} for you.`
     : I.length ? `You have ${dinners}${H.length ? ' and ' + hangs : ''} coming up.`
@@ -899,7 +901,9 @@ function renderHome() {
   // tables first: your invitations, or how your first one happens; then next week's plan; then hangs
   out.push(`<div class="sechead"><h3>Your tables</h3></div>`);
   // a captain's job shows once the invitation is open, right under it; sealed, the envelope only says to open it soon
-  out.push(I.length ? I.map((t) => (t.opened ? invMiniHTML(t) + capStripHTML(t) + gameNudgeHTML(t) : envHTML(t, sealed > 1))).join('<div class="sp"></div>') : v.standby ? '' : firstTableHTML());
+  // only the top one of several sealed ones says "Open this one first"; any other with a job says "Open soon"
+  const firstJob = (I.find((t) => !t.opened && ((t.captain && t.captain.me) || t.spotOpen)) || {}).id;
+  out.push(I.length ? I.map((t) => (t.opened ? invMiniHTML(t) + capStripHTML(t) + gameNudgeHTML(t) : envHTML(t, sealed > 1 && t.id === firstJob))).join('<div class="sp"></div>') : v.standby ? '' : firstTableHTML());
   if (v.standby) out.push(`<div class="sp"></div>${standbyHTML(v.standby)}`);
   if (v.month) out.push(`<div class="sp"></div>${monthHTML()}`);
   out.push(`<div class="sp"></div><div class="cardg plan-card" id="availCard">${availHTML()}</div>`);
