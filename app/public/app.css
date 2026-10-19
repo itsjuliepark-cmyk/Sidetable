@@ -1498,22 +1498,40 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .cfloat .cw{display:inline-block;animation:cword .4s cubic-bezier(.2,.9,.3,1) both}
 @keyframes cword{from{opacity:0;transform:translateY(6px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){.cfloat .cdots i,.cfloat.typing .orb,.cfloat .cw{animation:none}}
-/* why I put you together: a reason per card, side to side, arrows and dots like tonight's question */
-.why .whyhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.why .whyhead .ctitle{margin:0}
+/* rails of cards you swipe, with arrows and dots: the reasons for a table, and tonight's question */
+.chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.chead .ctitle{margin:0;display:flex;align-items:center;gap:6px}
 .whynav{display:flex;gap:6px;flex:none}
 .wnb{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.8);border:1px solid var(--line);color:var(--ink-2);box-shadow:0 4px 10px -6px rgba(18,28,38,.3);transition:opacity .2s,transform .15s}
 .wnb:disabled{opacity:.3}
 .wnb:not(:disabled):active{transform:scale(.9)}
-.whyrail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:2px 18px 6px;scroll-padding:0 18px;scrollbar-width:none}
-.whyrail::-webkit-scrollbar{display:none}
-.whyc{flex:0 0 84%;scroll-snap-align:start;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:15px 16px;border-radius:18px;background:linear-gradient(150deg,#F5F2FD,#EDF2FB);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 22px -18px rgba(18,28,38,.45)}
-.whyc:nth-child(4n+2){background:linear-gradient(150deg,#FDF2EE,#FBEEF3)}
-.whyc:nth-child(4n+3){background:linear-gradient(150deg,#EEF8F3,#EEF4FB)}
-.whyc:nth-child(4n+4){background:linear-gradient(150deg,#FDF7EA,#F8EFE6)}
-.whyrail.one .whyc{flex-basis:100%}
-.why .whyc p{margin:0;padding:0;border:0;font-size:15.5px;line-height:1.45;color:var(--ink)}
-.whyn{font-size:11.5px;font-weight:650;color:var(--ink-faint)}
+.crail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:2px 18px 6px;scroll-padding:0 18px;scrollbar-width:none}
+.crail::-webkit-scrollbar{display:none}
+.crail>*{flex:0 0 84%;scroll-snap-align:start}
+.crail.one>*{flex-basis:100%}
 .whydots{display:flex;justify-content:center;gap:5px;margin-top:8px}
 .whydots i{width:6px;height:6px;border-radius:3px;background:rgba(28,32,36,.15);transition:width .25s,background .25s}
 .whydots i.on{width:16px;background:var(--ink-2)}
+/* a reason card: what kind of reason (in its color), the reason, who it's about */
+.whyc{min-height:128px;display:flex;flex-direction:column;gap:8px;padding:14px 16px 15px;border-radius:18px;background:linear-gradient(150deg,var(--w1),var(--w2));border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 22px -18px rgba(18,28,38,.45)}
+.whyc.t-a{--w1:#F3EFFD;--w2:#EAF0FB;--wk:#6A55B8}
+.whyc.t-b{--w1:#FDF1EA;--w2:#FBEDF1;--wk:#A5552F}
+.whyc.t-c{--w1:#ECF7F1;--w2:#EDF3FB;--wk:#2C6E5F}
+.whyc.t-d{--w1:#EEF3FC;--w2:#FBEEF1;--wk:#3D5896}
+.whyc.t-e{--w1:#FDF6E6;--w2:#F9EFE4;--wk:#8A6420}
+.whyc.t-f{--w1:#FBEFF4;--w2:#F1EDFB;--wk:#A3476A}
+.whytop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.whyl{font-size:12px;font-weight:700;letter-spacing:-.003em;color:var(--wk)}
+.whyn{font-size:11.5px;font-weight:600;color:var(--ink-faint)}
+.why .whyc p{margin:0;padding:0;border:0;font-size:16px;line-height:1.42;font-weight:500;color:var(--ink);text-wrap:pretty}
+.whyvis{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:auto;padding-top:2px}
+.whygroup{display:inline-flex;align-items:center;gap:7px}
+.whygroup .avs .av{box-shadow:0 0 0 2px rgba(255,255,255,.95)}
+.whygroup b{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.whysplit{display:flex;gap:4px;width:100%;height:30px;margin-top:auto}
+.whysplit span{display:flex;align-items:center;justify-content:center;gap:4px;min-width:64px;border-radius:10px;font-size:12.5px;font-weight:600;color:#2C6E5F;background:rgba(44,110,95,.14)}
+.whysplit span+span{color:#A5552F;background:rgba(165,85,47,.14)}
+/* tonight's question on the table: the three cards side by side */
+.gcard.mini{min-height:0}
+.gcard.mini .gq{font-size:16px}
+.gfaces small{margin-left:6px;font-size:12px;font-weight:600;color:var(--ink-soft)}

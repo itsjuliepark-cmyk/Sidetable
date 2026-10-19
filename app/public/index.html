@@ -1175,24 +1175,59 @@ function drawTable() {
     ${t.feedbackOpen && !t.left ? `<button class="btn ghost" onclick="openAfter('${t.id}')">${t.feedbackDone ? 'My picks from this table' : 'How was the table?'}</button>` : ''}
     ${before && !t.left ? `<button class="link" onclick="openDecline('${t.id}')">I can’t make it</button>` : ''}`;
   if (chips.length) setTimeout(() => { if (cur === 'table' && A.table === t) hiTag(chips[0]); }, 650);
-  whyDots();
+  railSync('whyRail'); const g = t.game; if (g && g.stage === 'vote') { const k = g.cards.findIndex((c) => c.id === g.myVote); if (k > 0) railTo('qRail', k); else railSync('qRail'); }
 }
-// why these people: one reason per card, swiped (or stepped with the arrows) like tonight's question cards
+// a row of cards you swipe (or step with the arrows), with dots under it: the reasons for this table, tonight's question
+const ARROWS = (id) => `<div class="whynav"><button class="wnb" onclick="railGo('${id}',-1)" aria-label="Previous">${SV('<path d="M15 18l-6-6 6-6"/>', 16)}</button><button class="wnb" onclick="railGo('${id}',1)" aria-label="Next">${SV('<path d="M9 18l6-6-6-6"/>', 16)}</button></div>`;
+function railHTML(id, cards, title) {
+  const many = cards.length > 1;
+  return `<div class="chead"><div class="ctitle">${title}</div>${many ? ARROWS(id) : ''}</div>
+    <div class="crail ${many ? '' : 'one'}" id="${id}" onscroll="railSync('${id}')">${cards.join('')}</div>
+    ${many ? `<div class="whydots" id="${id}Dots">${cards.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}`;
+}
+const railStep = (r) => (r.firstElementChild ? r.firstElementChild.offsetWidth + 10 : 1);
+function railGo(id, d) { const r = $(id); if (r) r.scrollBy({ left: d * railStep(r), behavior: 'smooth' }); }
+function railTo(id, i) { const r = $(id); if (r) { r.scrollLeft = i * railStep(r); railSync(id); } }
+function railSync(id) {
+  const r = $(id), D = $(id + 'Dots'); if (!r || !D) return;
+  const n = D.children.length, i = Math.max(0, Math.min(n - 1, Math.round(r.scrollLeft / railStep(r))));
+  [...D.children].forEach((el, k) => el.classList.toggle('on', k === i));
+  const B = r.parentNode.querySelectorAll('.chead .wnb'); if (B.length === 2) { B[0].disabled = r.scrollLeft < 4; B[1].disabled = r.scrollLeft + r.clientWidth >= r.scrollWidth - 4; }
+}
+// why these people: each reason is a small card that says what kind of reason it is, the reason itself, and who it's about
+const NEXTKEY = { 'Start a company': 'start a company', 'Join a startup': 'join a startup', 'Big tech': 'big tech', 'Venture capital': 'venture', 'Back to my old industry': 'old industry', 'Research or a PhD': 'research or a phd' };
+function whyCardHTML(l, t, i, n) {
+  const P = t.people || [], low = l.replace(/\*/g, '').toLowerCase(), key = ((l.match(/\*([^*]+)\*/) || [])[1] || '').trim();
+  const faces = (ps, word) => (ps.length ? `<span class="whygroup"><span class="avs">${ps.slice(0, 5).map((p) => av(p, 'xs')).join('')}</span>${word ? `<b>${esc(word)}</b>` : ''}</span>` : '');
+  let label = 'Why', tone = 'a', text = hl(l), vis = '', m;
+  if ((m = /hooked on \*(.+)\*|into \*(.+)\*/.exec(l))) { const name = m[1] || m[2], id = Object.keys(SX.INTNAME).find((k) => SX.INTNAME[k] === name); label = 'What you share'; if (id) vis = faces(P.filter((p) => (p.ints || []).indexOf(id) >= 0)); }
+  else if (/different angles on/.test(l)) label = 'What you share';
+  else if ((m = /^“(.+)”: \*(\d+) yes, (\d+) no\*/.exec(l))) {
+    label = 'Where you split'; tone = 'b'; text = `“${esc(m[1])}”`; const y = +m[2], no = +m[3];
+    vis = `<div class="whysplit"><span style="flex:${y}"><b>${y}</b> yes</span><span style="flex:${no}"><b>${no}</b> no</span></div>`;
+  } else if (/^at the table:|^all \*?(builders|investors|operators|researchers|newcomers)/.test(low)) {
+    label = 'Who’s at the table'; tone = 'c';
+    vis = SX.LENS.map((x) => faces(P.filter((p) => p.lens === x.id), x.t)).filter(Boolean).slice(0, 3).join('');
+  } else if (/harvard|mit\b/.test(low) && /\d/.test(low)) {
+    label = 'Across the river'; tone = 'd'; vis = faces(P.filter((p) => p.school === 'harvard'), 'Harvard') + faces(P.filter((p) => p.school === 'mit'), 'MIT');
+  } else if (/planner|reminder/.test(low)) { label = 'Making plans'; tone = 'e'; vis = faces(P.filter((p) => (p.code || '')[2] === 'H')); }
+  else if (/crowd|deep talkers/.test(low)) { label = 'The vibe'; tone = 'f'; vis = faces(P.filter((p) => (p.code || '')[1] === 'D'), 'Deep') + faces(P.filter((p) => (p.code || '')[1] === 'P'), 'Playful'); }
+  else if (/from last time/.test(low)) { label = 'Back again'; tone = 'c'; vis = faces(P.filter((p) => !p.me && (t.known || []).some((k) => k.id === p.id))); }
+  else if (/new to the table|empty chair/.test(low)) { label = 'New faces'; tone = 'e'; vis = faces(P.filter((p) => key && key.indexOf(p.first) >= 0)); }
+  else if (/argued|rematch/.test(low)) { label = 'Last time'; tone = 'b'; }
+  else {
+    label = 'In common'; tone = 'c';
+    const act = (SX.ACTS || []).find((x) => (SX.ACTV[x] || x.toLowerCase()) === key), nx = SX.NEXT.find((x) => NEXTKEY[x] && low.indexOf(NEXTKEY[x]) >= 0);
+    vis = act ? faces(P.filter((p) => (p.acts || []).indexOf(act) >= 0)) : nx ? faces(P.filter((p) => (p.next || []).indexOf(nx) >= 0)) : '';
+  }
+  return `<div class="whyc t-${tone}"><div class="whytop"><span class="whyl">${label}</span>${n > 1 ? `<span class="whyn">${i + 1} of ${n}</span>` : ''}</div><p>${text}</p>${vis ? `<div class="whyvis">${vis}</div>` : ''}</div>`;
+}
 function whyHTML(t) {
   const L = t.why || []; if (!L.length) return '';
-  const title = t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together', many = L.length > 1;
-  const nav = many ? `<div class="whynav"><button class="wnb" onclick="whyGo(-1)" aria-label="Previous reason">${SV('<path d="M15 18l-6-6 6-6"/>', 16)}</button><button class="wnb" onclick="whyGo(1)" aria-label="Next reason">${SV('<path d="M9 18l6-6-6-6"/>', 16)}</button></div>` : '';
-  return `<div class="cardg why"><div class="whyhead"><div class="ctitle">${title}</div>${nav}</div>
-    <div class="whyrail ${many ? '' : 'one'}" id="whyRail" onscroll="whyDots()">${L.map((l, i) => `<div class="whyc">${many ? `<span class="whyn">${i + 1} of ${L.length}</span>` : ''}<p>${hl(l)}</p></div>`).join('')}</div>
-    ${many ? `<div class="whydots" id="whyDots">${L.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}</div>`;
+  const title = t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together';
+  return `<div class="cardg why">${railHTML('whyRail', L.map((l, i) => whyCardHTML(l, t, i, L.length)), title)}</div>`;
 }
-function whyGo(d) { const r = $('whyRail'); if (r && r.firstElementChild) r.scrollBy({ left: d * (r.firstElementChild.offsetWidth + 10), behavior: 'smooth' }); }
-function whyDots() {
-  const r = $('whyRail'), D = $('whyDots'); if (!r || !D || !r.firstElementChild) return;
-  const n = D.children.length, i = Math.max(0, Math.min(n - 1, Math.round(r.scrollLeft / (r.firstElementChild.offsetWidth + 10))));
-  [...D.children].forEach((el, k) => el.classList.toggle('on', k === i));
-  const B = r.parentNode.querySelectorAll('.wnb'); if (B.length === 2) { B[0].disabled = i === 0; B[1].disabled = i >= n - 1 || r.scrollLeft + r.clientWidth >= r.scrollWidth - 4; }
-}
+
 // what each of them said they'd do before this table, the morning after their last one
 function sinceHTML(t) {
   if (!t.loose || !t.loose.length) return '';
@@ -1630,6 +1665,13 @@ function gameCardHTML(c, g, people) {
     ${c.why ? `<p class="gwhy">${esc(c.why)}</p>` : ''}${readsHTML(c, false, g.hang)}
     <div class="gfoot"><div class="gfaces">${facesHTML(c.voters, people)}</div><button class="gvote" onclick="gameMove('vote',{card:'${c.id}'})">${mine ? ICON.check + ' Your pick' : 'Vote'}</button></div></div>`;
 }
+// a question card for the table screen: kind, heat, the question, the two sides, who voted, and a Vote button
+function gameCardMini(c, g, people) {
+  const mine = g.myVote === c.id;
+  return `<div class="gcard mini k-${esc(c.k)} ${mine ? 'mine' : ''}"><div class="gtop"><span class="gkind">${esc(c.kind)}</span>${heatHTML(c.heat)}</div><p class="gq">${esc(c.q)}</p>
+    <div class="gab"><span><i>A</i>${esc(c.a)}</span><em>or</em><span><i>B</i>${esc(c.b)}</span></div>
+    <div class="gfoot"><div class="gfaces">${facesHTML(c.voters, people)}${c.voters.length ? `<small>${c.voters.length} ${c.voters.length > 1 ? 'votes' : 'vote'}</small>` : ''}</div><button class="gvote" onclick="gameMove('vote',{card:'${c.id}'})">${mine ? ICON.check + ' Your pick' : 'Vote'}</button></div></div>`;
+}
 function gameBodyHTML(g, people) {
   if (g.stage === 'vote') return `<p class="ghint">Three questions for ${g.hang ? 'this hang' : 'your table'}. The one with the most votes is what you argue about ${g.hang ? 'when you meet' : 'at dinner'}.</p><div class="gcards">${g.cards.map((c) => gameCardHTML(c, g, people)).join('')}</div>`;
   const c = g.card, n = g.n;
@@ -1683,7 +1725,9 @@ function gameMove(act, o) {
 function gameSumHTML(t) {
   const g = t.game; if (!g || t.left) return '';
   let body;
-  if (g.stage === 'vote') body = `<p class="gsq">Your table is choosing what to argue about</p><div class="gkw">${g.cards.map((c) => `<span class="k-${esc(c.k)} ${g.myVote === c.id ? 'mine' : ''}"><i></i>${esc(c.kw || c.q)}${c.voters.length ? `<em>${c.voters.length}</em>` : ''}</span>`).join('')}</div>`;
+  if (g.stage === 'vote') return `<div class="cardg gsum">${railHTML('qRail', g.cards.map((c) => gameCardMini(c, g, t.people)), `${GICON.spark} Tonight’s question`)}
+    <p class="gsq" style="margin:10px 0 0">Three questions, one winner. The most votes is what you argue about at dinner. ${g.myVote ? `${g.voted} of ${g.n} have voted` : `Vote by ${esc(g.voteLabel)}`}</p>
+    <button class="link" style="margin:6px 0 0;text-align:left" onclick="openChat('table','${t.id}',true)">Talk it over in the group chat</button></div>`;
   else if (g.stage === 'sides') body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.mySide ? `You’re team “${esc(g.card[g.mySide])}”. Sealed until ${esc(g.revealLabel)}` : `Pick your side before ${esc(g.revealLabel)}`}</p>`;
   else body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.A.length} for “${esc(g.card.a)}”, ${g.B.length} for “${esc(g.card.b)}”</p>`;
   const todo = (g.stage === 'vote' && !g.myVote) || (g.stage === 'sides' && !g.mySide);

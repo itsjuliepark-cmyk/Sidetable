@@ -190,10 +190,11 @@
   D.menu = function () {
     var f = friend(), who = me();
     $('sheet').innerHTML = '<div class="grab"></div><h3>Demo</h3><div class="sub2" style="line-height:1.5">The real Hash Table app, with 40 sample members. It runs on this phone only, and nothing is sent anywhere.' + (who ? ' You’re ' + esc(who.name) + '.' : '') + '</div>'
-      + '<div class="label">Be someone</div>'
+      + (D.fresh ? (who ? '' : '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Join as someone new<small>Through a club link, the whole sign-up, then your first invitations</small></button>')
+      : '<div class="label">Be someone</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'jordan\')">Jordan Park, Harvard<small>Two sealed invitations, round two with last week’s table, and two friends</small></button>'
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new<small>Join through a club link and do the whole sign-up</small></button>'
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new<small>Join through a club link and do the whole sign-up</small></button>')
       + '<div class="label">Behind the scenes</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.captain()">Make me captain of my next dinner<small>Book the spot, rally the vote, settle up, and earn a stripe</small></button>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.dropOuts()">Most of my next table cancels<small>The people left join another table that night, or it’s called off</small></button>'
@@ -208,7 +209,10 @@
   // on the film, Join opens the demo's ways in: be Jordan, or sign up as someone new
   renderStart = function (msg) {
     baseStart(msg);
-    $('startBox').innerHTML = '<div class="ls-note">This is a working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere.</div>'
+    if (D.fresh) { $('lSign').style.display = 'none'; $('lJoin').textContent = 'Start'; } // nobody to sign in as yet
+    $('startBox').innerHTML = D.fresh
+      ? '<div class="ls-note">A working demo: you’re new here. Sign up the way a real member would, meet Charlie, and get your first invitations. It runs on your phone only, and nothing is sent anywhere.</div><button class="btn" onclick="SIXTOP_DEMO.join()">Start as someone new</button>'
+      : '<div class="ls-note">This is a working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere.</div>'
       + '<button class="btn" onclick="SIXTOP_DEMO.as(\'jordan\')">Try it as Jordan</button><button class="btn ghost" onclick="SIXTOP_DEMO.join()">Join as someone new</button>';
   };
   if (cur === 'start') renderStart();

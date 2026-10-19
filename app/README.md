@@ -27,7 +27,9 @@ npm run dev
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
-- `npm run demo`를 실행하면 저장소의 `demo/hash-table-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
+- `npm run demo`를 실행하면 데모 두 개를 함께 생성, 코드를 바꾼 뒤 함께 커밋
+  - `demo/hash-table-demo.html`: Jordan으로 보기, 한 주가 이미 지나간 상태
+  - `demo/hash-table-start.html`: 처음 온 사람으로 가입부터 시작, Sign in 없이 Start 버튼 하나
 
 ## 실제 파일럿 실행
 
@@ -130,6 +132,8 @@ npm run film
 - 세부 관심사도 개수 제한 없이 최소 하나, 첫 선택이 앵커
 - Charlie’s note는 버튼 바로 위에 떠서, 점 세 개로 잠깐 입력 중 표시 후 단어가 하나씩 나타남, 말투는 사람처럼 (Ooh, Wow, Ha)
 - 테이블 화면의 Why I put you together는 이유 하나당 카드 한 장, 좌우로 넘기거나 화살표로 이동
+  - 카드마다 이유의 종류(What you share, Where you split, Who’s at the table, Across the river 등)와 관련된 사람 얼굴, 찬반은 막대로 표시
+- Tonight’s question도 투표 중에는 세 질문을 카드로 나란히, 넘기면서 바로 Vote
 
 ## Tonight’s question
 

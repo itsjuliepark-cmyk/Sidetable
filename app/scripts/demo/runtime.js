@@ -4,12 +4,12 @@
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var KEY = 'sixtop-demo-/*BUILD*/', MAX_AGE = 3 * 864e5;
+  var FRESH = /*FRESH*/false, KIND = FRESH ? 'sixtop-start-' : 'sixtop-demo-', KEY = KIND + '/*BUILD*/', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
   var files = {}, seededAt = 0;
-  try { Object.keys(localStorage).forEach(function (k) { if (/^sixtop-demo-/.test(k) && k !== KEY) localStorage.removeItem(k); }); } catch (e) {}
+  try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(KIND) === 0 && k !== KEY) localStorage.removeItem(k); }); } catch (e) {}
   try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && Date.now() - saved.at < MAX_AGE && etMonday(saved.at) === etMonday(Date.now()) && saved.files) { files = saved.files; seededAt = saved.at; } } catch (e) {}
   var warned = false;
   function persist() { try { localStorage.setItem(KEY, JSON.stringify({ at: seededAt, files: files })); } catch (e) { if (!warned) { warned = true; try { toast('Demo', 'This browser is out of room to save the demo, so changes last until you close the page.'); } catch (x) {} } } }
@@ -168,5 +168,5 @@
     });
   };
   self.addEventListener('storage', function (e) { if (e.key === KEY) location.reload(); });
-  self.SIXTOP_DEMO = { S: S, KEY: KEY, faces: load('faces.js') };
+  self.SIXTOP_DEMO = { S: S, KEY: KEY, fresh: FRESH, faces: load('faces.js') };
 })();

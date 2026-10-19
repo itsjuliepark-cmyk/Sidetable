@@ -15,8 +15,10 @@ const shared = read('public/shared.js');
 const mods = { 'tables.js': read('server/tables.js'), 'server.js': read('server/server.js'), 'seed.js': read('scripts/seed.js'), 'faces.js': read('scripts/faces.js') };
 // the saved demo data is keyed to this exact code, so a new build never runs on data from an older one
 const build = require('crypto').createHash('sha1').update([read('public/shared.js'), read('server/tables.js'), read('server/server.js'), read('scripts/seed.js'), read('scripts/demo/runtime.js')].join('\n')).digest('hex').slice(0, 10);
-const runtime = read('scripts/demo/runtime.js').replace('/*BUILD*/', build);
-const hooks = read('scripts/demo/hooks.js');
+// two demos from one build: Jordan's (with a week already lived in), and a fresh start where you sign up as someone new
+function page(fresh) {
+const runtime = read('scripts/demo/runtime.js').replace('/*BUILD*/', build).replace('/*FRESH*/false', fresh ? 'true' : 'false');
+let hooks = read('scripts/demo/hooks.js');
 
 const inlineStyle = html.indexOf('<style>') >= 0 ? html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>')) : '';
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="/shared.js"></script>'));
@@ -25,6 +27,8 @@ app = must(app, "if ('serviceWorker' in navigator) {", "if (!window.SIXTOP_DEMO 
 app = must(app, "history.replaceState(null, '', '/'); toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();", "toast(V.mode === 'signin' ? 'Signed in' : 'Verified', V.mode === 'signin' ? 'Welcome back.' : 'Welcome to Hash Table.'); return boot();");
 // the opening film ships next to the page (published with it as video/film.mp4), not inside it
 app = must(app, "const FILM_SRC = '/video/film.mp4';", "const FILM_SRC = 'video/film.mp4';");
+// each demo signs in on its own, so the two never pick up each other's member on the same browser
+if (fresh) { app = app.split("'sixtopToken'").join("'sixtopToken-start'"); hooks = hooks.split("'sixtopToken'").join("'sixtopToken-start'"); }
 
 const src = Object.keys(mods).map((k) => JSON.stringify(k) + ': function (module, exports, require, __dirname, process, Buffer) {\n' + mods[k] + '\n}').join(',\n');
 const demoCss = `
@@ -60,13 +64,18 @@ ${hooks}
 </script>
 `;
 [shared, runtime, app, hooks].concat(Object.values(mods)).forEach((s) => { if (/<\/script/i.test(s)) throw new Error('build-demo: a script contains </script>'); });
+return out;
+}
+const out = page(false), fresh = page(true);
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'dist', 'sixtop-demo.html'), out);
+fs.writeFileSync(path.join(root, 'dist', 'hash-table-start.html'), fresh);
 fs.mkdirSync(path.join(root, 'dist', 'video'), { recursive: true });
 fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(root, 'dist', 'video', 'film.mp4'));
 // the same demo as a standalone page in the repo (demo/), so anyone with access to the repo can download it and open it in a browser
 const repoDemo = path.join(root, '..', 'demo');
 fs.mkdirSync(path.join(repoDemo, 'video'), { recursive: true });
 fs.writeFileSync(path.join(repoDemo, 'hash-table-demo.html'), '<!doctype html>\n<html lang="en">\n' + out + '</html>\n');
+fs.writeFileSync(path.join(repoDemo, 'hash-table-start.html'), '<!doctype html>\n<html lang="en">\n' + fresh + '</html>\n');
 fs.copyFileSync(path.join(root, 'public', 'video', 'film.mp4'), path.join(repoDemo, 'video', 'film.mp4'));
-console.log('dist/sixtop-demo.html', Math.round(out.length / 1024) + ' KB', '+ dist/video/film.mp4', (fs.statSync(path.join(root, 'dist', 'video', 'film.mp4')).size / 1048576).toFixed(1) + ' MB');
+console.log('dist/sixtop-demo.html and dist/hash-table-start.html', Math.round(out.length / 1024) + ' KB', '+ dist/video/film.mp4', (fs.statSync(path.join(root, 'dist', 'video', 'film.mp4')).size / 1048576).toFixed(1) + ' MB');

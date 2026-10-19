@@ -33,6 +33,7 @@ MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
 
 - 폰 데모 링크: https://claude.ai/artifact/P8rAwZFR773s1wuQcWjDqd (공유가 켜진 경우에만 열림)
 - 설치 없이 보기: 저장소를 내려받아(Code → Download ZIP) [demo/hash-table-demo.html](demo/hash-table-demo.html)을 브라우저로 열기
+- 처음부터 해 보기: [demo/hash-table-start.html](demo/hash-table-start.html)은 Jordan 없이 새 회원으로 가입부터 시작 (Charlie와의 가입, 페르소나, 첫 초대장까지)
 - Join → Try it as Jordan으로 샘플 회원 40명이 있는 상태에서 시작, 입력한 내용은 내 브라우저에만 저장
 
 ## 실행
