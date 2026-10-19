@@ -1210,11 +1210,57 @@ test('spot checks: a place a look found a table for six at around 7 comes first,
     assert.ok(O2.find((o) => o.id === A).had.room === 1 && O2.find((o) => o.id === B).had.room === 0 && O2[0].id === A, 'it had room the night we looked, so it leads');
     // the captain finds no table for six at A: marked full for that evening, for every captain that night
     assert.throws(() => S.captainSeen(db().members[t.ids.find((id) => id !== cap.id)], { table: t.id, place: A }), /captain/);
-    S.captainSeen(cap, { table: t.id, place: A });
+    S.captainSeen(cap, { table: t.id, place: A, full: true });
     const O3 = S.spotOptions(t);
     assert.ok(O3.find((o) => o.id === A).seen.state === 'full' && O3.find((o) => o.id === A).seen.by === 'captain' && O3[O3.length - 1].id !== E, 'a captain’s look counts, and the newest look wins');
     assert.ok(O3.indexOf(O3.find((o) => o.id === A)) > O3.indexOf(O3.find((o) => o.id === F)), 'and it drops below every place that might have room');
     S.importChecks([{ date, size: 6, at: new Date(Date.now() - hour).toISOString(), seen: { 'Seen Room': ['19:00'] } }]);
     assert.strictEqual(S.spotOptions(t).find((o) => o.id === A).seen.by, 'captain', 'an older look doesn’t undo a newer one');
+  } finally { back(); }
+});
+
+const lookSpot = (tag, noise, talk) => S.savePlace({ name: tag + ' Kitchen', address: '11 Elm St, Central Square', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'opentable', bookUrl: 'https://www.opentable.com/r/' + tag.toLowerCase() + '-kitchen', six: 'online', noise, talk }).id;
+
+test('back from a booking page: a captain says what it showed (times, nothing near the time, call us), every captain that night sees it at once, a booked time comes off, and the same weekday later leans on it', () => {
+  const A = lookSpot('Saw', 'moderate', 2), B = lookSpot('Nope', 'quiet', 3), C = lookSpot('Ring', 'moderate', 2), back = only([A, B, C]);
+  try {
+    const date = day(40), n1 = night(people(6, 'Capa'), 'topic', date), n2 = night(people(6, 'Capb'), 'topic', date), t1 = n1.t, t2 = n2.t, c1 = db().members[t1.captain], c2 = db().members[t2.captain];
+    assert.ok(c1 && c2 && t1.id !== t2.id, 'two tables that night, each with a captain');
+    assert.throws(() => S.captainSeen(c1, { table: t1.id, place: A }), /times/, 'it needs what they saw');
+    S.captainSeen(c1, { table: t1.id, place: A, times: ['19:15', '19:00', '19:00', '03:00', 'later'] });
+    assert.deepStrictEqual(db().seen[A + '|' + date].times, ['19:00', '19:15'], 'times only, once each, in order');
+    const mine = S.spotOptions(t1).find((o) => o.id === A).seen, theirs = S.spotOptions(t2).find((o) => o.id === A).seen;
+    assert.ok(mine.mine && mine.by === 'captain' && mine.state === 'free' && mine.when === 'just now', 'the captain sees their own look');
+    assert.ok(!theirs.mine && theirs.state === 'free' && theirs.times.join() === '19:00,19:15', 'and the other captain that night sees it right away');
+    assert.strictEqual(S.spotOptions(t2)[0].id, A, 'the place with a table goes to the top for them, ahead of the quiet one nobody has looked at');
+    S.captainSeen(c2, { table: t2.id, place: B, full: true }); S.captainSeen(c2, { table: t2.id, place: C, call: true });
+    const O1 = S.spotOptions(t1);
+    assert.ok(O1.find((o) => o.id === B).seen.state === 'full' && O1.find((o) => o.id === C).seen.state === 'call' && O1[O1.length - 1].id === B, 'nothing near the time drops to the bottom, quiet or not; call us stays in the middle');
+    // the captain books 7:00 there: that time is ours now, so the other captain sees 7:15 only
+    S.captainBook(c1, { table: t1.id, place: A, time: '19:00', name: c1.name });
+    assert.strictEqual(S.spotOptions(t2).find((o) => o.id === A).seen.times.join(), '19:15', 'a booked time comes off the list');
+    // a week on, the same weekday, and nobody has looked yet: it had room, so it leads; the full one is remembered
+    const O3 = S.spotOptions(night(people(6, 'Capc'), 'topic', S.addDays(date, 7)).t), hA = O3.find((o) => o.id === A).had, hB = O3.find((o) => o.id === B).had;
+    assert.ok(hA && hA.room === 1 && hA.nights === 1 && hA.day && O3[0].id === A, 'the same weekday a week on leans on what the captains saw');
+    assert.ok(hB && hB.room === 0 && O3[O3.length - 1].id === B, 'and remembers the one that was full');
+  } finally { back(); }
+});
+
+test('the spot checks tab: each coming night with its tables, the places that need a look first with a link for six, one tap to save what a page showed, and a note to duty on a bare Sunday night', () => {
+  const ids = [['Hush', 'quiet', 3], ['Calm', 'moderate', 3], ['Mid', 'moderate', 2], ['Buzz', 'lively', 2], ['Loud', 'lively', 1], ['Plain', 'moderate', 2]].map((x) => lookSpot('Tab' + x[0], x[1], x[2])), back = only(ids);
+  try {
+    const sun = [1, 2, 3, 4, 5, 6, 7].map(day).find((d) => new Date(d + 'T12:00:00Z').getUTCDay() === 0), tue = S.addDays(sun, 2);
+    night(people(6, 'Chk'), 'topic', tue);
+    const N = S.checksAdmin(14).find((x) => x.date === tue);
+    assert.ok(N && N.tables >= 1 && N.rows.length === ids.length && N.looked === 0 && N.free === 0, 'the night, its tables, and every place open that night');
+    assert.ok(N.rows.every((r) => r.look && r.link.indexOf('covers=6&dateTime=' + tue + 'T19%3A00') > 0), 'each with its page for six at 7');
+    assert.strictEqual(N.rows[0].noise, 'quiet', 'the quiet ones first, as captains will see them');
+    S.importChecks([{ date: tue, size: 6, time: '19:00', seen: { [ids[0]]: ['19:00'], [ids[1]]: [] } }]);
+    const N2 = S.checksAdmin(14).find((x) => x.date === tue), last = N2.rows.slice(-2).map((r) => r.id).sort();
+    assert.ok(N2.looked === 2 && N2.free === 1 && last.join() === [ids[0], ids[1]].sort().join() && !N2.rows[0].seen, 'saved by id, counted, and the looked-at ones move down');
+    // Sunday 8:45 PM with fewer than five looked at that week: one note to whoever is on duty, naming the night
+    const at = S.tzMs(sun, '20:45'); S.checksNudge(at); S.checksNudge(at); S.checksNudge(S.tzMs(sun, '19:00'));
+    const notes = db().alerts.filter((a) => a.key === 'checks:' + S.addDays(sun, 1));
+    assert.ok(notes.length === 1 && /Tuesday/.test(notes[0].text), 'once, naming the bare nights: ' + notes.length);
   } finally { back(); }
 });

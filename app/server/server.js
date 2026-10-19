@@ -800,48 +800,101 @@ function importRestaurants() {
   return { ok: true, added, updated, skipped, checks };
 }
 /* ---------- spot checks: is there really a table for six around 7? ----------
-   OpenTable, Resy and Tock don't share availability, so what the app knows comes from looking. Ops reads a restaurant's own
-   booking page for a party of six on an evening and notes the times it offered (server/spotchecks.js, or pasted on the admin
-   page), and a captain who finds no table for their group near the time marks the place full (captainSeen), so the other
-   captains that night skip it. Each look is kept with when it happened, and the newest one wins. A place has room when it
-   offered a time within an hour of the table's time for at least as many people as the table; it's full when it offered
-   nothing in that hour for no more than that many, and tight when it had nothing for more (six full, the table is four). Nothing here is live: the list says when each place was looked at. */
+   OpenTable, Resy and Tock don't share availability, and reading their pages by machine is against their terms (OpenTable
+   also blocks it), so what the app knows comes from people looking, which costs nothing:
+   - a captain back from a booking page says what it showed: they booked, times for their group, nothing near the time, or
+     "call us for a group this size" (captainSeen), so the other captains that night see it within the minute
+   - ops opens the places that still need a look for each coming evening (the admin Spot checks tab) and taps what the page
+     showed, about ten seconds a place, on Sunday night before the week goes out (a reminder comes if nights are bare)
+   - the checks we did by hand (server/spotchecks.js), and anything ops pastes
+   Each look is kept with when it happened and who looked, and the newest one wins. A place has room when it offered a time
+   within an hour of the table's time for at least as many people as the table; it's full when it offered nothing in that hour
+   for no more than that many, and tight when it had nothing for more (six full, the table is four). Nights nobody looked at
+   lean on the other nights someone did (the same weekday first) and on the tables our captains booked there. Nothing here is
+   live: the list always says when each place was looked at, and only a partner's hold is a sure thing. */
 const NEAR = 60; // minutes either side of the table's time that still work (6:00 to 8:00 for a 7:00 dinner)
 const hmMin = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
+const seenTimes = (list) => arr(list).map((x) => String(x).padStart(5, '0')).filter((x, i, a) => { const m = hmMin(x); return m >= 11 * 60 && m < 24 * 60 && a.indexOf(x) === i; }).sort().slice(0, 48);
 function seenAt(v, date, time, size) {
   const s = own(db.seen || {}, bkey(v.id, date)); if (!s) return null;
-  const base = hmMin(time || '19:00'), near = arr(s.times).filter((x) => Math.abs(hmMin(x) - base) <= NEAR).sort((a, b) => hmMin(a) - hmMin(b)), o = { at: s.at, by: s.by || 'check', size: s.size };
+  const base = hmMin(time || '19:00'), near = arr(s.times).filter((x) => Math.abs(hmMin(x) - base) <= NEAR).sort((a, b) => hmMin(a) - hmMin(b)), o = { at: s.at, by: s.by || 'check', size: s.size, who: s.who || '' };
   if (s.call) return s.size <= size ? Object.assign(o, { state: 'call' }) : null;
   if (near.length) return s.size >= size ? Object.assign(o, { state: 'free', times: near, best: near.slice().sort((a, b) => Math.abs(hmMin(a) - base) - Math.abs(hmMin(b) - base))[0] }) : null;
   return Object.assign(o, { state: s.size <= size ? 'full' : 'tight' }); // nothing for six: maybe a table of four still fits
 }
-// the other evenings this place was read for six (not captains' marks): how many had a table within the hour
-function seenHist(v, date) {
-  const h = { room: 0, nights: 0 };
+// the other evenings someone looked at this place (a spot check or a captain), and the tables our captains booked there: how
+// often it had a table for this many within the hour. The same weekday when we have it (Fridays fill up, Mondays don't),
+// any evening otherwise. booked: { place id: [{ date, size }] }
+function seenHist(v, date, size, booked) {
+  const all = { room: 0, nights: 0 }, same = { room: 0, nights: 0 }, dow = dowOf(date), seen = {};
+  const add = (d, room) => { [all].concat(dowOf(d) === dow ? [same] : []).forEach((h) => { h.nights++; if (room) h.room++; }); };
   Object.keys(db.seen || {}).forEach((k) => {
-    const s = db.seen[k]; if (k.indexOf(v.id + '|') !== 0 || k === bkey(v.id, date) || s.by !== 'check' || s.call || s.size < 6) return;
-    h.nights++; if (arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR)) h.room++;
+    if (k.indexOf(v.id + '|') !== 0) return; const d = k.slice(v.id.length + 1), s = db.seen[k]; if (d === date || s.call) return;
+    const room = arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR); seen[d] = true;
+    if (room ? s.size >= size : s.size <= size) add(d, room);
   });
+  arr((booked || {})[v.id]).forEach((x) => { if (x.date !== date && !seen[x.date] && x.size >= size) { seen[x.date] = true; add(x.date, true); } });
+  const h = same.nights ? Object.assign(same, { day: weekday(tzMs(date, '12:00')) }) : all;
   return h.nights ? h : null;
 }
-const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now); return d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : now - ms < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };
-// a spot check, by restaurant name, for one evening: { date, size, time, at, seen: { name: ['18:45', ...] or 'call' } }
-function importChecks(list) {
+// the tables our captains booked, by place: evidence the place had room that evening
+function bookedAt() {
+  const out = {};
+  Object.values(db.tables).forEach((x) => { const bk = x.published && !x.closed && bookingOn(x), e = db.events[x.eventId]; if (bk && e && e.status !== 'cancelled') (out[bk.pid] = out[bk.pid] || []).push({ date: e.date, size: bk.size }); });
+  return out;
+}
+const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now), ago = now - ms; return ago < 2 * 60000 ? 'just now' : ago < HOUR ? Math.round(ago / 60000) + ' minutes ago' : d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : ago < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };
+// a spot check, by restaurant name (or id), for one evening: { date, size, time, at, seen: { name: ['18:45', ...], [] or 'call' } }
+function importChecks(list, by) {
   let read = 0; const unknown = [], P = Object.values(db.places || {}).filter((v) => !v.gone);
   arr(list).forEach((c) => {
     if (!c || !ymdOk(c.date) || !c.seen || typeof c.seen !== 'object') fail('a check needs a date and what was seen');
     const size = Math.max(2, Math.min(12, Math.round(+c.size) || 6)), time = /^\d{2}:\d{2}$/.test(c.time || '') ? c.time : '19:00', at = Date.parse(c.at) ? new Date(Date.parse(c.at)).toISOString() : isoNow();
     Object.keys(c.seen).forEach((name) => {
-      const v = P.find((x) => x.name.toLowerCase() === String(name).toLowerCase()); if (!v) { unknown.push(name); return; }
+      const v = own(db.places || {}, name) || P.find((x) => x.name.toLowerCase() === String(name).toLowerCase()); if (!v || v.gone) { unknown.push(name); return; }
       const k = bkey(v.id, c.date), was = own(db.seen = db.seen || {}, k), raw = c.seen[name];
       if (was && Date.parse(was.at) > Date.parse(at)) return; // a newer look (a captain's, say) stands
-      db.seen[k] = raw === 'call' ? { size, time, at, by: 'check', call: true, times: [] } : { size, time, at, by: 'check', times: arr(raw).map(String).filter((x) => !isNaN(hmMin(x))).slice(0, 48) };
+      db.seen[k] = raw === 'call' ? { size, time, at, by: 'check', call: true, times: [] } : { size, time, at, by: 'check', times: seenTimes(raw) };
+      if (by) db.seen[k].who = by;
       read++;
     });
   });
   return { ok: true, read, unknown };
 }
-function saveCheck(b) { const r = importChecks(Array.isArray(b.checks) ? b.checks : [b]); log('spot-check', String(r.read), ''); save(); return r; }
+function saveCheck(b) { const r = importChecks(Array.isArray(b.checks) ? b.checks : [b], clip(b.by, 40).trim()); log('spot-check', String(r.read), ''); save(); return r; }
+// the coming evenings with dinners (or the next week when nothing's planned), and for each, every place a captain could book
+// that night: what the last look found, a booking link for six, and the ones that need a look first (nobody looked, or not
+// since yesterday), the quietest first, as captains will see them
+const STALE = 24 * HOUR;
+function checksAdmin(days, nowMs) {
+  const now = nowMs || Date.now(), today = ymdTz(now), last = addDays(today, Math.max(1, Math.min(14, Math.round(+days) || 8))), booked = bookedAt(), nights = {};
+  Object.values(db.events).forEach((e) => {
+    if (e.status === 'cancelled' || e.date < today || e.date > last || eventTimes(e).start <= now) return;
+    const k = e.date + '|' + e.time, n = nights[k] = nights[k] || { date: e.date, time: e.time, tables: 0, need: 0 };
+    tablesOf(e.id).filter((t) => t.published && !t.closed).forEach((t) => { n.tables++; if (!t.venue) n.need++; });
+  });
+  if (!Object.keys(nights).length) for (let i = 1; i <= 7; i++) { const d = addDays(today, i); nights[d + '|19:00'] = { date: d, time: '19:00', tables: 0, need: 0 }; }
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && !v.off && !isPartner(v));
+  const hush = (r) => (r.noise === 'quiet' ? 0 : r.noise === 'lively' ? 2 : 1), big = (r) => (r.six === 'online' ? 0 : r.six === 'call' ? 2 : 1);
+  return Object.values(nights).sort((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1)).map((n) => {
+    const rows = P.filter((v) => arr(v.nights).indexOf(dowOf(n.date)) >= 0 && arr(v.closedOn).indexOf(n.date) < 0).map((v) => {
+      const raw = own(db.seen || {}, bkey(v.id, n.date)), s = raw ? seenAt(v, n.date, n.time, raw.size) : null, h = s ? null : seenHist(v, n.date, 6, booked), age = raw ? now - Date.parse(raw.at) : Infinity;
+      return { id: v.id, name: v.name, area: v.area || '', via: v.bookVia || '', talk: v.talk || 0, noise: v.noise || '', six: v.six || 'unknown', link: bookLink(v, n.date, n.time, 6), phone: v.phone || '',
+        seen: s ? { state: s.state, times: s.times || [], size: s.size, by: s.by, who: s.who && db.members[s.who] ? firstOf(db.members[s.who]) : s.by === 'check' ? s.who : '', when: seenLabel(Date.parse(s.at), now) } : null,
+        had: h, look: age > STALE, odds: s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3 };
+    });
+    rows.sort((a, b) => (b.look - a.look) || ((b.talk || 2) - (a.talk || 2)) || (hush(a) - hush(b)) || (big(a) - big(b)) || (a.odds - b.odds) || (a.name < b.name ? -1 : 1));
+    return Object.assign(n, { label: dayLabel(tzMs(n.date, '12:00')) + ' at ' + timeLabel(tzMs(n.date, n.time)), looked: rows.filter((r) => !r.look).length, free: rows.filter((r) => !r.look && r.seen && r.seen.state === 'free').length, rows });
+  });
+}
+// Sunday night, once the week is out: evenings with captain tables where fewer than five places have a fresh look get one
+// note to whoever is on duty, so captains don't open a list nobody has checked
+function checksNudge(now) {
+  const today = ymdTz(now); if (dowOf(today) !== 0 || now < tzMs(today, '20:30')) return;
+  const wk = addDays(today, 1), key = 'checks:' + wk; if ((db.alerts || []).some((a) => a.key === key)) return;
+  const bare = checksAdmin(7, now).filter((n) => n.tables && n.date >= wk && n.looked < 5).map((n) => weekday(tzMs(n.date, '12:00'))).filter((d, i, a) => a.indexOf(d) === i);
+  if (bare.length) alertOps(key, 'checks', `Nobody has looked at times for six yet for ${bare.length < 2 ? bare[0] : bare.slice(0, -1).join(', ') + ' and ' + bare[bare.length - 1]}. Ten minutes on the Spot checks tab (the top places for each night) saves the captains a lot of dead ends.`);
+}
 // a partner that now has fewer tables, fewer seats, a closed evening, or is paused: tables past what it can take go elsewhere
 function replaceAt(v) {
   Object.values(db.tables).filter((t) => t.published && !t.closed && t.venue && t.venue.id === v.id && (db.events[t.eventId] || {}).date >= ymdTz(Date.now())).forEach((t) => {
@@ -1067,7 +1120,7 @@ function alertOps(key, kind, text) {
   if (db.alerts.some((a) => a.key === key && (!a.done || (a.doneAt && Date.now() - Date.parse(a.doneAt) < 6 * HOUR)))) return;
   const a = { id: 'a' + rid(4), key, kind, text: clip(text, 400), at: isoNow(), done: false };
   db.alerts.push(a); db.alerts = db.alerts.slice(-200);
-  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables' }[kind] || 'needs a look';
+  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables', checks: 'nobody has looked at times for six' }[kind] || 'needs a look';
   const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Hash Table: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
   log('alert', kind, key);
 }
@@ -1285,8 +1338,8 @@ function bookLink(v, date, time, size) {
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
   const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id), now = Date.now();
-  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {};
-  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date); } });
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {}, booked = bookedAt();
+  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date, size, booked); } });
   const odds = (v) => { const s = seen[v.id], h = had[v.id]; return s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3; };
   const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), hush = (v) => (v.noise === 'quiet' ? 0 : v.noise === 'lively' ? 2 : 1); // tables grow to six, so six online leads even for four
   const off = (v) => { const s = seen[v.id]; return s && s.best ? Math.abs(hmMin(s.best) - hmMin(e.time)) : 0; };
@@ -1294,16 +1347,17 @@ function spotOptions(t) {
     || (big(a) - big(b)) || (off(a) - off(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
     .map((v) => { const s = seen[v.id], h = had[v.id]; return { id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
       cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', talk: v.talk || 0, noise: v.noise || '', seat: v.seat || '', sound: v.sound || '',
-      seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
+      seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size, mine: !!s.who && s.who === t.captain } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
 }
-// a captain found no table for their group within the hour of the table's time: marked full for that evening, so the other
-// captains that night skip it (it stays on their list, at the bottom, with when it was found full)
+// what a captain saw on a booking page, back in the app: times for their group (b.times), nothing near the table's time
+// (b.full), or "call us for a group this size" (b.call). Kept for that evening, so every captain that night sees it right away
 function captainSeen(me, b) {
   const t = own(db.tables, b.table); if (!isCaptain(t, me)) fail('you’re not the captain of this table');
   const e = db.events[t.eventId], v = own(db.places || {}, b.place); if (!v || isPartner(v) || v.gone) fail('that spot isn’t on the list');
   if (Date.now() >= eventTimes(e).start) fail('that dinner has started');
-  (db.seen = db.seen || {})[bkey(v.id, e.date)] = { size: seatedIds(t).length, time: e.time, at: isoNow(), by: 'captain', who: me.id, times: [] };
-  log('captain-seen', t.id, v.id);
+  const times = b.full || b.call ? [] : seenTimes(b.times); if (!b.full && !b.call && !times.length) fail('tap the times you saw');
+  (db.seen = db.seen || {})[bkey(v.id, e.date)] = Object.assign({ size: seatedIds(t).length, time: e.time, at: isoNow(), by: 'captain', who: me.id, times }, b.call ? { call: true } : {});
+  log('captain-seen', t.id, v.id + (b.full ? ' full' : b.call ? ' call' : ' ' + times.join(' ')));
   return { ok: true, cap: capView(t, me) };
 }
 function missions(t, now, light) {
@@ -1405,6 +1459,7 @@ function captainBook(me, b) {
   const was = t.venue; if (was && was.id) { t.venue = null; syncBooking(was.id, e.date); }
   t.venue = { pid: v.id, name: v.name, address: v.address, note: `Booked under ${name}` + (time !== e.time ? `, at ${timeLabel(at)}` : '') };
   if (time !== e.time) t.time = time; else delete t.time;
+  const sk = own(db.seen || {}, bkey(v.id, e.date)); if (sk && arr(sk.times).indexOf(time) >= 0) sk.times = sk.times.filter((x) => x !== time); // that slot is ours now
   const first = !c.spot, prevTime = mine ? c.booking.time : e.time; c.booking = { pid: v.id, by: me.id, at: isoNow(), size: n, warned: n, time, name, code: oneLine(clip(b.code, 40)), via: v.bookVia || '' }; c.spot = { vid: v.id, at: isoNow(), booked: true };
   if (t.round > 1) { const prev = db.tables[t.prev]; t.same = !!(prev && prev.venue && prev.venue.name === v.name); }
   resolveAlerts('noplace:' + t.id); resolveAlerts('nobook:' + t.id);
@@ -2212,6 +2267,7 @@ function tick(nowMs) {
     const w = db.weeks[wk], marked = live().some((m) => m.avail && m.avail.week === wk && m.avail.slots.length);
     if (marked && !(w && w.published)) alertOps('week:' + wk, 'week', w ? 'Next week’s tables are built but not published, and members are waiting for Sunday-night invitations. Publish them on the Tables tab.' : 'Next week’s tables aren’t built yet, and members are waiting for Sunday-night invitations. Build and publish them on the Tables tab.');
   }
+  checksNudge(now);
   const stale = addDays(today, -120); Object.keys(db.seen || {}).forEach((k) => { if (k.slice(k.indexOf('|') + 1) < stale) delete db.seen[k]; }); // spot checks older than four months say little
   Object.values(db.events).forEach((e) => {
     if (e.status !== 'published' || e.date < old) return;
@@ -2474,6 +2530,7 @@ const server = http.createServer(async (req, res) => {
       if (recent('adminfail:' + ip) >= 10) return send(res, 429, { error: 'slow down' });
       if (!adminOK(req)) { limited('adminfail:' + ip, 10); return send(res, 401, { error: 'admin key required' }); }
       if (req.method === 'GET' && p === '/api/admin/state') return send(res, 200, adminState());
+      if (req.method === 'GET' && p === '/api/admin/checks') return send(res, 200, { nights: checksAdmin(u.searchParams.get('days')) });
       if (req.method === 'GET' && p === '/api/admin/event') return send(res, 200, adminEvent(u.searchParams.get('id')));
       const b = req.method === 'POST' ? await readBody(req, 64 * 1024) : {};
       let out;
@@ -2615,5 +2672,5 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen, checksAdmin, checksNudge,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };

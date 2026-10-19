@@ -61,7 +61,7 @@ textarea{width:100%;min-height:60px}
 <div class="card row" id="keyrow"><input type="password" class="grow" id="key" placeholder="Admin key" aria-label="Admin key"><button id="go">Open</button></div>
 <div id="app" hidden>
   <div class="stats" id="stats"></div>
-  <div class="tabs" id="tabs"><button data-v="nights" class="on">Tables</button><button data-v="places">Places</button><button data-v="ops">Ops</button><button data-v="pops">Hangs</button><button data-v="people">People</button><button data-v="board">Roles</button><button data-v="pulse">Board</button><button data-v="links">Links</button><button data-v="reports">Reports</button></div>
+  <div class="tabs" id="tabs"><button data-v="nights" class="on">Tables</button><button data-v="places">Places</button><button data-v="checks">Spot checks</button><button data-v="ops">Ops</button><button data-v="pops">Hangs</button><button data-v="people">People</button><button data-v="board">Roles</button><button data-v="pulse">Board</button><button data-v="links">Links</button><button data-v="reports">Reports</button></div>
 
   <section id="v-nights">
     <h2>Next week’s tables</h2>
@@ -86,10 +86,6 @@ textarea{width:100%;min-height:60px}
     <p class="soft">Two kinds of places. Spots for captains: restaurants the table’s captain books under their own name, through OpenTable, Resy, Tock, the restaurant’s site or a call, then tells Charlie the time and the name. Hash Table never contacts them, so add a booking link or a phone number and one line about what it’s like. Partners: restaurants that agreed to hold tables for Hash Table, so nothing needs booking. Nothing is booked in a restaurant’s own system by the app itself: OpenTable, Resy and the rest have no open booking API. Each partner agrees to hold a few tables on certain evenings. A standing hold is set unless the restaurant says it can’t; a partner that confirms each evening has to say yes first. Restaurants get the week’s plan on Sunday at 10 PM (with what to release), the final count at noon the day before (the same moment members stop changing plans for free), and any change after that. They see sizes, times, dietary notes and the captain’s first name, never who’s coming. Backup partners are used last.</p>
     <div class="card tbl"><table id="placesT"></table></div>
     <div class="row" style="margin:10px 0 0"><button class="ghost" id="plImport">Add the Harvard Square, Allston, Kendall and Central list</button><span class="soft" id="plImportOut">Real restaurants with their OpenTable, Resy or Tock links, food type, whether they take six online, and how easy it is to talk there. Already added ones are brought up to date, with the spot checks we did.</span></div>
-    <details style="margin-top:10px"><summary class="soft">Add a spot check (what a booking page showed for six on one evening)</summary>
-      <p class="soft" style="margin:8px 0 6px">Open each place’s OpenTable or Resy page for six at 7:00 on the evening and note the times it offers near 7. Paste them as {"date": "2026-10-30", "size": 6, "seen": {"The Maharaja": ["18:45", "19:00", "19:15"], "Harvest": [], "La Fábrica Central": "call"}}. An empty list means nothing for six from 6 to 8. Captains see when each place was looked at, and places found full drop to the bottom of their list.</p>
-      <textarea id="scJson" placeholder='{"date": "2026-10-30", "size": 6, "seen": {"Place name": ["18:45", "19:00"]}}' aria-label="Spot check"></textarea>
-      <div class="row" style="margin-top:6px"><button class="ghost" id="scGo">Save the spot check</button><span class="soft" id="scOut"></span></div></details>
     <h2 id="plHead">Add a place</h2>
     <div class="card"><input type="hidden" id="plId">
       <div class="row"><input type="text" class="grow" id="plName" placeholder="Restaurant" aria-label="Restaurant"><input type="text" class="grow" id="plAddr" placeholder="Address" aria-label="Address"><input type="text" id="plArea" placeholder="Area, e.g. Central Square" aria-label="Area" style="width:190px"></div>
@@ -104,6 +100,17 @@ textarea{width:100%;min-height:60px}
       <p class="soft" id="plOut">Weeknights are the easy ask: the restaurant gets a confirmed group on a slow evening, and everyone orders a main and a drink.</p></div>
     <h2>Needs a person</h2>
     <div class="card" id="plNeeds"></div>
+  </section>
+
+  <section id="v-checks" hidden>
+    <h2>Is there a table for six?</h2>
+    <p class="soft">OpenTable, Resy and Tock don’t share availability, and reading their pages by machine is against their terms, so people look, and it costs nothing. Captains tell the app what a booking page showed when they come back from it, and every captain that night sees it right away. This tab fills the gaps: on Sunday night, once the week is out, open the places at the top of each night (the ones nobody has looked at since yesterday, quietest first), look at the times for six around 7, and tap what you saw. About ten seconds a place, and ten places a night is plenty. If a night is still bare at 8:30 PM on Sunday, whoever is on duty gets a note.</p>
+    <div class="row" id="ckNights"></div>
+    <div class="card" id="ckBody"><p class="soft">Loading…</p></div>
+    <details style="margin-top:14px"><summary class="soft">Add a spot check (what a booking page showed for six on one evening)</summary>
+      <p class="soft" style="margin:8px 0 6px">Open each place’s OpenTable or Resy page for six at 7:00 on the evening and note the times it offers near 7. Paste them as {"date": "2026-10-30", "size": 6, "seen": {"The Maharaja": ["18:45", "19:00", "19:15"], "Harvest": [], "La Fábrica Central": "call"}}. An empty list means nothing for six from 6 to 8. Captains see when each place was looked at, and places found full drop to the bottom of their list.</p>
+      <textarea id="scJson" placeholder='{"date": "2026-10-30", "size": 6, "seen": {"Place name": ["18:45", "19:00"]}}' aria-label="Spot check"></textarea>
+      <div class="row" style="margin-top:6px"><button class="ghost" id="scGo">Save the spot check</button><span class="soft" id="scOut"></span></div></details>
   </section>
 
   <section id="v-ops" hidden>
@@ -306,7 +313,7 @@ document.addEventListener('click', function (ev) {
   var of = t.closest('[data-off]'); if (of) { if (!arm(of, 'Click again to call it off')) return; api('POST', '/api/admin/table-off', { table: of.dataset.off }).then(function () { load(); }).catch(function (er) { alert(er.message); }); return; }
   var ad = t.closest('[data-ad]'); if (ad) { api('POST', '/api/admin/alert-done', { id: ad.dataset.ad }).then(drawOps).catch(function (er) { alert(er.message); }); return; }
   var tx = t.closest('[data-tx]'); if (tx) { readTeam(); OPS.team.splice(+tx.dataset.tx, 1); drawTeam(); return; }
-  var tb = t.closest('#tabs button'); if (tb) { document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b === tb); }); ['nights', 'places', 'ops', 'pops', 'people', 'board', 'pulse', 'links', 'reports'].forEach(function (v) { $('v-' + v).hidden = v !== tb.dataset.v; }); }
+  var tb = t.closest('#tabs button'); if (tb) { document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b === tb); }); ['nights', 'places', 'checks', 'ops', 'pops', 'people', 'board', 'pulse', 'links', 'reports'].forEach(function (v) { $('v-' + v).hidden = v !== tb.dataset.v; }); if (tb.dataset.v === 'checks') loadChecks(); }
 });
 $('go').onclick = function () { K = $('key').value.trim(); try { sessionStorage.setItem('sixtopAdmin', K); } catch (e) {} load(); };
 $('key').onkeydown = function (e) { if (e.key === 'Enter') $('go').click(); };
@@ -325,6 +332,44 @@ $('evInd').onchange = function () { $('evIndRow').hidden = !this.checked; };
 $('evGo').onclick = function () { api('POST', '/api/admin/event', { type: $('evType').value, date: $('evDate').value, time: $('evTime').value, area: $('evArea').value, notify: $('evNotify').checked, industry: $('evInd').checked, guest: $('evGuest').value, role: $('evRole').value, about: $('evAbout').value }).then(function (e) { $('evOut').textContent = 'Seats are open.'; openEv = e.id; load(); }).catch(function (e) { $('evOut').textContent = e.message; }); };
 (function () { var d = new Date(Date.now() + 9 * 864e5); $('evDate').value = d.toISOString().slice(0, 10); })();
 if (K) load();
+/* spot checks: for each coming night, the places that need a look first, a link that opens their page for six, and what you saw */
+var CK = null, ckNight = '', ckAll = false, ckPick = {};
+function hm12(x) { var h = +x.slice(0, 2), m = x.slice(3); return ((h + 11) % 12 + 1) + ':' + m + (h >= 12 ? ' PM' : ' AM'); }
+function hmAdd(x, d) { var t = +x.slice(0, 2) * 60 + +x.slice(3) + d; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
+function loadChecks() { return api('GET', '/api/admin/checks?days=8').then(function (r) { CK = r.nights; if (!CK.some(function (n) { return n.date + '|' + n.time === ckNight; })) ckNight = CK.length ? CK[0].date + '|' + CK[0].time : ''; drawChecks(); }).catch(function (e) { $('ckBody').innerHTML = '<p class=warn>' + esc(e.message) + '</p>'; }); }
+function talkOf(r) { return r.noise === 'quiet' ? 'quiet' : r.talk === 3 ? 'easy to talk' : r.talk === 1 ? 'loud at dinner' : r.noise === 'lively' ? 'lively' : ''; }
+function lookOf(r) {
+  var s = r.seen, h = r.had, who = s && (s.by === 'captain' ? (s.who ? s.who + ', a captain,' : 'a captain') : s.who ? s.who : 'we');
+  if (s) return (s.state === 'free' ? '<span class=ok>Free at ' + s.times.map(hm12).map(function (x) { return x.replace(/ [AP]M$/, ''); }).join(', ') + '</span> for ' + s.size : s.state === 'call' ? 'Call for ' + s.size : '<span class=warn>Nothing near the time</span> for ' + s.size) + '<div class=soft>' + esc(who) + ' looked ' + esc(s.when) + '</div>';
+  if (h) return '<span class=soft>Nobody yet. ' + (h.day ? h.day + 's' : 'Other nights') + ': room on ' + h.room + ' of ' + h.nights + '</span>';
+  return '<span class=soft>Nobody yet</span>';
+}
+function drawChecks() {
+  if (!CK) return;
+  $('ckNights').innerHTML = CK.map(function (n) { var k = n.date + '|' + n.time; return '<button class="' + (k === ckNight ? '' : 'ghost') + ' small" data-ckn="' + k + '">' + esc(n.label) + '<span class=soft style="color:inherit;opacity:.75">, ' + (n.tables ? n.tables + ' tables' + (n.need ? ', ' + n.need + ' without a spot' : '') + ', ' : '') + n.looked + ' looked at, ' + n.free + ' free</span></button>'; }).join('');
+  var n = CK.find(function (x) { return x.date + '|' + x.time === ckNight; }); if (!n) { $('ckBody').innerHTML = '<p class=soft>No evenings coming up.</p>'; return; }
+  var rows = ckAll ? n.rows : n.rows.slice(0, 15), slots = [-60, -45, -30, -15, 0, 15, 30, 45, 60].map(function (d) { return hmAdd(n.time, d); });
+  $('ckBody').innerHTML = '<div class=soft style="margin-bottom:8px">' + esc(n.label) + '. ' + (n.rows.length - n.looked) + ' of ' + n.rows.length + ' places still need a look. The top ones are what captains see first.</div><div class=tbl><table><tr><th>Place</th><th>Last look</th><th></th><th>What the page showed for six</th></tr>' + rows.map(function (r) {
+    var k = n.date + '|' + r.id, pick = ckPick[k] || [];
+    return '<tr' + (r.look ? '' : ' style="opacity:.62"') + '><td style="white-space:normal;min-width:170px"><b>' + esc(r.name) + '</b><div class=soft>' + esc([r.area, talkOf(r), { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock', web: 'their site', phone: 'a call' }[r.via] || ''].filter(Boolean).join(', ')) + '</div></td>'
+      + '<td style="white-space:normal;min-width:170px">' + lookOf(r) + '</td>'
+      + '<td>' + (r.link ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + (/^tel:/.test(r.link) ? 'Call ' + esc(r.phone) : r.via === 'web' ? 'Open their site' : 'Open for six') + '</a>' : '') + '</td>'
+      + '<td style="white-space:normal;min-width:420px"><div class="row" style="gap:4px">' + slots.map(function (x) { return '<button class="small ' + (pick.indexOf(x) >= 0 ? '' : 'ghost') + '" data-ckt="' + k + '|' + x + '">' + hm12(x).replace(/ [AP]M$/, '') + '</button>'; }).join('')
+      + '</div><div class="row" style="gap:6px;margin-top:6px"><button class="small" data-cks="' + k + '|times"' + (pick.length ? '' : ' disabled') + '>Save ' + (pick.length ? pick.length + ' ' + (pick.length === 1 ? 'time' : 'times') : 'times') + '</button><button class="ghost small" data-cks="' + k + '|full">Nothing near 7</button>' + (['opentable', 'resy', 'tock'].indexOf(r.via) >= 0 ? '<button class="ghost small" data-cks="' + k + '|call">Says call</button>' : '') + '</div></td></tr>';
+  }).join('') + '</table></div>' + (!ckAll && n.rows.length > rows.length ? '<button class="ghost small" style="margin-top:8px" data-ckall="1">Show all ' + n.rows.length + '</button>' : '');
+}
+document.addEventListener('click', function (ev) {
+  var t = ev.target;
+  var nb = t.closest('[data-ckn]'); if (nb) { ckNight = nb.dataset.ckn; ckAll = false; drawChecks(); return; }
+  var al = t.closest('[data-ckall]'); if (al) { ckAll = true; drawChecks(); return; }
+  var tb = t.closest('[data-ckt]'); if (tb) { var q = tb.dataset.ckt.split('|'), k = q[0] + '|' + q[1], L = ckPick[k] = ckPick[k] || [], i = L.indexOf(q[2]); if (i >= 0) L.splice(i, 1); else L.push(q[2]); drawChecks(); return; }
+  var sv = t.closest('[data-cks]'); if (sv) {
+    var q2 = sv.dataset.cks.split('|'), date = q2[0], vid = q2[1], kind = q2[2], n = CK.find(function (x) { return x.date + '|' + x.time === ckNight; }), seen = {};
+    seen[vid] = kind === 'call' ? 'call' : kind === 'full' ? [] : (ckPick[date + '|' + vid] || []);
+    sv.disabled = true;
+    api('POST', '/api/admin/spot-check', { date: date, size: 6, time: n ? n.time : '19:00', seen: seen }).then(function () { delete ckPick[date + '|' + vid]; return loadChecks(); }).catch(function (er) { sv.disabled = false; alert(er.message); });
+  }
+});
 // food types for the place form, and the restaurant list in one tap
 SX.CUISINES.forEach((c) => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.t; $('plFood').appendChild(o); });
 $('scGo').onclick = () => { let b; try { b = JSON.parse($('scJson').value); } catch (e) { $('scOut').textContent = 'That isn’t valid JSON. Check the quotes and brackets.'; return; } api('POST', '/api/admin/spot-check', b).then((r) => { $('scOut').textContent = `Saved ${r.read}${r.unknown.length ? `. Not on the list: ${r.unknown.join(', ')}` : ''}.`; }).catch((e) => { $('scOut').textContent = e.message; }); };

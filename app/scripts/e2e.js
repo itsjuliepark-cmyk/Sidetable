@@ -159,7 +159,11 @@ const pick = (a, i) => a[i % a.length];
         if (!opt) problem('captain', 'the captain has no spot to book at ' + id);
         else {
           if (!/covers=\d|seats=\d|size=\d|^tel:|example\.com/.test(opt.link || '')) problem('captain', 'booking link without the party size: ' + opt.link);
-          const r = await call('POST', '/api/captain-book', { table: id, place: opt.id, name: 'Test Captain' }, cap);
+          // back from the booking page: the captain says what it showed, and it's on the list at once
+          const t0 = ctv.cap.spot.time || '19:00', sawAt = await call('POST', '/api/captain-seen', { table: id, place: opt.id, times: [t0] }, cap);
+          const mark = sawAt.j.cap && sawAt.j.cap.spot.options.find((o) => o.id === opt.id);
+          if (!mark || !mark.seen || mark.seen.state !== 'free' || !mark.seen.mine) problem('seen', 'what the captain saw isn’t on the list at ' + id);
+          const r = await call('POST', '/api/captain-book', { table: id, place: opt.id, name: 'Test Captain', time: t0 }, cap);
           if (!r.j.ok) problem('captain', 'booking failed at ' + id);
           const other = ppl.find((m) => m.id !== cap.id), seenBy = (await call('GET', '/api/table?id=' + id, null, other)).j;
           if (seenBy.venue) problem('reveal', 'a booked spot shows to the table before noon');
@@ -197,6 +201,13 @@ const pick = (a, i) => a[i % a.length];
     const st2 = (await call('GET', '/api/admin/state', null, { admin: true })).j;
     if (!st2 || st2.error) problem('admin', 'the admin state didn\'t load');
     void st;
+    const ck = (await call('GET', '/api/admin/checks?days=8', null, { admin: true })).j, ckn = (ck.nights || []).find((n) => n.tables && n.rows.length);
+    if (!ckn) problem('checks', 'the spot checks tab has no night with places');
+    else {
+      const row = ckn.rows[0], sv = await call('POST', '/api/admin/spot-check', { date: ckn.date, size: 6, time: ckn.time, seen: { [row.id]: [] } }, { admin: true });
+      const ck2 = (await call('GET', '/api/admin/checks?days=8', null, { admin: true })).j, again = (ck2.nights || []).find((n) => n.date === ckn.date && n.time === ckn.time);
+      if (!sv.j.ok || !again || again.looked !== ckn.looked + 1) problem('checks', 'a spot check saved on the tab didn’t count');
+    }
 
     /* ---------- delete an account: the person is gone from tables and People ---------- */
     const gone = M[20]; await call('POST', '/api/me', { erase: true }, Object.assign({}, gone, { allow: true }));

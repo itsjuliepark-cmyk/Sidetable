@@ -1647,6 +1647,25 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .talkbox{margin-top:8px}
 .talkbox .spottags{margin:0 0 4px}
 .link.nosix{display:block;text-align:left;margin:4px 0 0;font-size:13px}
+/* back from a booking page: how did it look? Four plain answers, and the times you saw */
+.backhead{display:flex;gap:11px;align-items:flex-start;margin:4px 0 14px}
+.backhead .orb{width:28px;height:28px;margin-top:2px}
+.backhead b{display:block;font-size:19px;font-weight:650;color:var(--ink);letter-spacing:-.01em}
+.backhead small{display:block;font-size:14px;line-height:1.45;color:var(--ink-soft);margin-top:3px}
+.backopts{display:grid;gap:8px;margin-bottom:8px}
+.backopt{display:block;width:100%;text-align:left;padding:13px 15px;border-radius:16px;border:1px solid var(--line-2);background:#fff;transition:border-color .2s,background .2s}
+.backopt b{display:block;font-size:15px;font-weight:650;color:var(--ink)}
+.backopt small{display:block;font-size:12.8px;line-height:1.4;color:var(--ink-soft);margin-top:2px}
+.backopt.yes{border-color:rgba(44,110,95,.35);background:rgba(44,110,95,.05)}
+.backopt.yes b{color:#2C6E5F}
+.backopt.no b{color:#9A4B3C}
+.backopt.on{border-color:var(--ink-2)}
+.backtimes{padding:4px 2px 6px}
+.backtimes .chips{margin-bottom:10px}
+.backnudge{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:10px 0 2px;padding:11px 13px;border-radius:14px;border:1px solid rgba(235,200,119,.55);background:rgba(235,200,119,.12);color:var(--ink-2)}
+.backnudge b{display:block;font-size:14px;font-weight:650;color:var(--ink)}
+.backnudge small{display:block;font-size:12.5px;line-height:1.4;color:var(--ink-soft);margin-top:1px}
+.backnudge svg{flex:none;opacity:.5}
 
 
 
@@ -2496,7 +2515,7 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var KIND = 'sixtop-demo-', KEY = KIND + 'cf2d7a6f4b', MAX_AGE = 3 * 864e5;
+  var KIND = 'sixtop-demo-', KEY = KIND + '5f1c48f830', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -3752,48 +3771,101 @@ function importRestaurants() {
   return { ok: true, added, updated, skipped, checks };
 }
 /* ---------- spot checks: is there really a table for six around 7? ----------
-   OpenTable, Resy and Tock don't share availability, so what the app knows comes from looking. Ops reads a restaurant's own
-   booking page for a party of six on an evening and notes the times it offered (server/spotchecks.js, or pasted on the admin
-   page), and a captain who finds no table for their group near the time marks the place full (captainSeen), so the other
-   captains that night skip it. Each look is kept with when it happened, and the newest one wins. A place has room when it
-   offered a time within an hour of the table's time for at least as many people as the table; it's full when it offered
-   nothing in that hour for no more than that many, and tight when it had nothing for more (six full, the table is four). Nothing here is live: the list says when each place was looked at. */
+   OpenTable, Resy and Tock don't share availability, and reading their pages by machine is against their terms (OpenTable
+   also blocks it), so what the app knows comes from people looking, which costs nothing:
+   - a captain back from a booking page says what it showed: they booked, times for their group, nothing near the time, or
+     "call us for a group this size" (captainSeen), so the other captains that night see it within the minute
+   - ops opens the places that still need a look for each coming evening (the admin Spot checks tab) and taps what the page
+     showed, about ten seconds a place, on Sunday night before the week goes out (a reminder comes if nights are bare)
+   - the checks we did by hand (server/spotchecks.js), and anything ops pastes
+   Each look is kept with when it happened and who looked, and the newest one wins. A place has room when it offered a time
+   within an hour of the table's time for at least as many people as the table; it's full when it offered nothing in that hour
+   for no more than that many, and tight when it had nothing for more (six full, the table is four). Nights nobody looked at
+   lean on the other nights someone did (the same weekday first) and on the tables our captains booked there. Nothing here is
+   live: the list always says when each place was looked at, and only a partner's hold is a sure thing. */
 const NEAR = 60; // minutes either side of the table's time that still work (6:00 to 8:00 for a 7:00 dinner)
 const hmMin = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
+const seenTimes = (list) => arr(list).map((x) => String(x).padStart(5, '0')).filter((x, i, a) => { const m = hmMin(x); return m >= 11 * 60 && m < 24 * 60 && a.indexOf(x) === i; }).sort().slice(0, 48);
 function seenAt(v, date, time, size) {
   const s = own(db.seen || {}, bkey(v.id, date)); if (!s) return null;
-  const base = hmMin(time || '19:00'), near = arr(s.times).filter((x) => Math.abs(hmMin(x) - base) <= NEAR).sort((a, b) => hmMin(a) - hmMin(b)), o = { at: s.at, by: s.by || 'check', size: s.size };
+  const base = hmMin(time || '19:00'), near = arr(s.times).filter((x) => Math.abs(hmMin(x) - base) <= NEAR).sort((a, b) => hmMin(a) - hmMin(b)), o = { at: s.at, by: s.by || 'check', size: s.size, who: s.who || '' };
   if (s.call) return s.size <= size ? Object.assign(o, { state: 'call' }) : null;
   if (near.length) return s.size >= size ? Object.assign(o, { state: 'free', times: near, best: near.slice().sort((a, b) => Math.abs(hmMin(a) - base) - Math.abs(hmMin(b) - base))[0] }) : null;
   return Object.assign(o, { state: s.size <= size ? 'full' : 'tight' }); // nothing for six: maybe a table of four still fits
 }
-// the other evenings this place was read for six (not captains' marks): how many had a table within the hour
-function seenHist(v, date) {
-  const h = { room: 0, nights: 0 };
+// the other evenings someone looked at this place (a spot check or a captain), and the tables our captains booked there: how
+// often it had a table for this many within the hour. The same weekday when we have it (Fridays fill up, Mondays don't),
+// any evening otherwise. booked: { place id: [{ date, size }] }
+function seenHist(v, date, size, booked) {
+  const all = { room: 0, nights: 0 }, same = { room: 0, nights: 0 }, dow = dowOf(date), seen = {};
+  const add = (d, room) => { [all].concat(dowOf(d) === dow ? [same] : []).forEach((h) => { h.nights++; if (room) h.room++; }); };
   Object.keys(db.seen || {}).forEach((k) => {
-    const s = db.seen[k]; if (k.indexOf(v.id + '|') !== 0 || k === bkey(v.id, date) || s.by !== 'check' || s.call || s.size < 6) return;
-    h.nights++; if (arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR)) h.room++;
+    if (k.indexOf(v.id + '|') !== 0) return; const d = k.slice(v.id.length + 1), s = db.seen[k]; if (d === date || s.call) return;
+    const room = arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR); seen[d] = true;
+    if (room ? s.size >= size : s.size <= size) add(d, room);
   });
+  arr((booked || {})[v.id]).forEach((x) => { if (x.date !== date && !seen[x.date] && x.size >= size) { seen[x.date] = true; add(x.date, true); } });
+  const h = same.nights ? Object.assign(same, { day: weekday(tzMs(date, '12:00')) }) : all;
   return h.nights ? h : null;
 }
-const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now); return d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : now - ms < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };
-// a spot check, by restaurant name, for one evening: { date, size, time, at, seen: { name: ['18:45', ...] or 'call' } }
-function importChecks(list) {
+// the tables our captains booked, by place: evidence the place had room that evening
+function bookedAt() {
+  const out = {};
+  Object.values(db.tables).forEach((x) => { const bk = x.published && !x.closed && bookingOn(x), e = db.events[x.eventId]; if (bk && e && e.status !== 'cancelled') (out[bk.pid] = out[bk.pid] || []).push({ date: e.date, size: bk.size }); });
+  return out;
+}
+const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now), ago = now - ms; return ago < 2 * 60000 ? 'just now' : ago < HOUR ? Math.round(ago / 60000) + ' minutes ago' : d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : ago < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };
+// a spot check, by restaurant name (or id), for one evening: { date, size, time, at, seen: { name: ['18:45', ...], [] or 'call' } }
+function importChecks(list, by) {
   let read = 0; const unknown = [], P = Object.values(db.places || {}).filter((v) => !v.gone);
   arr(list).forEach((c) => {
     if (!c || !ymdOk(c.date) || !c.seen || typeof c.seen !== 'object') fail('a check needs a date and what was seen');
     const size = Math.max(2, Math.min(12, Math.round(+c.size) || 6)), time = /^\d{2}:\d{2}$/.test(c.time || '') ? c.time : '19:00', at = Date.parse(c.at) ? new Date(Date.parse(c.at)).toISOString() : isoNow();
     Object.keys(c.seen).forEach((name) => {
-      const v = P.find((x) => x.name.toLowerCase() === String(name).toLowerCase()); if (!v) { unknown.push(name); return; }
+      const v = own(db.places || {}, name) || P.find((x) => x.name.toLowerCase() === String(name).toLowerCase()); if (!v || v.gone) { unknown.push(name); return; }
       const k = bkey(v.id, c.date), was = own(db.seen = db.seen || {}, k), raw = c.seen[name];
       if (was && Date.parse(was.at) > Date.parse(at)) return; // a newer look (a captain's, say) stands
-      db.seen[k] = raw === 'call' ? { size, time, at, by: 'check', call: true, times: [] } : { size, time, at, by: 'check', times: arr(raw).map(String).filter((x) => !isNaN(hmMin(x))).slice(0, 48) };
+      db.seen[k] = raw === 'call' ? { size, time, at, by: 'check', call: true, times: [] } : { size, time, at, by: 'check', times: seenTimes(raw) };
+      if (by) db.seen[k].who = by;
       read++;
     });
   });
   return { ok: true, read, unknown };
 }
-function saveCheck(b) { const r = importChecks(Array.isArray(b.checks) ? b.checks : [b]); log('spot-check', String(r.read), ''); save(); return r; }
+function saveCheck(b) { const r = importChecks(Array.isArray(b.checks) ? b.checks : [b], clip(b.by, 40).trim()); log('spot-check', String(r.read), ''); save(); return r; }
+// the coming evenings with dinners (or the next week when nothing's planned), and for each, every place a captain could book
+// that night: what the last look found, a booking link for six, and the ones that need a look first (nobody looked, or not
+// since yesterday), the quietest first, as captains will see them
+const STALE = 24 * HOUR;
+function checksAdmin(days, nowMs) {
+  const now = nowMs || Date.now(), today = ymdTz(now), last = addDays(today, Math.max(1, Math.min(14, Math.round(+days) || 8))), booked = bookedAt(), nights = {};
+  Object.values(db.events).forEach((e) => {
+    if (e.status === 'cancelled' || e.date < today || e.date > last || eventTimes(e).start <= now) return;
+    const k = e.date + '|' + e.time, n = nights[k] = nights[k] || { date: e.date, time: e.time, tables: 0, need: 0 };
+    tablesOf(e.id).filter((t) => t.published && !t.closed).forEach((t) => { n.tables++; if (!t.venue) n.need++; });
+  });
+  if (!Object.keys(nights).length) for (let i = 1; i <= 7; i++) { const d = addDays(today, i); nights[d + '|19:00'] = { date: d, time: '19:00', tables: 0, need: 0 }; }
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && !v.off && !isPartner(v));
+  const hush = (r) => (r.noise === 'quiet' ? 0 : r.noise === 'lively' ? 2 : 1), big = (r) => (r.six === 'online' ? 0 : r.six === 'call' ? 2 : 1);
+  return Object.values(nights).sort((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1)).map((n) => {
+    const rows = P.filter((v) => arr(v.nights).indexOf(dowOf(n.date)) >= 0 && arr(v.closedOn).indexOf(n.date) < 0).map((v) => {
+      const raw = own(db.seen || {}, bkey(v.id, n.date)), s = raw ? seenAt(v, n.date, n.time, raw.size) : null, h = s ? null : seenHist(v, n.date, 6, booked), age = raw ? now - Date.parse(raw.at) : Infinity;
+      return { id: v.id, name: v.name, area: v.area || '', via: v.bookVia || '', talk: v.talk || 0, noise: v.noise || '', six: v.six || 'unknown', link: bookLink(v, n.date, n.time, 6), phone: v.phone || '',
+        seen: s ? { state: s.state, times: s.times || [], size: s.size, by: s.by, who: s.who && db.members[s.who] ? firstOf(db.members[s.who]) : s.by === 'check' ? s.who : '', when: seenLabel(Date.parse(s.at), now) } : null,
+        had: h, look: age > STALE, odds: s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3 };
+    });
+    rows.sort((a, b) => (b.look - a.look) || ((b.talk || 2) - (a.talk || 2)) || (hush(a) - hush(b)) || (big(a) - big(b)) || (a.odds - b.odds) || (a.name < b.name ? -1 : 1));
+    return Object.assign(n, { label: dayLabel(tzMs(n.date, '12:00')) + ' at ' + timeLabel(tzMs(n.date, n.time)), looked: rows.filter((r) => !r.look).length, free: rows.filter((r) => !r.look && r.seen && r.seen.state === 'free').length, rows });
+  });
+}
+// Sunday night, once the week is out: evenings with captain tables where fewer than five places have a fresh look get one
+// note to whoever is on duty, so captains don't open a list nobody has checked
+function checksNudge(now) {
+  const today = ymdTz(now); if (dowOf(today) !== 0 || now < tzMs(today, '20:30')) return;
+  const wk = addDays(today, 1), key = 'checks:' + wk; if ((db.alerts || []).some((a) => a.key === key)) return;
+  const bare = checksAdmin(7, now).filter((n) => n.tables && n.date >= wk && n.looked < 5).map((n) => weekday(tzMs(n.date, '12:00'))).filter((d, i, a) => a.indexOf(d) === i);
+  if (bare.length) alertOps(key, 'checks', `Nobody has looked at times for six yet for ${bare.length < 2 ? bare[0] : bare.slice(0, -1).join(', ') + ' and ' + bare[bare.length - 1]}. Ten minutes on the Spot checks tab (the top places for each night) saves the captains a lot of dead ends.`);
+}
 // a partner that now has fewer tables, fewer seats, a closed evening, or is paused: tables past what it can take go elsewhere
 function replaceAt(v) {
   Object.values(db.tables).filter((t) => t.published && !t.closed && t.venue && t.venue.id === v.id && (db.events[t.eventId] || {}).date >= ymdTz(Date.now())).forEach((t) => {
@@ -4019,7 +4091,7 @@ function alertOps(key, kind, text) {
   if (db.alerts.some((a) => a.key === key && (!a.done || (a.doneAt && Date.now() - Date.parse(a.doneAt) < 6 * HOUR)))) return;
   const a = { id: 'a' + rid(4), key, kind, text: clip(text, 400), at: isoNow(), done: false };
   db.alerts.push(a); db.alerts = db.alerts.slice(-200);
-  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables' }[kind] || 'needs a look';
+  const subj = { unconfirmed: 'a restaurant hasn’t answered', place: 'a table needs a place', table: 'a table changed today', mail: 'an email didn’t go out', flaky: 'a partner keeps cancelling', report: 'a member was reported', week: 'this week’s tables', checks: 'nobody has looked at times for six' }[kind] || 'needs a look';
   const p = opsDuty(); if (p && p.email) sendMail(p.email, 'Hash Table: ' + subj, text + '\n\n' + PUBLIC_URL + '/admin').then((r) => { if (!r.ok && !r.show) console.error('alert mail not sent: ' + key); }).catch((e) => console.error('alert mail failed', e.message));
   log('alert', kind, key);
 }
@@ -4237,8 +4309,8 @@ function bookLink(v, date, time, size) {
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
   const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id), now = Date.now();
-  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {};
-  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date); } });
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {}, booked = bookedAt();
+  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date, size, booked); } });
   const odds = (v) => { const s = seen[v.id], h = had[v.id]; return s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3; };
   const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), hush = (v) => (v.noise === 'quiet' ? 0 : v.noise === 'lively' ? 2 : 1); // tables grow to six, so six online leads even for four
   const off = (v) => { const s = seen[v.id]; return s && s.best ? Math.abs(hmMin(s.best) - hmMin(e.time)) : 0; };
@@ -4246,16 +4318,17 @@ function spotOptions(t) {
     || (big(a) - big(b)) || (off(a) - off(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
     .map((v) => { const s = seen[v.id], h = had[v.id]; return { id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
       cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', talk: v.talk || 0, noise: v.noise || '', seat: v.seat || '', sound: v.sound || '',
-      seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
+      seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size, mine: !!s.who && s.who === t.captain } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
 }
-// a captain found no table for their group within the hour of the table's time: marked full for that evening, so the other
-// captains that night skip it (it stays on their list, at the bottom, with when it was found full)
+// what a captain saw on a booking page, back in the app: times for their group (b.times), nothing near the table's time
+// (b.full), or "call us for a group this size" (b.call). Kept for that evening, so every captain that night sees it right away
 function captainSeen(me, b) {
   const t = own(db.tables, b.table); if (!isCaptain(t, me)) fail('you’re not the captain of this table');
   const e = db.events[t.eventId], v = own(db.places || {}, b.place); if (!v || isPartner(v) || v.gone) fail('that spot isn’t on the list');
   if (Date.now() >= eventTimes(e).start) fail('that dinner has started');
-  (db.seen = db.seen || {})[bkey(v.id, e.date)] = { size: seatedIds(t).length, time: e.time, at: isoNow(), by: 'captain', who: me.id, times: [] };
-  log('captain-seen', t.id, v.id);
+  const times = b.full || b.call ? [] : seenTimes(b.times); if (!b.full && !b.call && !times.length) fail('tap the times you saw');
+  (db.seen = db.seen || {})[bkey(v.id, e.date)] = Object.assign({ size: seatedIds(t).length, time: e.time, at: isoNow(), by: 'captain', who: me.id, times }, b.call ? { call: true } : {});
+  log('captain-seen', t.id, v.id + (b.full ? ' full' : b.call ? ' call' : ' ' + times.join(' ')));
   return { ok: true, cap: capView(t, me) };
 }
 function missions(t, now, light) {
@@ -4357,6 +4430,7 @@ function captainBook(me, b) {
   const was = t.venue; if (was && was.id) { t.venue = null; syncBooking(was.id, e.date); }
   t.venue = { pid: v.id, name: v.name, address: v.address, note: `Booked under ${name}` + (time !== e.time ? `, at ${timeLabel(at)}` : '') };
   if (time !== e.time) t.time = time; else delete t.time;
+  const sk = own(db.seen || {}, bkey(v.id, e.date)); if (sk && arr(sk.times).indexOf(time) >= 0) sk.times = sk.times.filter((x) => x !== time); // that slot is ours now
   const first = !c.spot, prevTime = mine ? c.booking.time : e.time; c.booking = { pid: v.id, by: me.id, at: isoNow(), size: n, warned: n, time, name, code: oneLine(clip(b.code, 40)), via: v.bookVia || '' }; c.spot = { vid: v.id, at: isoNow(), booked: true };
   if (t.round > 1) { const prev = db.tables[t.prev]; t.same = !!(prev && prev.venue && prev.venue.name === v.name); }
   resolveAlerts('noplace:' + t.id); resolveAlerts('nobook:' + t.id);
@@ -5164,6 +5238,7 @@ function tick(nowMs) {
     const w = db.weeks[wk], marked = live().some((m) => m.avail && m.avail.week === wk && m.avail.slots.length);
     if (marked && !(w && w.published)) alertOps('week:' + wk, 'week', w ? 'Next week’s tables are built but not published, and members are waiting for Sunday-night invitations. Publish them on the Tables tab.' : 'Next week’s tables aren’t built yet, and members are waiting for Sunday-night invitations. Build and publish them on the Tables tab.');
   }
+  checksNudge(now);
   const stale = addDays(today, -120); Object.keys(db.seen || {}).forEach((k) => { if (k.slice(k.indexOf('|') + 1) < stale) delete db.seen[k]; }); // spot checks older than four months say little
   Object.values(db.events).forEach((e) => {
     if (e.status !== 'published' || e.date < old) return;
@@ -5426,6 +5501,7 @@ const server = http.createServer(async (req, res) => {
       if (recent('adminfail:' + ip) >= 10) return send(res, 429, { error: 'slow down' });
       if (!adminOK(req)) { limited('adminfail:' + ip, 10); return send(res, 401, { error: 'admin key required' }); }
       if (req.method === 'GET' && p === '/api/admin/state') return send(res, 200, adminState());
+      if (req.method === 'GET' && p === '/api/admin/checks') return send(res, 200, { nights: checksAdmin(u.searchParams.get('days')) });
       if (req.method === 'GET' && p === '/api/admin/event') return send(res, 200, adminEvent(u.searchParams.get('id')));
       const b = req.method === 'POST' ? await readBody(req, 64 * 1024) : {};
       let out;
@@ -5567,7 +5643,7 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen, checksAdmin, checksNudge,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };
 
 },
@@ -6978,7 +7054,7 @@ function captainHTML(t) {
   if (c.me && K && K.spot) return `<div class="sp"></div><div class="cardg capbrief me ${K.done === 3 ? 'won' : ''}" id="capBrief">
     <div class="caphead"><span class="capflag wave">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div></div>
     ${capBar(K.done)}
-    ${missionSpot(K.spot)}${missionVote(K.vote)}${missionChecks(K.checks)}
+    ${missionSpot(K.spot)}${backNudgeHTML(t)}${missionVote(K.vote)}${missionChecks(K.checks)}
     <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   if (c.me) return `<div class="sp"></div><div class="cardg capcard capbrief me"><div class="ctitle"><span class="capflag wave">${FLAG}</span> You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
@@ -7010,20 +7086,33 @@ function talkTag(o) {
   if (o.talk === 1) return '<i class="loud">Loud at dinner</i>';
   return o.noise === 'lively' ? '<i>Lively</i>' : '';
 }
-// what a look at the booking page found for that evening, or the other nights we looked
+// who looked: our own check, this captain, or another captain
+const seenWho = (s) => (s.by === 'captain' ? (s.mine ? 'you' : 'another captain') : 'we');
+const toMinT = (x) => { const [a, b] = String(x).split(':').map(Number); return a * 60 + b; };
+const mHM = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const labT = (m) => hmPM(mHM(m));
+const around = (S) => hmPM(S.time || '19:00').replace(':00', ''); // 7 PM
+// how the other nights went at a place nobody has looked at for this one: the same weekday when we have it
+function hadWords(h, lead) {
+  const unit = h.day ? h.day + 's' : 'nights';
+  return h.nights === 1 ? `${lead} the last ${h.day || 'night'} we looked` : h.nights === 2 ? `${lead} both ${unit} we looked` : `${lead} all ${nw(h.nights)} ${unit} we looked`;
+}
+const hadPart = (h) => `Room on ${nw(h.room)} of the ${nw(h.nights)} ${h.day ? h.day + 's' : 'nights'} we looked`;
+// what a look at the booking page found for that evening, or the other nights someone looked
 function seenTag(o, S) {
   const s = o.seen, h = o.had;
   if (s && s.state === 'free') return `<i class="ok">Free for ${nw(s.size || 6)}</i>`;
-  if (s && s.state === 'full') return `<i class="no">${s.by === 'captain' ? 'A captain found it full' : 'Full around ' + esc(hm12(S.time || '19:00').replace(':00', ''))}</i>`;
-  if (s && s.state === 'tight') return `<i class="no">Full for ${nw(s.size || 6)} around ${esc(hm12(S.time || '19:00').replace(':00', ''))}</i>`;
-  if (s && s.state === 'call') return '<i>Six only by phone</i>';
-  if (h && h.room === h.nights) return `<i class="ok2">Had room ${h.nights === 1 ? 'the night we looked' : h.nights === 2 ? 'both nights we looked' : `all ${nw(h.nights)} nights we looked`}</i>`;
-  if (h && !h.room) return `<i>Full ${h.nights === 1 ? 'the night we looked' : h.nights === 2 ? 'both nights we looked' : `all ${nw(h.nights)} nights we looked`}</i>`;
+  if (s && s.state === 'full') return `<i class="no">${s.by === 'captain' ? (s.mine ? 'You found it full' : 'A captain found it full') : 'Full around ' + esc(around(S).replace(' PM', ''))}</i>`;
+  if (s && s.state === 'tight') return `<i class="no">Full for ${nw(s.size || 6)} around ${esc(around(S).replace(' PM', ''))}</i>`;
+  if (s && s.state === 'call') return `<i>Only by phone for ${nw(s.size || 6)}</i>`;
+  if (h && h.room === h.nights) return `<i class="ok2">${hadWords(h, 'Had room')}</i>`;
+  if (h && !h.room) return `<i>${hadWords(h, 'Full')}</i>`;
+  if (h) return `<i>${hadPart(h)}</i>`;
   return '';
 }
 function spotHTML(o, S) {
   const seen = o.kind !== 'partner' ? seenTag(o, S) : '', big = o.kind !== 'partner' && !(o.seen && o.seen.state === 'free') ? (o.six === 'online' ? '<i>Takes six online</i>' : o.six === 'call' ? '<i>Call for six</i>' : '') : '';
-  const when = o.seen && o.seen.state !== 'call' ? `<small class="spotseen ${o.seen.state}">${o.seen.state === 'free' ? `At ${esc(fewTimes(o.seen.times, S.time))}, when we looked ${esc(o.seen.when)}` : o.seen.by === 'captain' ? esc(cap(o.seen.when)) : `When we looked ${esc(o.seen.when)}${o.seen.state === 'tight' ? `. A table for ${nw(S.size)} might still fit` : ''}`}</small>` : '';
+  const s = o.seen, when = s ? `<small class="spotseen ${s.state}">${s.state === 'free' ? `At ${esc(fewTimes(s.times, S.time))}, when ${seenWho(s)} looked ${esc(s.when)}` : `${esc(cap(seenWho(s)))} looked ${esc(s.when)}${s.state === 'tight' ? `. A table for ${nw(S.size)} might still fit` : ''}`}</small>` : '';
   return `<button class="spot ${o.mine ? 'sel' : ''} ${isFull(o) ? 'full' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(whereOf(o))}</small>${o.note ? `<small class="spotnote">${esc(o.note)}</small>` : ''}${when}
     <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${seen}${talkTag(o)}${big}${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`;
 }
@@ -7031,9 +7120,9 @@ function openSpot(food) {
   const t = A.table, S = t.cap.spot; if (food) { A.spotFood = food; A.spotMore = false; A.spotFull = false; } const f = A.spotFood || 'all';
   const have = SX.FOOD.filter((x) => x.id === 'all' || S.options.some((o) => (foodOf(o).g || 'other') === x.id));
   const pick = S.options.filter((o) => f === 'all' || o.mine || o.last || (foodOf(o).g || 'other') === f), list = pick.filter((o) => !isFull(o) || o.mine || o.last), full = pick.filter((o) => isFull(o) && !o.mine && !o.last);
-  const shown = A.spotMore ? list : list.slice(0, 10), free = S.options.filter((o) => o.seen && o.seen.state === 'free').length, looked = S.options.some((o) => o.seen && o.seen.by === 'check'), gone = S.options.filter((o) => o.seen && (o.seen.state === 'full' || o.seen.state === 'tight')).length;
-  const at = hmPM(S.time || '19:00'), lede = free ? `${free === 1 ? 'One place' : cap(nw(free)) + ' places'} had room for six around ${at.replace(':00', '')} when we looked, so ${free === 1 ? 'it’s' : 'they’re'} on top, quietest first${gone ? `. The ${gone === 1 ? 'one' : nw(gone)} that ${gone === 1 ? 'was' : 'were'} full ${gone === 1 ? 'sits' : 'sit'} at the bottom` : ''}`
-    : looked ? `Nothing we looked at had six around ${at.replace(':00', '')}, so open a few. Quietest rooms first` : `Nobody has looked at times for that night yet, so the quietest rooms come first. Open one to see what’s free`;
+  const shown = A.spotMore ? list : list.slice(0, 10), free = S.options.filter((o) => o.seen && o.seen.state === 'free').length, looked = S.options.some((o) => o.seen), gone = S.options.filter((o) => o.seen && (o.seen.state === 'full' || o.seen.state === 'tight')).length;
+  const at = hmPM(S.time || '19:00'), lede = free ? `${free === 1 ? 'One place' : cap(nw(free)) + ' places'} had a table around ${at.replace(':00', '')} when someone last looked, so ${free === 1 ? 'it’s' : 'they’re'} on top, quietest first${gone ? `. The ${gone === 1 ? 'one' : nw(gone)} that ${gone === 1 ? 'was' : 'were'} full ${gone === 1 ? 'sits' : 'sit'} at the bottom` : ''}`
+    : looked ? `Nothing anyone looked at had a table around ${at.replace(':00', '')}, so open a few. Quietest rooms first` : `Nobody has looked at times for that night yet, so the quietest rooms come first. Open one, and tell me what you saw when you’re back`;
   openSheet(`<h3>Book the spot</h3><div class="sub2">A table for ${nw(S.size)} on ${esc(S.when)}. ${lede}</div>
     ${have.length > 2 ? `<div class="chips scrollx spotfood">${have.map((x) => `<button class="chip ${f === x.id ? 'sel' : ''}" onclick="openSpot('${x.id}')">${esc(x.t)}</button>`).join('')}</div>` : ''}
     <div class="spots">${shown.map((o) => spotHTML(o, S)).join('') || `<p class="hint">${full.length ? 'Everything in this one was full when we looked. Try another' : 'Nothing in this one is open that evening. Try another'}</p>`}</div>
@@ -7042,15 +7131,15 @@ function openSpot(food) {
       : `<button class="link" style="display:block;margin:2px 0 8px" onclick="A.spotFull=true;openSpot()">${full.length === 1 ? 'One more was full' : cap(nw(full.length)) + ' more were full'} around ${esc(at.replace(':00', ''))}. Show ${full.length === 1 ? 'it' : 'them'} anyway</button>`) : ''}
     <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>`);
 }
-// what we know about a table for six there that evening, in words
+// what we know about a table there that evening, in words
 function seenNote(o, S) {
-  const s = o.seen, h = o.had, site = VIATAG[o.via] || 'Their page';
-  if (s && s.state === 'free') return `<div class="seenbox ok"><b>${esc(site)} had ${esc(fewTimes(s.times, S.time))} for ${nw(s.size || 6)}</b><small>When we looked ${esc(s.when)}. Tables come and go, so book soon</small></div>`;
-  if (s && s.state === 'full') return `<div class="seenbox no"><b>${s.by === 'captain' ? 'Another captain found it full' : `Nothing for ${nw(s.size || 6)} from 6 to 8`}</b><small>${s.by === 'captain' ? `No table for their group, ${esc(s.when)}` : `When we looked ${esc(s.when)}`}. Things open up, but another spot is the safer bet</small></div>`;
-  if (s && s.state === 'tight') return `<div class="seenbox no"><b>Nothing for ${nw(s.size || 6)} from 6 to 8</b><small>When we looked ${esc(s.when)}. A table for ${nw(S.size)} might still fit, but it won’t stretch if more people join</small></div>`;
-  if (s && s.state === 'call') return `<div class="seenbox"><b>Six is too many to book online here</b><small>${esc(site)} said so ${esc(s.when)}, so call them</small></div>`;
-  if (h) return `<div class="seenbox"><b>Nobody has looked at this night yet</b><small>${h.room === h.nights ? `It had room for six around 7 ${h.nights === 1 ? 'the other night we looked' : h.nights === 2 ? 'both other nights we looked' : `all ${nw(h.nights)} other nights we looked`}` : !h.room ? `It was full for six around 7 ${h.nights === 1 ? 'the other night we looked' : h.nights === 2 ? 'both other nights we looked' : `all ${nw(h.nights)} other nights we looked`}` : `It had room for six around 7 on ${nw(h.room)} of the ${nw(h.nights)} other nights we looked`}</small></div>`;
-  return '';
+  const s = o.seen, h = o.had, site = VIATAG[o.via] || 'Their page', base = toMinT(S.time || '19:00'), span = `${hm12(mHM(base - 60))} to ${hm12(mHM(base + 60))}`;
+  if (s && s.state === 'free') return `<div class="seenbox ok"><b>${esc(site)} had ${esc(fewTimes(s.times, S.time))} for ${nw(s.size || 6)}</b><small>When ${seenWho(s)} looked ${esc(s.when)}. Tables come and go, so book soon</small></div>`;
+  if (s && s.state === 'full') return `<div class="seenbox no"><b>${s.by === 'captain' ? (s.mine ? 'You found it full' : 'Another captain found it full') : `Nothing for ${nw(s.size || 6)} from ${span}`}</b><small>${s.by === 'captain' ? `No table for ${nw(s.size || 6)} from ${span}, ${esc(s.when)}` : `When we looked ${esc(s.when)}`}. Things open up, but another spot is the safer bet</small></div>`;
+  if (s && s.state === 'tight') return `<div class="seenbox no"><b>Nothing for ${nw(s.size || 6)} from ${span}</b><small>When ${seenWho(s)} looked ${esc(s.when)}. A table for ${nw(S.size)} might still fit, but it won’t stretch if more people join</small></div>`;
+  if (s && s.state === 'call') return `<div class="seenbox"><b>${esc(cap(nw(s.size || 6)))} is too many to book online here</b><small>${esc(cap(seenWho(s)))} looked ${esc(s.when)}, so call them</small></div>`;
+  if (h) return `<div class="seenbox"><b>Nobody has looked at this night yet</b><small>${h.room === h.nights ? hadWords(h, 'It had room') : !h.room ? hadWords(h, 'It was full') : hadPart(h)}. Open it, and tell me what you saw when you’re back</small></div>`;
+  return `<div class="seenbox"><b>Nobody has looked at this one yet</b><small>Open it, and tell me what you saw when you’re back</small></div>`;
 }
 // booking it yourself: open the restaurant's booking page (date, time and party size filled in), then tell Charlie
 function openBook(id) {
@@ -7064,9 +7153,9 @@ function openBook(id) {
     ${seenNote(o, S)}
     ${o.sound || o.seat ? `<div class="talkbox">${talkTag(o) ? `<span class="spottags">${talkTag(o)}</span>` : ''}${o.sound ? `<small>${esc(o.sound)}</small>` : ''}${o.seat ? `<small>In the booking note, ask for ${esc(o.seat)}</small>` : ''}</div>` : ''}
     <div class="bookstep"><span class="mnum">1</span><div class="grow"><b>Book a table for ${nw(S.size)}</b><small>${esc(S.when)}, under your name. If ${lab(base)} is gone, anything from ${lab(base - 60)} to ${lab(base + 60)} works</small></div></div>
-    ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `Times for ${nw(S.size)} on ${VIATAG[via]}` : VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
+    ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event, 1)">${esc(['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `Times for ${nw(S.size)} on ${VIATAG[via]}` : VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
     ${['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `<p class="hint" style="margin-top:6px">Opens with ${esc(S.when)} and ${nw(S.size)} people filled in, so you see what’s really free</p>` : ''}
-    ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
+    ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event, 1)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
     <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation fee before you confirm (for six it’s often charged per person inside 24 to 48 hours), and book only this one place</p>
     ${o.kind === 'book' && !isFull(o) ? `<button class="link nosix" onclick="markFull(this)">Nothing for ${nw(S.size)} from ${lab(base - 60)} to ${lab(base + 60)}? Mark it full for the other captains</button>` : ''}
     <div class="bookstep"><span class="mnum">2</span><div class="grow"><b>Tell Charlie it’s booked</b><small>The time you got, and the name it’s under</small></div></div>
@@ -7079,7 +7168,69 @@ function openBook(id) {
 }
 // in the phone demo there's nothing to book
 function bookReady() { const go = $('bookGo'), ok = !!(A.book && (A.book.opened || ($('bookCode') && $('bookCode').value.trim()))); if (go) go.disabled = !ok; const w = $('bookWait'); if (w) w.hidden = ok; }
-function bookOut(ev) { if (A.book) { A.book.opened = true; local.set('sixtopBookOpen:' + A.table.id + ':' + A.book.id, Date.now()); setTimeout(bookReady, 0); } if (window.SIXTOP_DEMO) { ev.preventDefault(); toast('Demo', 'Nothing to book in the demo. Tap I booked it'); return false; } return true; }
+function bookOut(ev, ask) {
+  if (A.book) { A.book.opened = true; local.set('sixtopBookOpen:' + A.table.id + ':' + A.book.id, Date.now()); if (ask) { A.book.away = Date.now(); A.book.asked = false; } setTimeout(bookReady, 0); }
+  if (window.SIXTOP_DEMO) { ev.preventDefault(); if (ask && A.book) { toast('Demo', 'No real booking page in the demo, so here’s what coming back looks like'); setTimeout(() => askBack(true), 1300); } else toast('Demo', 'Nothing to book in the demo. Tap I booked it'); return false; }
+  return true;
+}
+/* back from the booking page: what did it show? The captain booked it, saw times but didn't book yet, found nothing near the
+   time, or was told to call for a group this size. Whatever they saw goes on every captain's list for that evening right
+   away (/api/captain-seen), which is how the list stays honest without anyone's API. Asked once per place: on coming back
+   to the app, or, if the phone dropped the app meanwhile, as a card on the captain's brief */
+const BACK = 'sixtopBookBack:';
+function askBack(now) {
+  const B = A.book; if (!B || !B.away || B.asked || cur !== 'table' || !A.table || !A.table.cap || !A.table.cap.spot) return;
+  if (!now && Date.now() - B.away < 2500) return; // a blink, not a look
+  if (A.table.cap.spot.done || local.get(BACK + A.table.id + ':' + B.id)) return;
+  B.asked = true; openBack(B.id);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(askBack, 400); });
+window.addEventListener('focus', () => setTimeout(askBack, 400));
+function openBack(id) {
+  const t = A.table, S = t.cap.spot, o = S.options.find((x) => x.id === id); if (!o) return;
+  const base = toMinT(S.time || '19:00'), slots = [-60, -45, -30, -15, 0, 15, 30, 45, 60].map((d) => mHM(base + d)), web = ['opentable', 'resy', 'tock'].indexOf(o.via) >= 0;
+  A.back = { id, times: [] };
+  openSheet(`<div class="backhead"><span class="orb"></span><div class="grow"><b>Oh hey, you’re back!</b><small>Did ${esc(o.name)} have a table for ${nw(S.size)} around ${esc(around(S))}?</small></div></div>
+    <div class="backopts">
+      <button class="backopt yes" onclick="backBooked()"><b>Yes, and I booked it</b><small>Next, the time you got and the name it’s under</small></button>
+      <button class="backopt" id="backSaw" onclick="backTimes()"><b>There were times, but I didn’t book yet</b><small>Tap the ones you saw, so the other captains know</small></button>
+      <div class="backtimes" id="backTimes" hidden><div class="chips">${slots.map((x) => `<button class="chip" data-t="${x}" onclick="backPick(this)">${esc(labT(toMinT(x)))}</button>`).join('')}</div><button class="btn sm" id="backSave" disabled onclick="backSend(this, 'times')">Save these times</button></div>
+      <button class="backopt no" onclick="backSend(this, 'full')"><b>Nothing from ${esc(labT(base - 60))} to ${esc(labT(base + 60))}</b><small>I’ll mark it full that night, so nobody else wastes a tap</small></button>
+      ${web ? `<button class="backopt" onclick="backSend(this, 'call')"><b>It said to call for a group this size</b><small>I’ll tell the other captains to call this one</small></button>` : ''}
+    </div>
+    <button class="link" onclick="backSkip()">I didn’t get to look</button>`);
+}
+const backDone = () => { if (A.back && A.table) local.set(BACK + A.table.id + ':' + A.back.id, Date.now()); };
+function backTimes() { const box = $('backTimes'); if (box) { box.hidden = false; $('backSaw').classList.add('on'); box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
+function backPick(b) {
+  b.classList.toggle('sel'); const x = b.dataset.t, T = A.back.times, i = T.indexOf(x);
+  if (i >= 0) T.splice(i, 1); else T.push(x);
+  $('backSave').disabled = !T.length; $('backSave').textContent = T.length ? `Save ${T.length === 1 ? 'this time' : 'these ' + nw(T.length) + ' times'}` : 'Save these times';
+}
+function backSend(b, kind) {
+  if (backSend.busy || !A.back) return;
+  const t = A.table, id = A.back.id, body = { table: t.id, place: id };
+  if (kind === 'full') body.full = true; else if (kind === 'call') body.call = true; else body.times = A.back.times;
+  backSend.busy = true; b.disabled = true;
+  api('POST', '/api/captain-seen', body).then((r) => {
+    backDone(); if (r.cap) t.cap = r.cap; if (cur === 'table') drawTable();
+    if (kind === 'times') { toast('Charlie', 'Ooh, nice! Saved for the other captains too. Grab one before someone else does'); openBook(id); }
+    else { toast('Charlie', kind === 'full' ? 'Ugh, thanks for checking! Marked full for that night, so nobody else wastes a tap' : 'Got it, thanks! The other captains will know to call'); openSpot(); }
+  }).catch((e) => { b.disabled = false; oops(e); }).then(() => { backSend.busy = false; });
+}
+function backBooked() { const id = A.back.id; backDone(); if (cur === 'table') drawTable(); openBook(id); setTimeout(() => { const el = $('bookTimes'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80); }
+function backSkip() { const id = A.back.id; backDone(); if (cur === 'table') drawTable(); openBook(id); }
+// a booking page this captain opened on this phone and never said how it went (the app was closed meanwhile, say)
+function backPending(t) {
+  const S = t.cap && t.cap.spot; if (!S || S.done || !S.options) return null;
+  let best = null;
+  S.options.forEach((o) => { if (o.kind !== 'book') return; const at = local.get('sixtopBookOpen:' + t.id + ':' + o.id); if (at && Date.now() - at < 12 * 3600e3 && !local.get(BACK + t.id + ':' + o.id) && (!best || at > best.at)) best = { o, at }; });
+  return best;
+}
+function backNudgeHTML(t) {
+  const q = backPending(t); if (!q) return '';
+  return `<button class="backnudge" onclick="A.book = { id: '${q.o.id}', opened: true, asked: true }; openBack('${q.o.id}')"><span class="orb"></span><span class="grow"><b>How did ${esc(q.o.name)} look?</b><small>You opened it earlier. Tell me what you saw, and the other captains skip the dead ends</small></span>${SV('<path d="M9 18l6-6-6-6"/>', 16)}</button>`;
+}
 function bookIt(b) {
   if (bookIt.busy) return; bookIt.busy = true; b.disabled = true;
   api('POST', '/api/captain-book', { table: A.table.id, place: A.book.id, time: A.book.time, name: $('bookName').value, code: $('bookCode').value }).then((r) => { closeSheet(); capAfter(r, 'Booked. Keep it a secret until noon on the day'); }).catch((e) => { b.disabled = false; oops(e); }).then(() => { bookIt.busy = false; });
@@ -7088,7 +7239,7 @@ function bookIt(b) {
 function markFull(b) {
   if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again to mark it full for that night'; return; }
   b.disabled = true;
-  api('POST', '/api/captain-seen', { table: A.table.id, place: A.book.id }).then((r) => { if (r.cap) A.table.cap = r.cap; toast('Charlie', 'Ugh, thanks for checking! It’s marked full for that night, so nobody else wastes a tap'); openSpot(); }).catch((e) => { b.disabled = false; oops(e); });
+  api('POST', '/api/captain-seen', { table: A.table.id, place: A.book.id, full: true }).then((r) => { local.set(BACK + A.table.id + ':' + A.book.id, Date.now()); if (r.cap) A.table.cap = r.cap; toast('Charlie', 'Ugh, thanks for checking! It’s marked full for that night, so nobody else wastes a tap'); openSpot(); }).catch((e) => { b.disabled = false; oops(e); });
 }
 function bookResize(b) { b.disabled = true; api('POST', '/api/captain-book', { table: A.table.id, resize: true }).then((r) => capAfter(r, 'Thanks. The restaurant has the right count')).catch((e) => { b.disabled = false; oops(e); }); }
 function unbook(b) {
