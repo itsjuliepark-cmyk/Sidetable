@@ -71,16 +71,13 @@ function makeMember(i) {
 }
 const members = NAMES.map((_, i) => makeMember(i)), demo = members[0];
 const holdSeats = (e, ms, back) => { db.seats[e.id] = db.seats[e.id] || {}; ms.forEach((m, k) => { db.seats[e.id][m.id] = { at: new Date(Date.now() - (back || 5) * 864e5 + k * 6e4).toISOString(), size: pick(['either', 'either', 'six', 'four']), diet: [], status: 'held' }; }); };
-// spots captains book themselves (made up): through OpenTable, Resy, a call, or the restaurant's site
-const venues = [['Demo Bistro', 'Massachusetts Ave, Central Square', 'Cozy booths and great dumplings', 'opentable', 'https://www.opentable.com/', '$$', false],
-  ['Demo Table House', 'Main St, Kendall Square', 'One big shared table, loud in a good way', 'resy', 'https://resy.com/cities/bos', '$$', true],
-  ['Demo Trattoria', 'Prospect St, Central Square', 'Candles, fresh pasta, quiet corners', 'phone', '', '$$$', false],
-  ['Demo Supper Room', 'Brattle St, Harvard Square', 'Old wood, small plates, a back room for six', 'web', 'https://example.com/', '$$', false]];
+// spots captains book themselves: the real restaurant list around HBS and MIT (server/restaurants.js), each with its OpenTable,
+// Resy or Tock page, what it serves, and whether it takes six online
+S.importRestaurants();
 // partner restaurants (made up). In the demo they're open every evening, since sample dates can land on a weekend. Tables are
 // placed at them automatically when they're published.
 // the people who run it: an ops lead and a campus lead take turns being on duty (made up)
 S.saveOps({ team: [{ name: 'Demo Ops Lead', role: 'ops lead' }, { name: 'Demo Campus Lead', role: 'campus lead (MIT)' }], rota: {} });
-venues.forEach(([name, address, vibe, bookVia, bookUrl, price, card], k) => S.savePlace({ name, address, vibe, mode: 'captain', bookVia, bookUrl, price, card, phone: bookVia === 'phone' ? '(617) 555-01' + (40 + k) : '', area: address.split(', ')[1], nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, contact: 'the host stand', note: 'Ask for the Hash Table table' }));
 
 const ago = (h) => new Date(Date.now() - h * 36e5).toISOString();
 const firstWith = (tr, not) => members.find((m) => m.profile.tracks[0] === tr && m !== demo && (!not || not.indexOf(m) < 0));

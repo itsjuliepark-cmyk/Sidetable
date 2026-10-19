@@ -143,6 +143,12 @@
   ];
   const DIETS = ['Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Gluten-free', 'Alcohol-free table'];
   // what kind of dinners someone wants Charlie to invite them to
+  // what a restaurant serves: its label on a spot, and the group the captain's spot list filters by (Asian covers four)
+  const CUISINES = [{ id: 'tacos', t: 'Tacos & Mexican', g: 'tacos' }, { id: 'chinese', t: 'Chinese', g: 'asian' }, { id: 'japanese', t: 'Japanese', g: 'asian' }, { id: 'korean', t: 'Korean', g: 'asian' },
+    { id: 'thai_viet', t: 'Thai & Vietnamese', g: 'asian' }, { id: 'indian', t: 'Indian', g: 'indian' }, { id: 'pizza_italian', t: 'Pizza & Italian', g: 'pizza' }, { id: 'american', t: 'American', g: 'american' },
+    { id: 'mediterranean', t: 'Mediterranean', g: 'med' }, { id: 'seafood', t: 'Seafood', g: 'seafood' }, { id: 'veg', t: 'Vegetarian', g: 'veg' }, { id: 'other', t: 'Something else', g: 'other' }];
+  const FOOD = [{ id: 'all', t: 'All' }, { id: 'tacos', t: 'Tacos' }, { id: 'asian', t: 'Asian' }, { id: 'pizza', t: 'Pizza & Italian' }, { id: 'indian', t: 'Indian' }, { id: 'american', t: 'American' },
+    { id: 'med', t: 'Mediterranean' }, { id: 'seafood', t: 'Seafood' }, { id: 'veg', t: 'Vegetarian' }, { id: 'other', t: 'More' }];
   const MIX = [
     { id: 'both', t: 'Tech + social', s: 'Tech tables and social ones, mixed through the week. Most people pick this.', note: 'Ooh, both! Love it. Some nights you nerd out, some nights you just make new friends.' },
     { id: 'topic', t: 'Tech tables only', s: 'Dinners around my corner of tech. That’s why I’m here.', note: 'Tech all the way, nice! I’ll seat you with people who love the same corner of tech.' },
@@ -490,6 +496,6 @@
       last];
   }
 
-  return { SCHOOLS, YEARS, TRACKS, NEAR, INTS, INTNAME, LENS, BEFORE, BASE_TAKES, STANCE, AXES, QS, RHYTHM, LIFE, LIFE_PUBLIC, LIFEV, ACTS, ACTV, LOOK, DIETS, VIBES, MIX, NEXT, NEXTV, OPEN_TO, JOB, POSTS,
+  return { CUISINES, FOOD, SCHOOLS, YEARS, TRACKS, NEAR, INTS, INTNAME, LENS, BEFORE, BASE_TAKES, STANCE, AXES, QS, RHYTHM, LIFE, LIFE_PUBLIC, LIFEV, ACTS, ACTV, LOOK, DIETS, VIBES, MIX, NEXT, NEXTV, OPEN_TO, JOB, POSTS,
     PERSONAS, TRAITS, AXWORD, axes, codeOf, persona, bestWith, track, takesFor, deck, KINDS, CARDS, card };
 });

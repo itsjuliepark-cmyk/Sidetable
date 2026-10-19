@@ -1615,3 +1615,6 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 /* the flag on the seal sits on its left, clear of the tag; the stamp lands once the big reveal has gone */
 .seal .sealflag{right:auto;left:-14px}
 .invwrap.open .capstamp.later{animation-delay:3.4s}
+/* the captain's spot list: food chips, and a green tag for places that take the whole table online */
+.spotfood{margin:14px -22px 2px;padding:0 22px 2px}
+.spottags i.ok{color:#2C6E5F;background:rgba(44,110,95,.12)}

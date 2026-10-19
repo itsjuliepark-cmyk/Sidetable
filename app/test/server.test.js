@@ -1155,3 +1155,27 @@ test('a table of six that loses three while changes are free takes someone who m
   assert.ok(seated.some((id) => spare.some((m) => m.id === id)), 'one of them someone who marked that evening');
   assert.ok(t.captain && seated.indexOf(t.captain) >= 0, 'and a captain who is still coming');
 });
+
+test('the restaurant list: each place says what it serves and if it takes six online; a captain sees every one open that night, six-online first, with the date and six filled in', () => {
+  const r1 = S.importRestaurants(), r2 = S.importRestaurants();
+  assert.ok(r1.added >= 50 && !r1.skipped.length, 'the whole list goes in: ' + JSON.stringify(r1.skipped));
+  assert.ok(r2.added === 0 && r2.updated === r1.added, 'a second time only brings them up to date');
+  const P = Object.values(db().places).filter((v) => v.mode === 'captain' && v.cuisine);
+  assert.ok(P.every((v) => SX.CUISINES.some((c) => c.id === v.cuisine) && ['online', 'call', 'unknown'].indexOf(v.six) >= 0), 'every one says what it serves');
+  const back = only(P.map((v) => v.id));
+  try {
+    const monday = [3, 4, 5, 6, 7, 8, 9].map(day).find((d) => new Date(d + 'T12:00:00Z').getUTCDay() === 1);
+    const ms = people(6, 'Spot'), t = night(ms, 'topic', monday).t, O = S.spotOptions(t);
+    assert.strictEqual(S.db().tables[t.id].ids.length, 6);
+    assert.ok(O.length > 20, 'the whole list, not four: ' + O.length);
+    const shutMon = P.filter((v) => v.nights.indexOf(1) < 0).map((v) => v.id);
+    assert.ok(shutMon.length && O.every((o) => shutMon.indexOf(o.id) < 0), 'nothing closed on Mondays');
+    const k = O.findIndex((o) => o.six !== 'online');
+    assert.ok(k > 0 && O.slice(k).every((o) => o.six !== 'online'), 'the ones that take six online come first');
+    const ot = O.find((o) => o.via === 'opentable'), rs = O.find((o) => o.via === 'resy'), ph = O.find((o) => o.via === 'phone');
+    assert.ok(ot.link.indexOf('covers=6&dateTime=' + monday + 'T') > 0, 'OpenTable opens on that date for six: ' + ot.link);
+    assert.ok(rs.link.indexOf('date=' + monday + '&seats=6') > 0, 'Resy too: ' + rs.link);
+    assert.ok(!ph || /^tel:/.test(ph.link), 'a call-to-book place dials');
+    assert.ok(O.every((o) => o.cuisine), 'and each says what it serves');
+  } finally { back(); }
+});

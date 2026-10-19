@@ -1310,11 +1310,22 @@ function capAfter(r, msg) {
   if (msg) toast('Charlie', msg);
   const box = $('capBrief'); if (box && r.cap && r.cap.done === 3) setTimeout(() => celebrate(box, tableKind(A.table)), 250);
 }
-function openSpot() {
-  const t = A.table, S = t.cap.spot;
-  openSheet(`<h3>Book the spot</h3><div class="sub2">For ${nw(S.size)} on ${esc(S.when)}. Your table finds out at noon on the day, so it’s your secret till then</div>
-    <div class="spots">${S.options.map((o) => `<button class="spot ${o.mine ? 'sel' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(o.area)}</small>${o.note ? `<small class="spotnote">${esc(o.note)}</small>` : ''}
-      <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`).join('')}</div>
+// the captain's spot list: every place open that evening with room, food chips on top (Tacos, Asian, Pizza and the rest), the
+// ones that take a group this size online first; ten at a time
+const foodOf = (o) => (SX.CUISINES.find((c) => c.id === o.cuisine) || {});
+function spotHTML(o, S) {
+  const big = o.kind !== 'partner' ? (o.six === 'online' ? '<i class="ok">Takes six online</i>' : o.six === 'call' ? '<i>Call for six</i>' : '') : '';
+  return `<button class="spot ${o.mine ? 'sel' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc([foodOf(o).t, o.area].filter(Boolean).join(' in '))}</small>${o.note ? `<small class="spotnote">${esc(o.note)}</small>` : ''}${o.group ? `<small class="spotnote">${esc(o.group)}</small>` : ''}
+    <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${big}${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`;
+}
+function openSpot(food) {
+  const t = A.table, S = t.cap.spot; if (food) { A.spotFood = food; A.spotMore = false; } const f = A.spotFood || 'all';
+  const have = SX.FOOD.filter((x) => x.id === 'all' || S.options.some((o) => (foodOf(o).g || 'other') === x.id));
+  const list = S.options.filter((o) => f === 'all' || o.mine || o.last || (foodOf(o).g || 'other') === f), shown = A.spotMore ? list : list.slice(0, 10), six = S.options.filter((o) => o.six === 'online').length;
+  openSheet(`<h3>Book the spot</h3><div class="sub2">A table for ${nw(S.size)} on ${esc(S.when)}. ${S.options.length} places are open that evening${six ? `, and the ${six} that take six online come first` : ''}. Your table finds out at noon on the day</div>
+    ${have.length > 2 ? `<div class="chips scrollx spotfood">${have.map((x) => `<button class="chip ${f === x.id ? 'sel' : ''}" onclick="openSpot('${x.id}')">${esc(x.t)}</button>`).join('')}</div>` : ''}
+    <div class="spots">${shown.map((o) => spotHTML(o, S)).join('') || '<p class="hint">Nothing in this one is open that evening. Try another</p>'}</div>
+    ${list.length > shown.length ? `<button class="btn ghost sm" style="margin:4px 0 8px" onclick="A.spotMore=true;openSpot()">Show ${list.length - shown.length} more</button>` : ''}
     <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>`);
 }
 // booking it yourself: open the restaurant's booking page (date, time and party size filled in), then tell Charlie
@@ -1326,7 +1337,8 @@ function openBook(id) {
   A.book = { id, time: S.time || '19:00', opened: !!(was && Date.now() - was < 6 * 3600e3) };
   openSheet(`<h3>${esc(o.name)}</h3><div class="sub2">${esc(o.area)}</div>${o.note ? `<div class="sub2 spotnote">${esc(o.note)}</div>` : ''}
     <div class="bookstep"><span class="mnum">1</span><div class="grow"><b>Book a table for ${nw(S.size)}</b><small>${esc(S.when)}, under your name. If ${lab(base)} is gone, anything from ${lab(base - 60)} to ${lab(base + 60)} works</small></div></div>
-    ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
+    ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event)">${esc(['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `Times for ${nw(S.size)} on ${VIATAG[via]}` : VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
+    ${['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `<p class="hint" style="margin-top:6px">Opens with ${esc(S.when)} and ${nw(S.size)} people filled in, so you see what’s really free</p>` : ''}
     ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
     <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation fee before you confirm (for six it’s often charged per person inside 24 to 48 hours), and book only this one place</p>
     <div class="bookstep"><span class="mnum">2</span><div class="grow"><b>Tell Charlie it’s booked</b><small>The time you got, and the name it’s under</small></div></div>

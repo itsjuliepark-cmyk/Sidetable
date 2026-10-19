@@ -4,7 +4,6 @@
   'use strict';
   var D = self.SIXTOP_DEMO, S = D.S;
   var db = function () { return S.db(); };
-  var VENUES = [['Demo Bistro', 'Massachusetts Ave, Central Square'], ['Demo Table House', 'Main St, Kendall Square'], ['Demo Trattoria', 'Prospect St, Central Square'], ['Demo Supper Room', 'Brattle St, Harvard Square']];
   function jordan() { return Object.values(db().members).find(function (m) { return m.name === 'Jordan Park' && !m.deleted; }); }
   function friend() { var j = jordan(); return j && Object.values(db().members).find(function (m) { return m.id !== j.id && !m.deleted && S.isMutual(j.id, m.id); }); }
   function club() { return Object.values(db().clubs)[0]; }

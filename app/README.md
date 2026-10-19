@@ -205,6 +205,24 @@ npm run film
 - 6명은 온라인 예약 한도 경계라 전화 안내 함께 표시, 6명이면 카드 보증과 1인 $25~50 취소 수수료가 흔해 예약 전 확인 안내
 - 제휴 식당(상시 확보, 매번 확인)은 선택 기능으로 유지, 테이블을 잡아둔 곳이라 예약 없이 캡틴이 고르기만
 
+### 하버드와 MIT 근처 식당 목록
+
+- `server/restaurants.js`: Harvard Square, Allston, Brighton, Kendall, Central, Inman의 실제 식당 62곳 (2026년 10월 조사)
+- 식당마다 동네, 주소, 음식 종류, 가격대, 예약 방법(OpenTable 36, Resy 11, Tock 2, 자체 사이트 6, 전화 7), 예약 페이지, 전화번호, 6명 온라인 예약 여부(52곳 가능), 저녁 휴무일, 단체 관련 한 줄, 분위기 한 줄
+- 음식 종류: Tacos & Mexican, Chinese, Japanese, Korean, Thai & Vietnamese, Indian, Pizza & Italian, American, Mediterranean, Seafood, Vegetarian, 기타
+- 예약 링크는 식당 사이트에서 연결된 실제 페이지로 확인, OpenTable과 Resy는 브라우저로 열어 식당 이름과 날짜, 인원 자동 입력까지 확인
+- 관리자 Places 탭의 목록 버튼 한 번으로 추가, 이미 있는 식당은 최신 정보로 갱신, 데모는 처음부터 이 목록 사용
+- 식당 정보는 바뀌니 파일럿 전에 한 번 더 확인 필요 (각 항목의 check에 조사 때 불확실했던 점 기록)
+
+### 캡틴이 보는 장소 목록
+
+- 그 날짜에 여는 곳만 표시: 요일 휴무, 관리자가 넣은 휴무일, 그날 우리 테이블이 이미 찬 곳은 제외
+- 6명 온라인 예약 가능한 곳이 먼저, 그다음 그날 우리 테이블이 적은 곳, 테이블 동네 순
+- 위쪽 음식 칩으로 거르기: All, Tacos, Asian(중식, 일식, 한식, 태국과 베트남), Pizza & Italian, Indian, American, Mediterranean, Seafood, Vegetarian
+- 카드마다 음식 종류와 동네, 분위기, 단체 관련 한 줄, "Takes six online" 또는 "Call for six", 가격대, 예약 방법
+- 10곳씩 보여주고 Show more로 나머지
+- 예약 버튼은 그 날짜, 시간, 인원이 채워진 채로 열림 (실제 빈자리는 예약 페이지에서 바로 확인)
+
 ### 캡틴 예약의 안전장치
 
 - 저녁 48시간 전까지 예약이 없으면 캡틴에게 알림, 캡틴을 맡은 지 6시간이 지난 뒤에만

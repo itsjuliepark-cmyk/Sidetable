@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const SX = require('../public/shared.js');
 const T = require('./tables.js');
+const RESTAURANTS = require('./restaurants.js');
 
 const PORT = +process.env.PORT || 8800;
 const ROOT = path.join(__dirname, '..');
@@ -769,7 +770,8 @@ function savePlace(b) {
     email: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(b.email || '').trim()) ? String(b.email).trim().slice(0, 120) : '', contact: clip(b.contact, 80).trim(), phone: clip(b.phone, 30).trim(),
     note: clip(b.note, 160).trim(), vibe: clip(b.vibe, 80).trim(), terms: clip(b.terms, 400).trim(), closedOn: arr(b.closedOn).map(String).filter(ymdOk).slice(0, 60), off: b.off === undefined ? !!v.off : !!b.off,
     mode: b.mode === 'ask' ? 'ask' : b.mode === 'captain' ? 'captain' : 'hold', backup: !!b.backup,
-    bookVia: inList(b.bookVia, ['opentable', 'resy', 'tock', 'web', 'phone']) || (b.mode === 'captain' ? 'web' : ''), bookUrl: cleanUrl(b.bookUrl), price: inList(b.price, ['$', '$$', '$$$']) || '', card: !!b.card });
+    bookVia: inList(b.bookVia, ['opentable', 'resy', 'tock', 'web', 'phone']) || (b.mode === 'captain' ? 'web' : ''), bookUrl: cleanUrl(b.bookUrl), price: inList(b.price, ['$', '$$', '$$$']) || '', card: !!b.card,
+    cuisine: inList(b.cuisine, SX.CUISINES.map((c) => c.id)) || '', six: inList(b.six, ['online', 'call', 'unknown']) || 'unknown', group: clip(b.group, 120).trim() });
   if (v.mode === 'captain' && !v.bookUrl && !v.phone) fail('add a booking link or a phone number, so captains can book it');
   // 10. now a standing hold: evenings waiting for a yes are simply held
   if (v.mode === 'hold') Object.values(db.bookings || {}).forEach((x) => { if (x.vid === v.id && x.state === 'asked' && x.date >= ymdTz(Date.now())) { x.state = 'held'; delete x.more; resolveAlerts('unconfirmed:' + bkey(v.id, x.date)); tablesAt(v, x.date).forEach((t) => revealNow(t)); } });
@@ -777,6 +779,21 @@ function savePlace(b) {
   (db.places = db.places || {})[v.id] = v;
   replaceAt(v);
   return { ok: true, id: v.id };
+}
+// the restaurant list around HBS and MIT (server/restaurants.js), as spots captains book: added, or brought up to date by name.
+// Ops can still pause one, change how many of our tables it takes in a night, or add its own places on the admin page
+function importRestaurants() {
+  const DOW = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }; let added = 0, updated = 0; const skipped = [];
+  RESTAURANTS.forEach((r) => {
+    const was = Object.values(db.places || {}).find((v) => !v.gone && v.name.toLowerCase() === String(r.name).toLowerCase()), shut = arr(r.closed).map((d) => DOW[d]).filter((d) => d != null);
+    try {
+      savePlace({ id: was && was.id, name: r.name, address: r.address, area: r.area, nights: [0, 1, 2, 3, 4, 5, 6].filter((d) => shut.indexOf(d) < 0), tables: was ? was.tables : r.six === 'call' ? 1 : 2, seats: was ? was.seats : 6,
+        mode: 'captain', bookVia: r.bookVia, bookUrl: r.bookUrl, phone: r.phone, price: r.price, vibe: r.vibe, cuisine: r.cuisine, six: r.six, group: r.groupNote, note: was ? was.note : '', off: was ? was.off : false, closedOn: was ? was.closedOn : [] });
+      if (was) updated++; else added++;
+    } catch (e) { skipped.push(r.name + ': ' + e.message); }
+  });
+  log('places-import', String(added), String(updated)); save();
+  return { ok: true, added, updated, skipped };
 }
 // a partner that now has fewer tables, fewer seats, a closed evening, or is paused: tables past what it can take go elsewhere
 function replaceAt(v) {
@@ -1214,12 +1231,17 @@ function bookLink(v, date, time, size) {
 }
 // where this table could go that evening: partners with a table held for Hash Table (nothing to book), then spots the captain
 // books, same area first; the current spot stays on the list
+// every place open that evening with room for the table (its night, its closed dates, how many of our tables it takes): the
+// current and last spots first, partners next, then the ones that take a group this size online, then the least used by us that
+// night. Each booking link opens with the date, the time and the party size filled in, so the captain sees real times for six
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
   const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id);
-  return Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e))))
-    .sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1)).slice(0, 4)
-    .map((v) => ({ id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '', link: isPartner(v) ? '' : bookLink(v, e.date, e.time, size) }));
+  const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), load = {}; // tables grow to six, so places that take six online lead even for four
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))); P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); });
+  return P.sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (big(a) - big(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
+    .map((v) => ({ id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
+      cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', link: isPartner(v) ? '' : bookLink(v, e.date, e.time, size) }));
 }
 function missions(t, now, light) {
   now = now || Date.now();
@@ -2400,6 +2422,7 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/move') out = move(b);
       else if (p === '/api/admin/venue') out = setVenue(b);
       else if (p === '/api/admin/place') out = savePlace(b);
+      else if (p === '/api/admin/places-import') out = importRestaurants();
       else if (p === '/api/admin/place-off') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); v.off = !v.off; if (v.off) replaceAt(v); out = { ok: true }; }
       else if (p === '/api/admin/place-table') { const t = own(db.tables, b.table); if (!t) fail('no such table'); if (!placeTable(t)) fail('no partner has room that evening'); out = placesAdmin(); }
       else if (p === '/api/admin/place-answer') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); placeAnswer(v, String(b.date || ''), !!b.ok, 'admin'); out = placesAdmin(); }
@@ -2526,5 +2549,5 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };
