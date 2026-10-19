@@ -839,7 +839,7 @@ function tableWho(t) {
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t, many) {
   const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${FLAG}${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
-  return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
+  return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}${job && t.captain && t.captain.me ? `<span class="sealflag">${FLAG}</span>` : ''}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
 const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
@@ -1010,6 +1010,15 @@ function openInvite(id) {
   A.inv = t; go('invite'); drawInvite(t.opened);
   if (!t.opened) { t.opened = true; api('POST', '/api/invite-open', { table: id }).catch(() => {}); }
 }
+// you're the captain: a gold flag swings in over the letter with gold confetti, then steps aside (a tap closes it sooner)
+function capReveal(t) {
+  const host = $('s-invite'); if (!host || host.querySelector('.capreveal')) return;
+  const el = document.createElement('div'); el.className = 'capreveal'; el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="crbox"><div class="crrays" aria-hidden="true"></div><div class="crflag">${FLAG}</div><b>You’re the captain!</b><p>Charlie picked you for ${esc(t.day)}. Three small missions, and I’ll walk you through each one</p></div>`;
+  el.onclick = () => close(); host.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+  setTimeout(() => celebrate(el.querySelector('.crbox'), 'gold'), 450);
+  const close = () => { if (!el.parentNode) return; el.classList.remove('on'); setTimeout(() => el.remove(), 400); }; setTimeout(close, 3000);
+}
 // a captain's invitation says what the job is: a few small missions, and that it can be passed on
 function capLetterHTML(t) {
   if (!t.captain || !t.captain.me) return '';
@@ -1023,7 +1032,7 @@ function drawInvite(already) {
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
       <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${sealWord(t)}</span></div>
       <article class="invite ${k}">
-        ${t.captain && t.captain.me ? `<div class="capstamp" id="capStamp" aria-hidden="true">${FLAG}<b>Captain</b></div>` : ''}
+        ${t.captain && t.captain.me ? `<div class="capstamp ${already ? '' : 'later'}" id="capStamp" aria-hidden="true">${FLAG}<b>Captain</b></div>` : ''}
         <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
@@ -1046,8 +1055,11 @@ function drawInvite(already) {
       </div>
     </div>`;
   if (!already) { const w = $('invwrap'); setTimeout(() => w.classList.add('opening'), 380); setTimeout(() => { w.classList.add('open'); celebrate(w, k); }, 1150); }
-  // a captain's letter: once the stamp lands, a burst of gold from it
-  if (t.captain && t.captain.me) setTimeout(() => { const s = $('capStamp'); if (s && cur === 'invite') celebrate(s, 'gold'); }, already ? 700 : 1900);
+  // a captain's letter: the first time, a big gold moment says it before the letter; the stamp then lands with a burst of gold
+  if (t.captain && t.captain.me) {
+    if (!already) setTimeout(() => { if (cur === 'invite' && A.inv === t) capReveal(t); }, 1250);
+    setTimeout(() => { const s = $('capStamp'); if (s && cur === 'invite') celebrate(s, 'gold'); }, already ? 700 : 4300);
+  }
 }
 // a burst of pastel confetti and a few sparkles from where the seal was, once, when an invitation opens
 function celebrate(host, kind) {

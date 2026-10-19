@@ -1586,6 +1586,44 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .seatflag svg{width:13px;height:13px}
 .seatflag.wave{animation:capring 2.2s ease-out infinite}
 @media (prefers-reduced-motion:reduce){.capflag.wave,.capflag.wave svg,.seatflag.wave,.seatflag.wave svg,.env.job,.env .envtag svg,.env .envtag::after,.invite .icap::after,.capstrip.mine::after,.capbrief.me,.capbrief.me::before{animation:none}.invwrap.open .capstamp{animation:none;opacity:1}}
+/* ---------- captain, louder: hard to miss ---------- */
+/* the sealed envelope: a gold edge that travels round it, a strong glow, a real wiggle, a bouncing flag on the seal */
+.env.job{animation:envglow2 2s ease-in-out infinite,envcall2 2.6s ease-in-out .6s infinite}
+@keyframes envglow2{0%,100%{box-shadow:0 22px 40px -26px rgba(70,50,40,.55),0 0 0 0 rgba(240,180,80,.0)}50%{box-shadow:0 22px 40px -26px rgba(70,50,40,.55),0 0 34px 6px rgba(240,180,80,.55)}}
+@keyframes envcall2{0%,70%,100%{transform:none}75%{transform:rotate(-2.4deg) translateY(-4px) scale(1.01)}80%{transform:rotate(2.4deg) translateY(-4px) scale(1.01)}85%{transform:rotate(-1.4deg) translateY(-2px)}90%{transform:rotate(.8deg)}95%{transform:none}}
+.env.job::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:3px;z-index:4;pointer-events:none;background:conic-gradient(from var(--capa),#E8B85C,#B9822A,#FFE7A8,#D9A441,#E8B85C);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:capspin 3s linear infinite}
+.env.job .envtag{color:#5A3D0E;background:linear-gradient(135deg,#F7DC9C,#E2B05A);box-shadow:0 8px 18px -8px rgba(170,120,40,.8),0 0 0 1px rgba(255,255,255,.5) inset;animation:tagpulse 1.6s ease-in-out infinite}
+@keyframes tagpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.seal .sealflag{position:absolute;top:-14px;right:-14px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#7A5518;background:radial-gradient(circle at 34% 28%,#FFF6DA,#EFCF86 60%,#D9A441);box-shadow:0 0 0 2px #fff,0 6px 14px -6px rgba(150,100,30,.8);animation:flagbounce 1.2s cubic-bezier(.3,1.6,.5,1) infinite}
+.seal .sealflag svg{width:14px;height:14px;stroke-width:2.2;transform-origin:22% 88%;animation:flagwave 1.2s ease-in-out infinite}
+@keyframes flagbounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}60%{transform:translateY(0) scale(1.06,.94)}}
+/* the reveal: a big gold flag swings in over the letter */
+.capreveal{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:24px;background:rgba(20,16,10,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease}
+.capreveal.on{opacity:1}
+.capreveal .crbox{position:relative;width:min(300px,100%);padding:30px 22px 26px;border-radius:28px;text-align:center;color:#3E2A0C;background:linear-gradient(165deg,#FFF8E6,#F6DFA6);box-shadow:0 30px 60px -24px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.6) inset;transform:scale(.6) rotate(-6deg);opacity:0;transition:transform .6s cubic-bezier(.2,1.5,.35,1),opacity .3s ease}
+.capreveal.on .crbox{transform:none;opacity:1}
+.crrays{position:absolute;left:50%;top:62px;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(232,184,92,.35) 0deg 10deg,transparent 10deg 24deg);-webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%);animation:rays 8s linear infinite;pointer-events:none}
+@keyframes rays{to{transform:rotate(360deg)}}
+.crflag{position:relative;display:grid;place-items:center;width:84px;height:84px;margin:0 auto 14px;border-radius:50%;color:#7A5518;background:radial-gradient(circle at 34% 28%,#FFF8E2,#F2D597 58%,#D9A441);box-shadow:inset 0 0 0 4px rgba(255,255,255,.6),0 14px 28px -12px rgba(150,100,30,.8);animation:capring 1.6s ease-out infinite}
+.crflag svg{width:40px;height:40px;stroke-width:2;transform-origin:22% 88%;animation:flagwave 1.1s ease-in-out infinite}
+.capreveal b{position:relative;display:block;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.capreveal p{position:relative;margin:8px 0 0;font-size:14.5px;line-height:1.5;color:#6B5233}
+/* home: the captain strip is gold through and through, and its flag bounces */
+.capstrip.mine{background:linear-gradient(110deg,#FFF3D6,#F6DB9C,#FFF3D6,#F6DB9C);background-size:300% 100%;animation:goldflow 4s linear infinite;box-shadow:0 0 0 1.5px rgba(214,160,70,.6),0 14px 30px -16px rgba(170,120,40,.75)}
+@keyframes goldflow{to{background-position:-300% 0}}
+.capstrip.mine b{color:#4A3210}
+.capstrip.mine small{color:#6E5228}
+.capstrip.mine .capflag{width:36px;height:36px;background:radial-gradient(circle at 34% 28%,#FFF8E2,#F2D597 58%,#D9A441);color:#6E4C12}
+.capstrip.mine .capflag svg{animation:flagwave 1.1s ease-in-out infinite}
+/* the table: a gold banner of a header, a bigger waving flag, a thicker travelling edge */
+.capbrief.me::before{inset:-3px;border-radius:25px;padding:3px}
+.capbrief.me .caphead .capflag{width:46px;height:46px;background:radial-gradient(circle at 34% 28%,#FFF8E2,#F2D597 58%,#D9A441);color:#6E4C12}
+.capbrief.me .caphead .capflag svg{width:22px;height:22px;stroke-width:2.1}
+.capbrief.me .caphead b{font-size:19px;color:#4A3210}
+@media (prefers-reduced-motion:reduce){.env.job,.env.job::after,.env.job .envtag,.seal .sealflag,.seal .sealflag svg,.crrays,.crflag,.crflag svg,.capstrip.mine,.capstrip.mine .capflag svg{animation:none}.capreveal .crbox{transition:opacity .3s}}
+/* the flag on the seal sits on its left, clear of the tag; the stamp lands once the big reveal has gone */
+.seal .sealflag{right:auto;left:-14px}
+.invwrap.open .capstamp.later{animation-delay:3.4s}
 
 
 
@@ -6255,7 +6293,7 @@ function tableWho(t) {
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t, many) {
   const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${FLAG}${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
-  return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
+  return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}${job && t.captain && t.captain.me ? `<span class="sealflag">${FLAG}</span>` : ''}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
 const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
@@ -6426,6 +6464,15 @@ function openInvite(id) {
   A.inv = t; go('invite'); drawInvite(t.opened);
   if (!t.opened) { t.opened = true; api('POST', '/api/invite-open', { table: id }).catch(() => {}); }
 }
+// you're the captain: a gold flag swings in over the letter with gold confetti, then steps aside (a tap closes it sooner)
+function capReveal(t) {
+  const host = $('s-invite'); if (!host || host.querySelector('.capreveal')) return;
+  const el = document.createElement('div'); el.className = 'capreveal'; el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="crbox"><div class="crrays" aria-hidden="true"></div><div class="crflag">${FLAG}</div><b>You’re the captain!</b><p>Charlie picked you for ${esc(t.day)}. Three small missions, and I’ll walk you through each one</p></div>`;
+  el.onclick = () => close(); host.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+  setTimeout(() => celebrate(el.querySelector('.crbox'), 'gold'), 450);
+  const close = () => { if (!el.parentNode) return; el.classList.remove('on'); setTimeout(() => el.remove(), 400); }; setTimeout(close, 3000);
+}
 // a captain's invitation says what the job is: a few small missions, and that it can be passed on
 function capLetterHTML(t) {
   if (!t.captain || !t.captain.me) return '';
@@ -6439,7 +6486,7 @@ function drawInvite(already) {
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
       <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${sealWord(t)}</span></div>
       <article class="invite ${k}">
-        ${t.captain && t.captain.me ? `<div class="capstamp" id="capStamp" aria-hidden="true">${FLAG}<b>Captain</b></div>` : ''}
+        ${t.captain && t.captain.me ? `<div class="capstamp ${already ? '' : 'later'}" id="capStamp" aria-hidden="true">${FLAG}<b>Captain</b></div>` : ''}
         <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
@@ -6462,8 +6509,11 @@ function drawInvite(already) {
       </div>
     </div>`;
   if (!already) { const w = $('invwrap'); setTimeout(() => w.classList.add('opening'), 380); setTimeout(() => { w.classList.add('open'); celebrate(w, k); }, 1150); }
-  // a captain's letter: once the stamp lands, a burst of gold from it
-  if (t.captain && t.captain.me) setTimeout(() => { const s = $('capStamp'); if (s && cur === 'invite') celebrate(s, 'gold'); }, already ? 700 : 1900);
+  // a captain's letter: the first time, a big gold moment says it before the letter; the stamp then lands with a burst of gold
+  if (t.captain && t.captain.me) {
+    if (!already) setTimeout(() => { if (cur === 'invite' && A.inv === t) capReveal(t); }, 1250);
+    setTimeout(() => { const s = $('capStamp'); if (s && cur === 'invite') celebrate(s, 'gold'); }, already ? 700 : 4300);
+  }
 }
 // a burst of pastel confetti and a few sparkles from where the seal was, once, when an invitation opens
 function celebrate(host, kind) {
