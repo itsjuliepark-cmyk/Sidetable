@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var FRESH = /*FRESH*/false, KIND = FRESH ? 'sixtop-start-' : 'sixtop-demo-', KEY = KIND + '/*BUILD*/', MAX_AGE = 3 * 864e5;
+  var KIND = 'sixtop-demo-', KEY = KIND + '/*BUILD*/', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -168,5 +168,5 @@
     });
   };
   self.addEventListener('storage', function (e) { if (e.key === KEY) location.reload(); });
-  self.SIXTOP_DEMO = { S: S, KEY: KEY, fresh: FRESH, faces: load('faces.js') };
+  self.SIXTOP_DEMO = { S: S, KEY: KEY, faces: load('faces.js') };
 })();

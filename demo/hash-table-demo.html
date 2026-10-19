@@ -2389,7 +2389,7 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var FRESH = false, KIND = FRESH ? 'sixtop-start-' : 'sixtop-demo-', KEY = KIND + '7fd8790f66', MAX_AGE = 3 * 864e5;
+  var KIND = 'sixtop-demo-', KEY = KIND + '5830f83f74', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -5711,7 +5711,7 @@ module.exports = [
     });
   };
   self.addEventListener('storage', function (e) { if (e.key === KEY) location.reload(); });
-  self.SIXTOP_DEMO = { S: S, KEY: KEY, fresh: FRESH, faces: load('faces.js') };
+  self.SIXTOP_DEMO = { S: S, KEY: KEY, faces: load('faces.js') };
 })();
 
 </script>
@@ -6833,9 +6833,9 @@ function popGameHTML(u) {
   const g = u.game; if (!g) return '';
   const q = g.stage === 'vote' ? null : g.q || (g.card && g.card.q);
   const line = u.peek ? (g.stage === 'vote' ? 'Three questions are up for a vote. Join and you get a say in what you argue about.' : 'Join to pick your side. It stays sealed until you meet.')
-    : g.stage === 'vote' ? (g.myVote ? `You voted, ${g.voted} of ${g.n} are in so far.` : `Three questions, one winner. Vote by ${g.voteLabel}.`)
-    : g.stage === 'sides' ? (g.mySide ? `You’re team “${g.card[g.mySide]}”. Sealed until ${g.revealLabel}.` : `Pick your side before ${g.revealLabel}.`)
-    : `${g.A.length} for “${g.card.a}”, ${g.B.length} for “${g.card.b}”.`;
+    : g.stage === 'vote' ? (g.myVote ? `You voted! ${g.voted} of ${g.n} are in so far` : `Pick the topic you want to talk about when you meet! Votes close ${g.voteLabel}`)
+    : g.stage === 'sides' ? (g.mySide ? `This is your topic! You’re team “${g.card[g.mySide]}”, sealed until ${g.revealLabel}` : `This is your topic! Pick your side before ${g.revealLabel}`)
+    : `Talk it out when you meet! ${g.A.length} for “${g.card.a}”, ${g.B.length} for “${g.card.b}”`;
   const todo = !u.peek && gameTodo(g);
   return `<div class="cardg gsum"><div class="ctitle">${GICON.spark} ${esc(g.title)}</div>${q ? `<p class="gq">${esc(q)}</p>` : ''}<p class="gsq">${esc(line)}</p>${u.peek ? '' : `<button class="btn sm ${todo ? '' : 'ghost'}" onclick="openChat('pop','${u.id}',true)">${g.stage === 'vote' ? (g.myVote ? 'See the votes' : 'Vote now') : g.stage === 'sides' ? (g.mySide ? 'Open the group chat' : 'Pick your side') : 'See the split'}</button>`}</div>`;
 }
@@ -7048,7 +7048,7 @@ function gameCardMini(c, g, people) {
     <div class="gfoot"><div class="gfaces">${facesHTML(c.voters, people)}${c.voters.length ? `<small>${c.voters.length} ${c.voters.length > 1 ? 'votes' : 'vote'}</small>` : ''}</div><button class="gvote" onclick="gameMove('vote',{card:'${c.id}'})">${mine ? ICON.check + ' Your pick' : 'Vote'}</button></div></div>`;
 }
 function gameBodyHTML(g, people) {
-  if (g.stage === 'vote') return `<p class="ghint">Three questions for ${g.hang ? 'this hang' : 'your table'}. The one with the most votes is what you argue about ${g.hang ? 'when you meet' : 'at dinner'}.</p><div class="gcards">${g.cards.map((c) => gameCardHTML(c, g, people)).join('')}</div>`;
+  if (g.stage === 'vote') return `<p class="ghint">Three topics for ${g.hang ? 'this hang' : 'your table'}. Vote for the one you want to talk about ${g.hang ? 'when you meet' : 'at dinner'}!</p><div class="gcards">${g.cards.map((c) => gameCardHTML(c, g, people)).join('')}</div>`;
   const c = g.card, n = g.n;
   if (g.stage === 'sides') return `<div class="gcard big k-${esc(c.k)}"><div class="gtop"><span class="gkind">${esc(c.kind)}</span>${heatHTML(c.heat)}</div><p class="gq">${esc(c.q)}</p>
       <div class="gsides">${['a', 'b'].map((s) => `<button class="gside ${g.mySide === s ? 'sel' : ''}" onclick="gameMove('side',{side:'${s}'})"><i>${s.toUpperCase()}</i>${esc(c[s])}</button>`).join('')}</div>
@@ -7101,10 +7101,10 @@ function gameSumHTML(t) {
   const g = t.game; if (!g || t.left) return '';
   let body;
   if (g.stage === 'vote') return `<div class="cardg gsum">${railHTML('qRail', g.cards.map((c) => gameCardMini(c, g, t.people)), `${GICON.spark} Tonight’s question`)}
-    <p class="gsq" style="margin:10px 0 0">Three questions, one winner. The most votes is what you argue about at dinner. ${g.myVote ? `${g.voted} of ${g.n} have voted` : `Vote by ${esc(g.voteLabel)}`}</p>
+    <p class="gsq" style="margin:10px 0 0">Pick the topic you want to talk about at the table! ${g.myVote ? `${g.voted} of ${g.n} have voted so far` : `Votes close ${esc(g.voteLabel)}`}</p>
     <button class="link" style="margin:6px 0 0;text-align:left" onclick="openChat('table','${t.id}',true)">Talk it over in the group chat</button></div>`;
-  else if (g.stage === 'sides') body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.mySide ? `You’re team “${esc(g.card[g.mySide])}”. Sealed until ${esc(g.revealLabel)}` : `Pick your side before ${esc(g.revealLabel)}`}</p>`;
-  else body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.A.length} for “${esc(g.card.a)}”, ${g.B.length} for “${esc(g.card.b)}”</p>`;
+  else if (g.stage === 'sides') body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.mySide ? `This is your topic for the table! You’re team “${esc(g.card[g.mySide])}”, sealed until ${esc(g.revealLabel)}` : `This is your topic for the table! Pick your side before ${esc(g.revealLabel)}`}</p>`;
+  else body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">Talk it out at the table! ${g.A.length} for “${esc(g.card.a)}”, ${g.B.length} for “${esc(g.card.b)}”</p>`;
   const todo = (g.stage === 'vote' && !g.myVote) || (g.stage === 'sides' && !g.mySide);
   return `<div class="cardg gsum"><div class="ctitle">${GICON.spark} Tonight’s question</div>${body}<button class="btn sm ${todo ? '' : 'ghost'}" onclick="openChat('table','${t.id}',true)">${g.stage === 'vote' ? (g.myVote ? 'See the votes' : 'Vote in the group chat') : g.stage === 'sides' ? (g.mySide ? 'Open the group chat' : 'Pick your side') : 'See the split'}</button></div>`;
 }
@@ -7879,12 +7879,11 @@ function boot() {
   D.menu = function () {
     var f = friend(), who = me();
     $('sheet').innerHTML = '<div class="grab"></div><h3>Demo</h3><div class="sub2" style="line-height:1.5">The real Hash Table app, with 40 sample members. It runs on this phone only, and nothing is sent anywhere.' + (who ? ' You’re ' + esc(who.name) + '.' : '') + '</div>'
-      + (D.fresh ? (who ? '' : '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Join as someone new<small>Through a club link, the whole sign-up, then your first invitations</small></button>')
-      : '<div class="label">Be someone</div>'
+      + '<div class="label">Be someone</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'jordan\')">Jordan Park, Harvard<small>Two sealed invitations, round two with last week’s table, and two friends</small></button>'
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')
       + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new, from the start<small>Join through a club link and do the whole sign-up</small></button>'
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.signedUp()">Someone new, signed up<small>Skip the sign-up and see what comes next: your first invitations</small></button>')
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.signedUp()">Someone new, signed up<small>Skip the sign-up and see what comes next: your first invitations</small></button>'
       + '<div class="label">Behind the scenes</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.captain()">Make me captain of my next dinner<small>Book the spot, rally the vote, settle up, and earn a stripe</small></button>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.dropOuts()">Most of my next table cancels<small>The people left join another table that night, or it’s called off</small></button>'
@@ -7896,13 +7895,10 @@ function boot() {
   };
 
   var baseStart = renderStart;
-  // on the film, Join opens the demo's ways in: be Jordan, or sign up as someone new
+  // on the film, Join opens the demo's three ways in: sign up from the start, start just after sign-up, or be Jordan
   renderStart = function (msg) {
     baseStart(msg);
-    if (D.fresh) { $('lSign').style.display = 'none'; $('lJoin').textContent = 'Start'; } // nobody to sign in as yet
-    $('startBox').innerHTML = D.fresh
-      ? '<div class="ls-note">A working demo: you’re new here. Sign up the way a real member would, meet Charlie, and get your first invitations. It runs on your phone only, and nothing is sent anywhere.</div><button class="btn" onclick="SIXTOP_DEMO.join()">Start as someone new</button>'
-      : '<div class="ls-note">A working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere. Pick a way in</div><div class="ls-opts">'
+    $('startBox').innerHTML = '<div class="ls-note">A working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere. Pick a way in</div><div class="ls-opts">'
       + '<button class="ls-opt main" onclick="SIXTOP_DEMO.join()">Start as someone new<small>The whole sign-up with Charlie, from the first question</small></button>'
       + '<button class="ls-opt" onclick="SIXTOP_DEMO.signedUp()">Skip to after sign-up<small>You’re new and already signed up: see your first invitations</small></button>'
       + '<button class="ls-opt" onclick="SIXTOP_DEMO.as(\'jordan\')">Try it as Jordan<small>A week in: invitations, round two, friends, captain</small></button></div>';

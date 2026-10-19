@@ -208,12 +208,11 @@
   D.menu = function () {
     var f = friend(), who = me();
     $('sheet').innerHTML = '<div class="grab"></div><h3>Demo</h3><div class="sub2" style="line-height:1.5">The real Hash Table app, with 40 sample members. It runs on this phone only, and nothing is sent anywhere.' + (who ? ' You’re ' + esc(who.name) + '.' : '') + '</div>'
-      + (D.fresh ? (who ? '' : '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Join as someone new<small>Through a club link, the whole sign-up, then your first invitations</small></button>')
-      : '<div class="label">Be someone</div>'
+      + '<div class="label">Be someone</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'jordan\')">Jordan Park, Harvard<small>Two sealed invitations, round two with last week’s table, and two friends</small></button>'
       + (f ? '<button class="opt plain" onclick="SIXTOP_DEMO.as(\'friend\')">' + esc(f.name) + ', ' + (f.school === 'mit' ? 'MIT' : 'Harvard') + '<small>Picked Jordan after their last dinner</small></button>' : '')
       + '<button class="opt plain" onclick="SIXTOP_DEMO.join()">Someone new, from the start<small>Join through a club link and do the whole sign-up</small></button>'
-      + '<button class="opt plain" onclick="SIXTOP_DEMO.signedUp()">Someone new, signed up<small>Skip the sign-up and see what comes next: your first invitations</small></button>')
+      + '<button class="opt plain" onclick="SIXTOP_DEMO.signedUp()">Someone new, signed up<small>Skip the sign-up and see what comes next: your first invitations</small></button>'
       + '<div class="label">Behind the scenes</div>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.captain()">Make me captain of my next dinner<small>Book the spot, rally the vote, settle up, and earn a stripe</small></button>'
       + '<button class="opt plain" onclick="SIXTOP_DEMO.dropOuts()">Most of my next table cancels<small>The people left join another table that night, or it’s called off</small></button>'
@@ -225,13 +224,10 @@
   };
 
   var baseStart = renderStart;
-  // on the film, Join opens the demo's ways in: be Jordan, or sign up as someone new
+  // on the film, Join opens the demo's three ways in: sign up from the start, start just after sign-up, or be Jordan
   renderStart = function (msg) {
     baseStart(msg);
-    if (D.fresh) { $('lSign').style.display = 'none'; $('lJoin').textContent = 'Start'; } // nobody to sign in as yet
-    $('startBox').innerHTML = D.fresh
-      ? '<div class="ls-note">A working demo: you’re new here. Sign up the way a real member would, meet Charlie, and get your first invitations. It runs on your phone only, and nothing is sent anywhere.</div><button class="btn" onclick="SIXTOP_DEMO.join()">Start as someone new</button>'
-      : '<div class="ls-note">A working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere. Pick a way in</div><div class="ls-opts">'
+    $('startBox').innerHTML = '<div class="ls-note">A working demo with 40 sample members. It runs on your phone only, and nothing is sent anywhere. Pick a way in</div><div class="ls-opts">'
       + '<button class="ls-opt main" onclick="SIXTOP_DEMO.join()">Start as someone new<small>The whole sign-up with Charlie, from the first question</small></button>'
       + '<button class="ls-opt" onclick="SIXTOP_DEMO.signedUp()">Skip to after sign-up<small>You’re new and already signed up: see your first invitations</small></button>'
       + '<button class="ls-opt" onclick="SIXTOP_DEMO.as(\'jordan\')">Try it as Jordan<small>A week in: invitations, round two, friends, captain</small></button></div>';

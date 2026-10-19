@@ -27,9 +27,8 @@ npm run dev
 - `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
 - 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
 - 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
-- `npm run demo`를 실행하면 데모 두 개를 함께 생성, 코드를 바꾼 뒤 함께 커밋
-  - `demo/hash-table-demo.html`: Jordan으로 보기, 한 주가 이미 지나간 상태
-  - `demo/hash-table-start.html`: 처음 온 사람으로 가입부터 시작, Sign in 없이 Start 버튼 하나
+- `npm run demo`를 실행하면 저장소의 `demo/hash-table-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
+  - 첫 화면 Join에서 세 가지로 시작: 처음부터 가입, 가입 끝난 새 회원, Jordan
 
 ## 실제 파일럿 실행
 

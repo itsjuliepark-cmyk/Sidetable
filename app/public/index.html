@@ -1459,9 +1459,9 @@ function popGameHTML(u) {
   const g = u.game; if (!g) return '';
   const q = g.stage === 'vote' ? null : g.q || (g.card && g.card.q);
   const line = u.peek ? (g.stage === 'vote' ? 'Three questions are up for a vote. Join and you get a say in what you argue about.' : 'Join to pick your side. It stays sealed until you meet.')
-    : g.stage === 'vote' ? (g.myVote ? `You voted, ${g.voted} of ${g.n} are in so far.` : `Three questions, one winner. Vote by ${g.voteLabel}.`)
-    : g.stage === 'sides' ? (g.mySide ? `You’re team “${g.card[g.mySide]}”. Sealed until ${g.revealLabel}.` : `Pick your side before ${g.revealLabel}.`)
-    : `${g.A.length} for “${g.card.a}”, ${g.B.length} for “${g.card.b}”.`;
+    : g.stage === 'vote' ? (g.myVote ? `You voted! ${g.voted} of ${g.n} are in so far` : `Pick the topic you want to talk about when you meet! Votes close ${g.voteLabel}`)
+    : g.stage === 'sides' ? (g.mySide ? `This is your topic! You’re team “${g.card[g.mySide]}”, sealed until ${g.revealLabel}` : `This is your topic! Pick your side before ${g.revealLabel}`)
+    : `Talk it out when you meet! ${g.A.length} for “${g.card.a}”, ${g.B.length} for “${g.card.b}”`;
   const todo = !u.peek && gameTodo(g);
   return `<div class="cardg gsum"><div class="ctitle">${GICON.spark} ${esc(g.title)}</div>${q ? `<p class="gq">${esc(q)}</p>` : ''}<p class="gsq">${esc(line)}</p>${u.peek ? '' : `<button class="btn sm ${todo ? '' : 'ghost'}" onclick="openChat('pop','${u.id}',true)">${g.stage === 'vote' ? (g.myVote ? 'See the votes' : 'Vote now') : g.stage === 'sides' ? (g.mySide ? 'Open the group chat' : 'Pick your side') : 'See the split'}</button>`}</div>`;
 }
@@ -1674,7 +1674,7 @@ function gameCardMini(c, g, people) {
     <div class="gfoot"><div class="gfaces">${facesHTML(c.voters, people)}${c.voters.length ? `<small>${c.voters.length} ${c.voters.length > 1 ? 'votes' : 'vote'}</small>` : ''}</div><button class="gvote" onclick="gameMove('vote',{card:'${c.id}'})">${mine ? ICON.check + ' Your pick' : 'Vote'}</button></div></div>`;
 }
 function gameBodyHTML(g, people) {
-  if (g.stage === 'vote') return `<p class="ghint">Three questions for ${g.hang ? 'this hang' : 'your table'}. The one with the most votes is what you argue about ${g.hang ? 'when you meet' : 'at dinner'}.</p><div class="gcards">${g.cards.map((c) => gameCardHTML(c, g, people)).join('')}</div>`;
+  if (g.stage === 'vote') return `<p class="ghint">Three topics for ${g.hang ? 'this hang' : 'your table'}. Vote for the one you want to talk about ${g.hang ? 'when you meet' : 'at dinner'}!</p><div class="gcards">${g.cards.map((c) => gameCardHTML(c, g, people)).join('')}</div>`;
   const c = g.card, n = g.n;
   if (g.stage === 'sides') return `<div class="gcard big k-${esc(c.k)}"><div class="gtop"><span class="gkind">${esc(c.kind)}</span>${heatHTML(c.heat)}</div><p class="gq">${esc(c.q)}</p>
       <div class="gsides">${['a', 'b'].map((s) => `<button class="gside ${g.mySide === s ? 'sel' : ''}" onclick="gameMove('side',{side:'${s}'})"><i>${s.toUpperCase()}</i>${esc(c[s])}</button>`).join('')}</div>
@@ -1727,10 +1727,10 @@ function gameSumHTML(t) {
   const g = t.game; if (!g || t.left) return '';
   let body;
   if (g.stage === 'vote') return `<div class="cardg gsum">${railHTML('qRail', g.cards.map((c) => gameCardMini(c, g, t.people)), `${GICON.spark} Tonight’s question`)}
-    <p class="gsq" style="margin:10px 0 0">Three questions, one winner. The most votes is what you argue about at dinner. ${g.myVote ? `${g.voted} of ${g.n} have voted` : `Vote by ${esc(g.voteLabel)}`}</p>
+    <p class="gsq" style="margin:10px 0 0">Pick the topic you want to talk about at the table! ${g.myVote ? `${g.voted} of ${g.n} have voted so far` : `Votes close ${esc(g.voteLabel)}`}</p>
     <button class="link" style="margin:6px 0 0;text-align:left" onclick="openChat('table','${t.id}',true)">Talk it over in the group chat</button></div>`;
-  else if (g.stage === 'sides') body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.mySide ? `You’re team “${esc(g.card[g.mySide])}”. Sealed until ${esc(g.revealLabel)}` : `Pick your side before ${esc(g.revealLabel)}`}</p>`;
-  else body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.A.length} for “${esc(g.card.a)}”, ${g.B.length} for “${esc(g.card.b)}”</p>`;
+  else if (g.stage === 'sides') body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">${g.mySide ? `This is your topic for the table! You’re team “${esc(g.card[g.mySide])}”, sealed until ${esc(g.revealLabel)}` : `This is your topic for the table! Pick your side before ${esc(g.revealLabel)}`}</p>`;
+  else body = `<div class="gkw one"><span class="k-${esc(g.card.k)} mine"><i></i>${esc(g.card.kw || g.card.q)}</span></div><p class="gsq">Talk it out at the table! ${g.A.length} for “${esc(g.card.a)}”, ${g.B.length} for “${esc(g.card.b)}”</p>`;
   const todo = (g.stage === 'vote' && !g.myVote) || (g.stage === 'sides' && !g.mySide);
   return `<div class="cardg gsum"><div class="ctitle">${GICON.spark} Tonight’s question</div>${body}<button class="btn sm ${todo ? '' : 'ghost'}" onclick="openChat('table','${t.id}',true)">${g.stage === 'vote' ? (g.myVote ? 'See the votes' : 'Vote in the group chat') : g.stage === 'sides' ? (g.mySide ? 'Open the group chat' : 'Pick your side') : 'See the split'}</button></div>`;
 }
