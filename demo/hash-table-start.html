@@ -6257,7 +6257,8 @@ function firstTableHTML() {
 }
 function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 function renderHome() {
-  const v = A.view, me = v.me, out = [], I = invitations(), H = myHangs();
+  // tonight's dinner first, then tech tables before social ones (Hash Table leads with the tech talk), each by date
+  const v = A.view, me = v.me, out = [], I = invitations().sort((a, b) => ((b.phase === 'tonight') - (a.phase === 'tonight')) || ((a.type === 'kindred') - (b.type === 'kindred')) || (a.start < b.start ? -1 : 1)), H = myHangs();
   const sealed = I.filter((t) => !t.opened).length, dinners = I.length === 1 ? 'one dinner' : nw(I.length) + ' dinners', hangs = H.length === 1 ? 'one hang' : nw(H.length) + ' hangs';
   const line = sealed ? `Charlie has ${sealed === 1 ? 'a private invitation' : nw(sealed) + ' private invitations'} for you.`
     : I.length ? `You have ${dinners}${H.length ? ' and ' + hangs : ''} coming up.`
