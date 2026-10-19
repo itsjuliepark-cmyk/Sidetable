@@ -423,14 +423,25 @@ function api(method, url, body) {
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
 // Charlie's note: a quick reaction to what you just picked. It pops up over the next step and goes by itself (a tap closes it)
 function charlieSays(text, ms) {
-  const el = $('cfloat'); if (!el || !text) return;
-  $('cfloatT').textContent = text; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
-  clearTimeout(charlieSays.t); charlieSays.t = setTimeout(() => el.classList.remove('on'), ms || Math.max(2600, Math.min(5200, 1400 + text.length * 40)));
+  const el = $('cfloat'), p = $('cfloatT'); if (!el || !text) return;
+  clearTimeout(charlieSays.t); clearTimeout(charlieSays.w);
+  el.classList.remove('on', 'typing'); void el.offsetWidth; el.classList.add('on', 'typing');
+  p.innerHTML = '<span class="cdots" aria-hidden="true"><i></i><i></i><i></i></span>';
+  charlieSays.w = setTimeout(() => { el.classList.remove('typing'); p.innerHTML = esc(text).split(' ').map((w, i) => `<span class="cw" style="animation-delay:${i * 30}ms">${w}</span>`).join(' '); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }, 600);
+  charlieSays.t = setTimeout(() => el.classList.remove('on'), 600 + (ms || Math.max(2600, Math.min(5400, 1500 + text.length * 40))));
 }
 // what Charlie says as you leave a step (the sign-up only, and never the same line twice in a row)
-const REACT = { tables: () => (SX.MIX.find((x) => x.id === A.P.mix) || {}).note, lens: () => (SX.LENS.find((l) => l.id === A.P.lens) || {}).note,
-  takes: () => (Object.keys(A.P.takes).length === 3 ? 'Good. I’ll make sure someone at your table disagrees with you. Politely. Now, part two: the people.' : ''),
-  life: () => (SX.LOOK.find((o) => o.id === A.P.look) || {}).note, future: () => NEXT_NOTE[A.P.next[0]] };
+const REACT = {
+  school: () => (A.P.first ? `Hey ${A.P.first}, so nice to meet you! Okay, let’s find your people.` : ''),
+  tables: () => (SX.MIX.find((x) => x.id === A.P.mix) || {}).note,
+  tracks: () => { const T = A.P.tracks.map((x) => SX.track(x).t), n = T.length; return !n ? '' : n === 1 ? `${T[0]}! Great corner to be in.` : n === 2 ? `Ooh, ${T[0]} and ${T[1]}. Nice combo!` : `Wow, ${nw(n)} corners of tech! I love a curious one. I’ll seat you mostly by ${T[0]}.`; },
+  interests: () => { const n = A.P.interests.length, a = SX.INTNAME[A.P.interests[0]]; return !n ? '' : n === 1 ? `${a}! Love a specialist.` : n >= 6 ? `Whoa, ${nw(n)} of them! You’ll never run out of things to talk about.` : `Oh nice, ${a} as your anchor. I already have a few people in mind.`; },
+  lens: () => (SX.LENS.find((l) => l.id === A.P.lens) || {}).note,
+  takes: () => { const v = Object.values(A.P.takes), no = v.filter((x) => x === 'disagree').length, yes = v.filter((x) => x === 'agree').length; if (v.length < 3) return '';
+    return no >= 2 ? 'Ooh, spicy! I’ll find someone at your table who pushes back. Politely. Now, part two: the people!' : yes >= 2 && !no ? 'Ha, so agreeable! Don’t worry, I’ll still find you someone to argue with. Now, part two: the people!' : 'Nice, a little of everything. I’ll make sure someone sees it differently. Now, part two: the people!'; },
+  life: () => (SX.LOOK.find((o) => o.id === A.P.look) || {}).note,
+  future: () => (A.P.next.length > 2 ? 'Ooh, keeping your options open. Smart! You’ll hear from people on every path.' : NEXT_NOTE[A.P.next[0]]),
+  profile: () => ((A.P.building || '').trim() ? 'Ooh, people are definitely going to ask you about that.' : (A.P.headline || '').trim() ? 'Love it. That’s a good opener.' : '') };
 function react(step) { if (!A.P || !A.view || A.view.me.done || !REACT[step]) return; const txt = REACT[step](); A.reacted = A.reacted || {}; if (!txt || A.reacted[step] === txt) return; A.reacted[step] = txt; setTimeout(() => charlieSays(txt), 260); }
 function oops(e) { toast('Something’s off', e && e.message ? cap(e.message) + '.' : 'Try again in a moment.'); }
 // a face, or the first letter on the school color; a photo that fails to load falls back to the letter
@@ -630,10 +641,10 @@ function renderTables() {
   gate('tablesNext', A.P.mix ? null : ['mixList', 'Pick the kind of dinners']);
 }
 function pickMix(id) { A.P.mix = id; renderTables(); }
-const NEXT_NOTE = { 'Start a company': 'A founder. I’ll seat you near a few builders, and at least one person who asks hard questions.', 'Join a startup': 'Startup-bound. Some of the best intros happen at a dinner table.',
-  'Big tech': 'Big tech. You’ll be the one who knows how things really work at scale.', 'Venture capital': 'A future investor. You’ll meet founders before anyone else does.',
-  'Back to my old industry': 'Going back with new tricks. That view is gold at a tech table.', 'Research or a PhD': 'A researcher. You’ll keep the rest of the table honest.',
-  'Still figuring it out': 'Still figuring it out is a great place to be at a dinner like this.' };
+const NEXT_NOTE = { 'Start a company': 'Ooh, a founder! I’ll seat you near a few builders, and at least one person who asks hard questions.', 'Join a startup': 'Startup-bound, nice! Some of the best intros happen at a dinner table.',
+  'Big tech': 'Oh nice, big tech. You’ll be the one who knows how things really work at scale.', 'Venture capital': 'Ooh, a future investor! You’ll meet founders before anyone else does.',
+  'Back to my old industry': 'Going back with new tricks? Love that. That view is gold at a tech table.', 'Research or a PhD': 'A PhD? Wow. You’ll keep the rest of the table honest.',
+  'Still figuring it out': 'Honestly? Still figuring it out is a great place to be at a dinner like this.' };
 function renderFuture() {
   $('futK').textContent = part('three', 'Where you’re headed');
   $('nextChips').innerHTML = SX.NEXT.map((x, i) => `<button class="chip ${A.P.next.indexOf(x) >= 0 ? 'sel' : ''}" aria-pressed="${A.P.next.indexOf(x) >= 0}" onclick="pickNext(${i})">${esc(x)}</button>`).join('');
@@ -827,7 +838,7 @@ function tableWho(t) {
 // what a seal says: the kind of table, or the round
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t, many) {
-  const job = t.captain && t.captain.me && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : '';
+  const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
   return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
@@ -917,6 +928,7 @@ function renderHome() {
 }
 // under an open invitation: you're the captain, and the next mission
 function capStripHTML(t) {
+  if (t.spotOpen && !(t.captain && t.captain.me) && !t.left) return `<button class="capstrip" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>Your table still needs a spot</b><small>Anyone can book it now, and whoever does is captain</small></div>${ICON.chev}</button>`;
   if (!t.captain || !t.captain.me || t.left) return '';
   const J = t.capJobs || {};
   const next = J.spotBy ? `Next: book the spot by ${J.spotBy}` : J.vote ? `Next: get the table voting, ${J.vote.voted} of ${J.vote.need} so far` : J.checks ? 'Last one: split the check at dinner' : 'All three missions done';
@@ -1147,12 +1159,13 @@ function drawTable() {
     ${before ? venue : ''}
     ${before && !t.left ? captainHTML(t) : ''}
     ${gameSumHTML(t)}
+    <div class="sp"></div>
     <div class="cardg who"><div class="ctitle">Who’s coming <span class="wn">${nw(people.length)} of you</span></div>
       <div class="whogrid" id="tv">${people.slice().sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).map((p, i) => `<button class="seat ${p.me ? 'me' : ''}" data-id="${p.id}" style="animation-delay:${i * 0.06}s" onclick="${p.me ? '' : `openProfile('${p.id}')`}">${av(p)}<div class="nm">${p.me ? 'You' : esc(p.first)}</div>${badge(p.school)}</button>`).join('')}</div>
       ${chips.length ? `<div class="whoshare"><div class="label">What you share <span>tap one</span></div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div><p class="tvcap" id="tvCap"></p></div>` : ''}
     </div>
     <div class="sp"></div>
-    <div class="cardg why"><div class="ctitle">${t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together'}</div>${t.why.map((l) => `<p>${hl(l)}</p>`).join('')}</div>
+    ${whyHTML(t)}
     ${sinceHTML(t)}
     <div class="sp"></div>
     ${people.filter((p) => !p.me).map((p) => pcardHTML(p, mine, { n: ((t.known || []).find((k) => k.id === p.id) || {}).n })).join('')}
@@ -1162,6 +1175,23 @@ function drawTable() {
     ${t.feedbackOpen && !t.left ? `<button class="btn ghost" onclick="openAfter('${t.id}')">${t.feedbackDone ? 'My picks from this table' : 'How was the table?'}</button>` : ''}
     ${before && !t.left ? `<button class="link" onclick="openDecline('${t.id}')">I can’t make it</button>` : ''}`;
   if (chips.length) setTimeout(() => { if (cur === 'table' && A.table === t) hiTag(chips[0]); }, 650);
+  whyDots();
+}
+// why these people: one reason per card, swiped (or stepped with the arrows) like tonight's question cards
+function whyHTML(t) {
+  const L = t.why || []; if (!L.length) return '';
+  const title = t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together', many = L.length > 1;
+  const nav = many ? `<div class="whynav"><button class="wnb" onclick="whyGo(-1)" aria-label="Previous reason">${SV('<path d="M15 18l-6-6 6-6"/>', 16)}</button><button class="wnb" onclick="whyGo(1)" aria-label="Next reason">${SV('<path d="M9 18l6-6-6-6"/>', 16)}</button></div>` : '';
+  return `<div class="cardg why"><div class="whyhead"><div class="ctitle">${title}</div>${nav}</div>
+    <div class="whyrail ${many ? '' : 'one'}" id="whyRail" onscroll="whyDots()">${L.map((l, i) => `<div class="whyc">${many ? `<span class="whyn">${i + 1} of ${L.length}</span>` : ''}<p>${hl(l)}</p></div>`).join('')}</div>
+    ${many ? `<div class="whydots" id="whyDots">${L.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}</div>`;
+}
+function whyGo(d) { const r = $('whyRail'); if (r && r.firstElementChild) r.scrollBy({ left: d * (r.firstElementChild.offsetWidth + 10), behavior: 'smooth' }); }
+function whyDots() {
+  const r = $('whyRail'), D = $('whyDots'); if (!r || !D || !r.firstElementChild) return;
+  const n = D.children.length, i = Math.max(0, Math.min(n - 1, Math.round(r.scrollLeft / (r.firstElementChild.offsetWidth + 10))));
+  [...D.children].forEach((el, k) => el.classList.toggle('on', k === i));
+  const B = r.parentNode.querySelectorAll('.wnb'); if (B.length === 2) { B[0].disabled = i === 0; B[1].disabled = i >= n - 1 || r.scrollLeft + r.clientWidth >= r.scrollWidth - 4; }
 }
 // what each of them said they'd do before this table, the morning after their last one
 function sinceHTML(t) {
@@ -1214,6 +1244,7 @@ function captainHTML(t) {
     <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
+  if (t.spotOpen) return `<div class="sp"></div><div class="cardg capcard"><div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>Your table still needs a spot</b><small>${esc(c.first)} hasn’t booked yet. Anyone can book it now, and whoever does is captain</small></div></div><button class="btn sm" style="margin-top:12px" onclick="captainTake('${t.id}', this)">I’ll book it</button></div>`;
   const p = (t.people || []).find((x) => x.id === c.id) || { first: c.first };
   return `<div class="sp"></div><div class="cardg capcard row">${av(p, 's')}<div class="grow"><b>${esc(c.first)} is the captain</b><div class="sub2">Picks the spot, rallies the vote and settles the checks. It rotates, so your turn comes too</div></div></div>`;
 }

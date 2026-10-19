@@ -1031,7 +1031,7 @@ test('whoever booked deleting their account close to dinner leaves the booking i
   const dr = S.draft({ event: e.id }); S.publish({ event: e.id }); const tt = db().tables[dr.tables[0] ? dr.tables[0].id : Object.values(db().tables).find((x) => x.eventId === e.id).id];
   assert.ok(tt && tt.ids.length === 4);
   S.cancelSeat(trio[0], { event: e.id }); S.cancelSeat(trio[1], { event: e.id });
-  assert.ok(!tt.closed && tt.ids.filter((id) => !(tt.out || {})[id]).length === 3, 'someone who marked the evening takes the chair, so the table stays');
+  assert.ok(!tt.closed && tt.ids.filter((id) => !(tt.out || {})[id]).length >= 3, 'someone who marked the evening takes the chair, so the table stays');
 });
 
 test('an unbooked table passes to another captain a day and a half out, and with no spot by 2 PM on the day it’s off', () => {
@@ -1116,4 +1116,42 @@ test('nobody’s first dinner comes with a job when someone at the table has bee
   const v = S.view(cm).tables.find((x) => x.id === t.id);
   assert.ok(v.capJobs && v.capJobs.spotBy && v.capJobs.checks, 'the captain sees what’s left: the spot (and by when), the checks');
   assert.strictEqual(S.view(news[1]).tables.find((x) => x.id === t.id).capJobs, null, 'nobody else does');
+});
+
+test('a captain who never opens the table hands the job to someone who has, and four hours before the cutoff anyone can book it', () => {
+  const sp = bookSpot('Quiet'), back = only([sp]);
+  try {
+    const ms = people(5, 'Quiet'), n = night(ms, 'topic', day(33)), t = n.t, first = t.captain;
+    assert.ok(first && !t.venue, 'a captain, nothing booked');
+    const keen = ms.find((m) => m.id !== first); keen.read['inv:' + t.id] = new Date().toISOString();
+    S.tick(S.tzMs(day(1), '10:00'));
+    assert.ok(t.captain && t.captain !== first && t.cap.quiet, 'the job moved off a captain who never opened the table');
+    assert.strictEqual(t.captain, keen.id, 'to the one who did');
+    // the new captain doesn't book either: four hours before the cutoff the table can book it
+    S.tick(S.closeAt(n.e) - 3 * 36e5);
+    assert.ok(t.cap.open, 'open to the table');
+    const other = ms.find((m) => m.id !== t.captain && m.id !== first), v = S.view(other).tables.find((x) => x.id === t.id);
+    assert.ok(v.spotOpen, 'everyone sees it');
+    assert.ok(db().chats[t.id].some((x) => /Anyone here can book it now/.test(x.text)), 'the table hears it');
+    S.captainMove(other, { table: t.id, act: 'take' });
+    assert.strictEqual(t.captain, other.id, 'whoever steps in is captain');
+    S.captainBook(other, { table: t.id, place: sp, name: other.name });
+    assert.ok(t.venue && t.venue.pid === sp && !S.view(other).tables.find((x) => x.id === t.id).spotOpen, 'booked, and no longer open');
+  } finally { back(); }
+});
+
+test('a table of six that loses three while changes are free takes someone who marked that evening, so one more change can’t sink it', () => {
+  const W = S.addDays(S.targetWeek(), 42), d = day(3), at = new Date().toISOString();
+  const six = people(6, 'Half'), spare = people(2, 'Spare2');
+  six.concat(spare).forEach((m) => { m.profile.mix = 'both'; m.avail = { week: W, slots: [d + '|dinner'], max: 1, at }; });
+  const e = S.createEvent({ type: 'topic', date: d, time: '19:00' }); e.week = W; e.generated = true;
+  db().seats[e.id] = {}; six.forEach((m) => { db().seats[e.id][m.id] = { at, size: 'either', diet: [], status: 'held' }; });
+  S.draft({ event: e.id }); S.publish({ event: e.id });
+  const t = Object.values(db().tables).find((x) => x.eventId === e.id);
+  assert.strictEqual(t.ids.length, 6);
+  const leave = t.ids.slice(0, 3); leave.forEach((id) => S.cancelSeat(db().members[id], { event: e.id }));
+  const seated = t.ids.filter((id) => !(t.out || {})[id]);
+  assert.ok(!t.closed && seated.length === 4, 'four at the table: ' + seated.length);
+  assert.ok(seated.some((id) => spare.some((m) => m.id === id)), 'one of them someone who marked that evening');
+  assert.ok(t.captain && seated.indexOf(t.captain) >= 0, 'and a captain who is still coming');
 });

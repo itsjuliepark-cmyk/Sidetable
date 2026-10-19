@@ -84,11 +84,11 @@
   const INTNAME = {}; INTS.forEach((i) => { INTNAME[i.id] = i.t; });
 
   const LENS = [
-    { id: 'build', t: 'Building it', s: 'Founder, engineer, maker', note: 'A builder. I’ll make sure someone at your table asks who pays.' },
-    { id: 'fund', t: 'Funding it', s: 'VC, angel, corporate venture', note: 'An investor. Two per table at most, so it never turns into pitch night.' },
-    { id: 'run', t: 'Running it', s: 'PM, operator, GM', note: 'An operator. Every table needs one person who has shipped the thing.' },
-    { id: 'study', t: 'Studying it', s: 'Research, policy, medicine, science', note: 'A researcher. You’ll keep everyone honest.' },
-    { id: 'pivot', t: 'Pivoting into it', s: 'New to this and curious', note: 'New to this? Best seat in the house. You get to ask the obvious question nobody else will.' }
+    { id: 'build', t: 'Building it', s: 'Founder, engineer, maker', note: 'Ooh, a builder! I’ll make sure someone at your table asks who pays.' },
+    { id: 'fund', t: 'Funding it', s: 'VC, angel, corporate venture', note: 'Oh, an investor! Two per table at most, so it never turns into pitch night.' },
+    { id: 'run', t: 'Running it', s: 'PM, operator, GM', note: 'Yes, an operator! Every table needs someone who has actually shipped the thing.' },
+    { id: 'study', t: 'Studying it', s: 'Research, policy, medicine, science', note: 'Ooh, a researcher. You’re going to keep everyone honest.' },
+    { id: 'pivot', t: 'Pivoting into it', s: 'New to this and curious', note: 'New to this? Honestly, best seat in the house. You get to ask the question nobody else will.' }
   ];
   const BEFORE = ['Engineer', 'Product', 'Consulting', 'Banking / PE', 'Founder', 'Medicine', 'Military', 'Something else'];
 
@@ -107,25 +107,25 @@
   ];
   const QS = [
     { q: 'Friday, 7 PM. Your plans just fell through. You…', o: [
-      { t: 'Text three people and rally a new plan', d: { h: 26, s: 10 }, note: 'A rallier. Every table needs one, or nobody ever meets again.' },
-      { t: 'Honestly? Relieved. Takeout and a long call with one friend', d: { s: -16, d: 12, a: -10 }, note: 'One good conversation over a crowd. Noted.' },
-      { t: 'Go somewhere new alone and see who you meet', d: { a: 26, s: 8 }, note: 'Brave. You’re the friend with the best stories.' },
-      { t: 'Wait for someone to invite me somewhere', d: { h: -24 }, note: 'A joiner. Good news: I’ll make sure your table has a planner.' }] },
+      { t: 'Text three people and rally a new plan', d: { h: 26, s: 10 }, note: 'Ha, love it! Every table needs a rallier, or nobody ever meets again.' },
+      { t: 'Honestly? Relieved. Takeout and a long call with one friend', d: { s: -16, d: 12, a: -10 }, note: 'Same, honestly. One good conversation beats a crowd. Noted!' },
+      { t: 'Go somewhere new alone and see who you meet', d: { a: 26, s: 8 }, note: 'Wow, brave! You’re definitely the friend with the best stories.' },
+      { t: 'Wait for someone to invite me somewhere', d: { h: -24 }, note: 'Totally fair. Good news: I’ll make sure your table has a planner.' }] },
     { q: 'The conversation you’d stay up until 2 AM for…', o: [
-      { t: 'What we’d do if we weren’t scared', d: { d: 28 }, note: 'Deep end. Your people will go there with you.' },
-      { t: 'Ranking things that don’t need ranking', d: { d: -26, s: 8 }, note: 'Ha. Bits over big questions. Your table will be loud.' },
-      { t: 'A book, a paper, a wild theory', d: { d: 14, a: 8 }, note: 'A thinker who still wants to have fun.' },
-      { t: 'Stories. The more embarrassing, the better', d: { d: -12, s: 14 }, note: 'A storyteller. Good. Someone has to go first.' }] },
+      { t: 'What we’d do if we weren’t scared', d: { d: 28 }, note: 'Ooh, the deep end. Your people will go there with you.' },
+      { t: 'Ranking things that don’t need ranking', d: { d: -26, s: 8 }, note: 'Ha! Bits over big questions. Your table is going to be loud.' },
+      { t: 'A book, a paper, a wild theory', d: { d: 14, a: 8 }, note: 'Oh nice, a thinker who still wants to have fun.' },
+      { t: 'Stories. The more embarrassing, the better', d: { d: -12, s: 14 }, note: 'Yes! Someone has to go first, and it sounds like it’s you.' }] },
     { q: 'The group chat has been dead for two weeks. You…', o: [
-      { t: 'Propose a plan with a date and a place', d: { h: 28 }, note: 'A planner. Friendships survive because of people like you.' },
-      { t: 'Revive it with a meme and see what happens', d: { h: 8, d: -10, s: 6 }, note: 'Low effort, high return. Respect.' },
-      { t: 'Wait. Someone will text eventually', d: { h: -22 }, note: 'Fair. I’ll make sure someone does.' },
-      { t: 'Skip the group and call one person', d: { d: 14, s: -10, h: 6 }, note: 'Straight to one-on-one. A classic close-friend move.' }] },
+      { t: 'Propose a plan with a date and a place', d: { h: 28 }, note: 'Oh, a planner! Honestly, friendships survive because of people like you.' },
+      { t: 'Revive it with a meme and see what happens', d: { h: 8, d: -10, s: 6 }, note: 'Ha, low effort, high return. Respect.' },
+      { t: 'Wait. Someone will text eventually', d: { h: -22 }, note: 'Fair enough! Don’t worry, I’ll make sure someone does.' },
+      { t: 'Skip the group and call one person', d: { d: 14, s: -10, h: 6 }, note: 'Ooh, straight to one-on-one. Classic close-friend move.' }] },
     { q: 'Your ideal Saturday with friends is…', o: [
-      { t: 'Our usual spot, our usual order', d: { a: -28 }, note: 'Rituals. The best friendships run on them.' },
-      { t: 'Something none of us has done before', d: { a: 28 }, note: 'Adventure first. I’ll find you people who say yes.' },
-      { t: 'A long walk along the Charles that turns into dinner', d: { a: -8, d: 10 }, note: 'Unhurried. My kind of Saturday.' },
-      { t: 'Anything with a scoreboard', d: { a: 10, s: 10, d: -8 }, note: 'A little competition. Great for bonding, apparently.' }] }
+      { t: 'Our usual spot, our usual order', d: { a: -28 }, note: 'Aw, rituals. The best friendships run on them.' },
+      { t: 'Something none of us has done before', d: { a: 28 }, note: 'Wow, adventure first! I’ll find you people who say yes.' },
+      { t: 'A long walk along the Charles that turns into dinner', d: { a: -8, d: 10 }, note: 'Mmm, unhurried. That’s my kind of Saturday too.' },
+      { t: 'Anything with a scoreboard', d: { a: 10, s: 10, d: -8 }, note: 'Ha, a little competition! Great for bonding, apparently.' }] }
   ];
   const RHYTHM = [['Every week', 'Weekly'], ['Every two weeks', 'Every 2 weeks'], ['Once a month', 'Monthly']];
   const LIFE = ['New to Boston', 'Partnered', 'Married', 'A parent', 'International', 'Staying in Boston'];
@@ -136,17 +136,17 @@
   const ACTV = { 'Run the Charles': 'run the Charles', 'Climb': 'climb', 'Cook together': 'cook together', 'Museums': 'go to museums', 'Live music': 'see live music',
     'Celtics & Red Sox': 'catch a Celtics game', 'Hike': 'hike', 'Board games': 'play board games', 'Try new restaurants': 'try new restaurants' };
   const LOOK = [
-    { id: 'crew', t: 'A crew I see every month', note: 'A crew. I’ll keep seating you with the same faces until it sticks.' },
-    { id: 'close', t: 'One or two close friends', note: 'Close friends. Fewer people, more often. I can do that.' },
-    { id: 'ideas', t: 'People to argue ideas with', note: 'Sparring partners. Your tech tables will be loud.' },
-    { id: 'acts', t: 'People to do things with', note: 'Activity people. I’ll turn dinners into Saturday plans.' }
+    { id: 'crew', t: 'A crew I see every month', note: 'Love that. I’ll keep seating you with the same faces until it sticks.' },
+    { id: 'close', t: 'One or two close friends', note: 'Aw, close friends. Fewer people, more often. I can do that!' },
+    { id: 'ideas', t: 'People to argue ideas with', note: 'Ooh, sparring partners! Your tech tables are going to be loud.' },
+    { id: 'acts', t: 'People to do things with', note: 'Yes! I’ll turn dinners into Saturday plans.' }
   ];
   const DIETS = ['Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Gluten-free', 'Alcohol-free table'];
   // what kind of dinners someone wants Charlie to invite them to
   const MIX = [
-    { id: 'both', t: 'Tech + social', s: 'Tech tables and social ones, mixed through the week. Most people pick this.', note: 'Both. I’ll mix them, so you get the nerding out and the new friends.' },
-    { id: 'topic', t: 'Tech tables only', s: 'Dinners around my corner of tech. That’s why I’m here.', note: 'Tech tables it is. I’ll seat you with people who love the same corner of tech.' },
-    { id: 'social', t: 'Mostly social', s: 'Good people first. The topic can wait.', note: 'Good people first. I’ll seat you for how you click, not what you do, so I’ll skip most of the tech questions.' }
+    { id: 'both', t: 'Tech + social', s: 'Tech tables and social ones, mixed through the week. Most people pick this.', note: 'Ooh, both! Love it. Some nights you nerd out, some nights you just make new friends.' },
+    { id: 'topic', t: 'Tech tables only', s: 'Dinners around my corner of tech. That’s why I’m here.', note: 'Tech all the way, nice! I’ll seat you with people who love the same corner of tech.' },
+    { id: 'social', t: 'Mostly social', s: 'Good people first. The topic can wait.', note: 'Love that. Good people first, so I’ll skip most of the tech questions.' }
   ];
   // where someone is headed after school, and how Charlie says it at a table
   const NEXT = ['Start a company', 'Join a startup', 'Big tech', 'Venture capital', 'Back to my old industry', 'Research or a PhD', 'Still figuring it out'];

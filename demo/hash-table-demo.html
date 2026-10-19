@@ -1472,15 +1472,16 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 /* the school line on the first step: the check and the words apart */
 .verified{display:flex;align-items:center;gap:7px}
 .verified svg{flex:none}
-/* Charlie's note: a reaction that pops up as you move on, on a dark glass card, then goes */
-.cfloat{position:absolute;left:14px;right:14px;top:calc(62px + env(safe-area-inset-top,0px));z-index:45;display:flex;gap:11px;align-items:flex-start;padding:14px 16px 15px;border-radius:20px;
+/* Charlie's note: a reaction that pops up just above the button as you move on, on a dark glass card, then goes
+   (the button sits 76px up: 22px under it, 54px tall; the note keeps 10px clear of it) */
+.cfloat{position:absolute;left:22px;right:22px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:45;display:flex;gap:11px;align-items:flex-start;padding:14px 16px 15px;border-radius:20px;
   background:rgba(14,14,16,.8);-webkit-backdrop-filter:blur(16px) saturate(1.05);backdrop-filter:blur(16px) saturate(1.05);box-shadow:0 24px 46px -22px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08) inset;
-  color:#fff;opacity:0;transform:translateY(-10px) scale(.96);pointer-events:none;transition:opacity .3s ease,transform .5s cubic-bezier(.2,1.35,.35,1)}
+  color:#fff;opacity:0;transform:translateY(12px) scale(.96);transform-origin:50% 100%;pointer-events:none;transition:opacity .3s ease,transform .5s cubic-bezier(.2,1.35,.35,1)}
 .cfloat.on{opacity:1;transform:none;pointer-events:auto;cursor:pointer}
 .cfloat .orb{margin-top:1px;box-shadow:0 0 0 1.5px rgba(255,255,255,.35),0 4px 12px -3px rgba(0,0,0,.45)}
 .cfloat.on .orb{animation:cpulse .8s cubic-bezier(.2,1.4,.4,1) 1}
 .cfloat b{display:block;font-size:12px;font-weight:600;letter-spacing:-.003em;color:rgba(255,255,255,.6);margin-bottom:3px}
-.cfloat p{margin:0;font-family:var(--italic);font-style:italic;font-size:17.5px;line-height:1.36;color:#fff;overflow-wrap:anywhere}
+.cfloat p{margin:0;font-family:var(--sans);font-size:15px;font-weight:500;line-height:1.45;letter-spacing:-.006em;color:#fff;overflow-wrap:anywhere}
 @keyframes cpulse{0%{transform:scale(.5)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.cfloat{transition:opacity .2s;transform:none}.cfloat.on .orb{animation:none}}
 /* a sealed captain's envelope: a small gold note to open it soon */
@@ -1496,6 +1497,35 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .invite .icap .capflag{width:30px;height:30px}
 .invite .icap b{display:block;font-size:14.5px;font-weight:650;color:#4A3A22}
 .invite .icap p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:#6B5A44}
+/* Charlie types for a beat (three dots, the orb breathing), then the words land one after another */
+.cfloat .cdots{display:inline-flex;gap:5px;align-items:center;height:22px}
+.cfloat .cdots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);animation:cdot 1s ease-in-out infinite}
+.cfloat .cdots i:nth-child(2){animation-delay:.15s}
+.cfloat .cdots i:nth-child(3){animation-delay:.3s}
+@keyframes cdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.cfloat.typing .orb{animation:breathe 1.1s ease-in-out infinite}
+.cfloat .cw{display:inline-block;animation:cword .4s cubic-bezier(.2,.9,.3,1) both}
+@keyframes cword{from{opacity:0;transform:translateY(6px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){.cfloat .cdots i,.cfloat.typing .orb,.cfloat .cw{animation:none}}
+/* why I put you together: a reason per card, side to side, arrows and dots like tonight's question */
+.why .whyhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.why .whyhead .ctitle{margin:0}
+.whynav{display:flex;gap:6px;flex:none}
+.wnb{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.8);border:1px solid var(--line);color:var(--ink-2);box-shadow:0 4px 10px -6px rgba(18,28,38,.3);transition:opacity .2s,transform .15s}
+.wnb:disabled{opacity:.3}
+.wnb:not(:disabled):active{transform:scale(.9)}
+.whyrail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:2px 18px 6px;scroll-padding:0 18px;scrollbar-width:none}
+.whyrail::-webkit-scrollbar{display:none}
+.whyc{flex:0 0 84%;scroll-snap-align:start;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:15px 16px;border-radius:18px;background:linear-gradient(150deg,#F5F2FD,#EDF2FB);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 22px -18px rgba(18,28,38,.45)}
+.whyc:nth-child(4n+2){background:linear-gradient(150deg,#FDF2EE,#FBEEF3)}
+.whyc:nth-child(4n+3){background:linear-gradient(150deg,#EEF8F3,#EEF4FB)}
+.whyc:nth-child(4n+4){background:linear-gradient(150deg,#FDF7EA,#F8EFE6)}
+.whyrail.one .whyc{flex-basis:100%}
+.why .whyc p{margin:0;padding:0;border:0;font-size:15.5px;line-height:1.45;color:var(--ink)}
+.whyn{font-size:11.5px;font-weight:650;color:var(--ink-faint)}
+.whydots{display:flex;justify-content:center;gap:5px;margin-top:8px}
+.whydots i{width:6px;height:6px;border-radius:3px;background:rgba(28,32,36,.15);transition:width .25s,background .25s}
+.whydots i.on{width:16px;background:var(--ink-2)}
 
 
 
@@ -1914,11 +1944,11 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
   const INTNAME = {}; INTS.forEach((i) => { INTNAME[i.id] = i.t; });
 
   const LENS = [
-    { id: 'build', t: 'Building it', s: 'Founder, engineer, maker', note: 'A builder. I’ll make sure someone at your table asks who pays.' },
-    { id: 'fund', t: 'Funding it', s: 'VC, angel, corporate venture', note: 'An investor. Two per table at most, so it never turns into pitch night.' },
-    { id: 'run', t: 'Running it', s: 'PM, operator, GM', note: 'An operator. Every table needs one person who has shipped the thing.' },
-    { id: 'study', t: 'Studying it', s: 'Research, policy, medicine, science', note: 'A researcher. You’ll keep everyone honest.' },
-    { id: 'pivot', t: 'Pivoting into it', s: 'New to this and curious', note: 'New to this? Best seat in the house. You get to ask the obvious question nobody else will.' }
+    { id: 'build', t: 'Building it', s: 'Founder, engineer, maker', note: 'Ooh, a builder! I’ll make sure someone at your table asks who pays.' },
+    { id: 'fund', t: 'Funding it', s: 'VC, angel, corporate venture', note: 'Oh, an investor! Two per table at most, so it never turns into pitch night.' },
+    { id: 'run', t: 'Running it', s: 'PM, operator, GM', note: 'Yes, an operator! Every table needs someone who has actually shipped the thing.' },
+    { id: 'study', t: 'Studying it', s: 'Research, policy, medicine, science', note: 'Ooh, a researcher. You’re going to keep everyone honest.' },
+    { id: 'pivot', t: 'Pivoting into it', s: 'New to this and curious', note: 'New to this? Honestly, best seat in the house. You get to ask the question nobody else will.' }
   ];
   const BEFORE = ['Engineer', 'Product', 'Consulting', 'Banking / PE', 'Founder', 'Medicine', 'Military', 'Something else'];
 
@@ -1937,25 +1967,25 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
   ];
   const QS = [
     { q: 'Friday, 7 PM. Your plans just fell through. You…', o: [
-      { t: 'Text three people and rally a new plan', d: { h: 26, s: 10 }, note: 'A rallier. Every table needs one, or nobody ever meets again.' },
-      { t: 'Honestly? Relieved. Takeout and a long call with one friend', d: { s: -16, d: 12, a: -10 }, note: 'One good conversation over a crowd. Noted.' },
-      { t: 'Go somewhere new alone and see who you meet', d: { a: 26, s: 8 }, note: 'Brave. You’re the friend with the best stories.' },
-      { t: 'Wait for someone to invite me somewhere', d: { h: -24 }, note: 'A joiner. Good news: I’ll make sure your table has a planner.' }] },
+      { t: 'Text three people and rally a new plan', d: { h: 26, s: 10 }, note: 'Ha, love it! Every table needs a rallier, or nobody ever meets again.' },
+      { t: 'Honestly? Relieved. Takeout and a long call with one friend', d: { s: -16, d: 12, a: -10 }, note: 'Same, honestly. One good conversation beats a crowd. Noted!' },
+      { t: 'Go somewhere new alone and see who you meet', d: { a: 26, s: 8 }, note: 'Wow, brave! You’re definitely the friend with the best stories.' },
+      { t: 'Wait for someone to invite me somewhere', d: { h: -24 }, note: 'Totally fair. Good news: I’ll make sure your table has a planner.' }] },
     { q: 'The conversation you’d stay up until 2 AM for…', o: [
-      { t: 'What we’d do if we weren’t scared', d: { d: 28 }, note: 'Deep end. Your people will go there with you.' },
-      { t: 'Ranking things that don’t need ranking', d: { d: -26, s: 8 }, note: 'Ha. Bits over big questions. Your table will be loud.' },
-      { t: 'A book, a paper, a wild theory', d: { d: 14, a: 8 }, note: 'A thinker who still wants to have fun.' },
-      { t: 'Stories. The more embarrassing, the better', d: { d: -12, s: 14 }, note: 'A storyteller. Good. Someone has to go first.' }] },
+      { t: 'What we’d do if we weren’t scared', d: { d: 28 }, note: 'Ooh, the deep end. Your people will go there with you.' },
+      { t: 'Ranking things that don’t need ranking', d: { d: -26, s: 8 }, note: 'Ha! Bits over big questions. Your table is going to be loud.' },
+      { t: 'A book, a paper, a wild theory', d: { d: 14, a: 8 }, note: 'Oh nice, a thinker who still wants to have fun.' },
+      { t: 'Stories. The more embarrassing, the better', d: { d: -12, s: 14 }, note: 'Yes! Someone has to go first, and it sounds like it’s you.' }] },
     { q: 'The group chat has been dead for two weeks. You…', o: [
-      { t: 'Propose a plan with a date and a place', d: { h: 28 }, note: 'A planner. Friendships survive because of people like you.' },
-      { t: 'Revive it with a meme and see what happens', d: { h: 8, d: -10, s: 6 }, note: 'Low effort, high return. Respect.' },
-      { t: 'Wait. Someone will text eventually', d: { h: -22 }, note: 'Fair. I’ll make sure someone does.' },
-      { t: 'Skip the group and call one person', d: { d: 14, s: -10, h: 6 }, note: 'Straight to one-on-one. A classic close-friend move.' }] },
+      { t: 'Propose a plan with a date and a place', d: { h: 28 }, note: 'Oh, a planner! Honestly, friendships survive because of people like you.' },
+      { t: 'Revive it with a meme and see what happens', d: { h: 8, d: -10, s: 6 }, note: 'Ha, low effort, high return. Respect.' },
+      { t: 'Wait. Someone will text eventually', d: { h: -22 }, note: 'Fair enough! Don’t worry, I’ll make sure someone does.' },
+      { t: 'Skip the group and call one person', d: { d: 14, s: -10, h: 6 }, note: 'Ooh, straight to one-on-one. Classic close-friend move.' }] },
     { q: 'Your ideal Saturday with friends is…', o: [
-      { t: 'Our usual spot, our usual order', d: { a: -28 }, note: 'Rituals. The best friendships run on them.' },
-      { t: 'Something none of us has done before', d: { a: 28 }, note: 'Adventure first. I’ll find you people who say yes.' },
-      { t: 'A long walk along the Charles that turns into dinner', d: { a: -8, d: 10 }, note: 'Unhurried. My kind of Saturday.' },
-      { t: 'Anything with a scoreboard', d: { a: 10, s: 10, d: -8 }, note: 'A little competition. Great for bonding, apparently.' }] }
+      { t: 'Our usual spot, our usual order', d: { a: -28 }, note: 'Aw, rituals. The best friendships run on them.' },
+      { t: 'Something none of us has done before', d: { a: 28 }, note: 'Wow, adventure first! I’ll find you people who say yes.' },
+      { t: 'A long walk along the Charles that turns into dinner', d: { a: -8, d: 10 }, note: 'Mmm, unhurried. That’s my kind of Saturday too.' },
+      { t: 'Anything with a scoreboard', d: { a: 10, s: 10, d: -8 }, note: 'Ha, a little competition! Great for bonding, apparently.' }] }
   ];
   const RHYTHM = [['Every week', 'Weekly'], ['Every two weeks', 'Every 2 weeks'], ['Once a month', 'Monthly']];
   const LIFE = ['New to Boston', 'Partnered', 'Married', 'A parent', 'International', 'Staying in Boston'];
@@ -1966,17 +1996,17 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
   const ACTV = { 'Run the Charles': 'run the Charles', 'Climb': 'climb', 'Cook together': 'cook together', 'Museums': 'go to museums', 'Live music': 'see live music',
     'Celtics & Red Sox': 'catch a Celtics game', 'Hike': 'hike', 'Board games': 'play board games', 'Try new restaurants': 'try new restaurants' };
   const LOOK = [
-    { id: 'crew', t: 'A crew I see every month', note: 'A crew. I’ll keep seating you with the same faces until it sticks.' },
-    { id: 'close', t: 'One or two close friends', note: 'Close friends. Fewer people, more often. I can do that.' },
-    { id: 'ideas', t: 'People to argue ideas with', note: 'Sparring partners. Your tech tables will be loud.' },
-    { id: 'acts', t: 'People to do things with', note: 'Activity people. I’ll turn dinners into Saturday plans.' }
+    { id: 'crew', t: 'A crew I see every month', note: 'Love that. I’ll keep seating you with the same faces until it sticks.' },
+    { id: 'close', t: 'One or two close friends', note: 'Aw, close friends. Fewer people, more often. I can do that!' },
+    { id: 'ideas', t: 'People to argue ideas with', note: 'Ooh, sparring partners! Your tech tables are going to be loud.' },
+    { id: 'acts', t: 'People to do things with', note: 'Yes! I’ll turn dinners into Saturday plans.' }
   ];
   const DIETS = ['Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Gluten-free', 'Alcohol-free table'];
   // what kind of dinners someone wants Charlie to invite them to
   const MIX = [
-    { id: 'both', t: 'Tech + social', s: 'Tech tables and social ones, mixed through the week. Most people pick this.', note: 'Both. I’ll mix them, so you get the nerding out and the new friends.' },
-    { id: 'topic', t: 'Tech tables only', s: 'Dinners around my corner of tech. That’s why I’m here.', note: 'Tech tables it is. I’ll seat you with people who love the same corner of tech.' },
-    { id: 'social', t: 'Mostly social', s: 'Good people first. The topic can wait.', note: 'Good people first. I’ll seat you for how you click, not what you do, so I’ll skip most of the tech questions.' }
+    { id: 'both', t: 'Tech + social', s: 'Tech tables and social ones, mixed through the week. Most people pick this.', note: 'Ooh, both! Love it. Some nights you nerd out, some nights you just make new friends.' },
+    { id: 'topic', t: 'Tech tables only', s: 'Dinners around my corner of tech. That’s why I’m here.', note: 'Tech all the way, nice! I’ll seat you with people who love the same corner of tech.' },
+    { id: 'social', t: 'Mostly social', s: 'Good people first. The topic can wait.', note: 'Love that. Good people first, so I’ll skip most of the tech questions.' }
   ];
   // where someone is headed after school, and how Charlie says it at a table
   const NEXT = ['Start a company', 'Join a startup', 'Big tech', 'Venture capital', 'Back to my old industry', 'Research or a PhD', 'Still figuring it out'];
@@ -2332,7 +2362,7 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 (function () {
   'use strict';
   // KEY changes with the bundled code (scripts/build-demo.js fills it in), so new code never runs on old sample data
-  var KEY = 'sixtop-demo-73ca84c2b9', MAX_AGE = 3 * 864e5;
+  var KEY = 'sixtop-demo-e528637ba2', MAX_AGE = 3 * 864e5;
   // sample data is rebuilt every few days, and always when a new week starts in Boston, so 'next week' always has evenings in it
   var etYmd = function (ms) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
   var etMonday = function (ms) { var d = new Date(etYmd(ms) + 'T12:00:00Z'), back = (d.getUTCDay() + 6) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); };
@@ -3233,7 +3263,7 @@ function cancelSeat(me, b) {
   s.status = 'cancelled'; s.cancelledAt = new Date().toISOString(); s.late = seated && Date.now() > freeFor(e, me) && s.rescued !== 'cross' && !seatedIds(tb).some((x) => x !== me.id && apart(me.id, x));
   if (tb && tb.published && !tb.closed) {
     tb.out = tb.out || {}; tb.out[me.id] = true;
-    if (!fillChair(tb, e) && !(seatedIds(tb).length < 3 && Date.now() < freeUntil(e) && fillFromWeek(tb, e))) { if (seatedIds(tb).length < 3) shrink(tb, e); else charlie(tb.id, 'Plans changed for one of you, so the table is a seat smaller. Everything else stays the same.'); }
+    if (!fillChair(tb, e) && !(seatedIds(tb).length < 4 && Date.now() < freeUntil(e) && fillFromWeek(tb, e))) { if (seatedIds(tb).length < 3) shrink(tb, e); else charlie(tb.id, 'Plans changed for one of you, so the table is a seat smaller. Everything else stays the same.'); }
     if (!tb.closed) { const bk = bookingOn(tb); if (bk && bk.by === me.id) notify(me.id, 'bookkeep', { place: tb.venue.name, day: weekday(t.start) }); if (tb.captain === me.id) { pickCaptain(tb, me.id); captainChanged(tb, e); briefCaptain(tb); } if (tb.venue && tb.venue.id) syncBooking(tb.venue.id, e.date); }
   }
   else if (tb) { tb.ids = tb.ids.filter((x) => x !== me.id); refreshTable(tb); }
@@ -3800,12 +3830,15 @@ function coolCheck(m) {
    checks, and opens the deck once everyone's sat down. It rotates: whoever has done it least recently goes first, people who
    said they're happy to before people who didn't say, never someone who said no. Anyone can pass it on until two hours
    before. The restaurant hears only the captain's first name. */
+// someone who has looked at this table: opened the invitation, or read its chat
+const seenTable = (m, t) => !!(m && m.read && (m.read['inv:' + t.id] || m.read['t:' + t.id]));
 function pickCaptain(t, skip) {
   const pass = arr(t.passed).concat(skip ? [skip] : []), now = Date.now();
   const ok = seatedIds(t).filter((id) => { const m = db.members[id]; return m && !m.deleted && (m.captain || 'maybe') !== 'no' && pass.indexOf(id) < 0; });
   const been = {}; seatedIds(t).forEach((id) => { been[id] = Object.values(db.tables).some((x) => x !== t && x.published && !x.closed && seatedIds(x).indexOf(id) >= 0 && db.events[x.eventId] && eventTimes(db.events[x.eventId]).start < now); });
-  // a volunteer first, then someone who hasn't captained lately; someone who's been to a dinner before beats a first-timer
-  const score = (id) => { const m = db.members[id], recent = m.captainAt && now - Date.parse(m.captainAt) < 21 * DAY; return (m.captain === 'yes' ? 0 : 1) + (recent ? 2 : 0) + (been[id] ? 0 : 1.5); };
+  // a volunteer first, then someone who hasn't captained lately; someone who's been to a dinner before beats a first-timer,
+  // and someone who has opened this table beats someone who hasn't (that only matters when the job changes hands later)
+  const score = (id) => { const m = db.members[id], recent = m.captainAt && now - Date.parse(m.captainAt) < 21 * DAY; return (m.captain === 'yes' ? 0 : 1) + (recent ? 2 : 0) + (been[id] ? 0 : 1.5) + (seenTable(m, t) ? 0 : 1); };
   // nobody willing: someone who'd rather not still beats a table with nobody to book it (they can pass it on)
   const pool = ok.length ? ok : seatedIds(t).filter((id) => { const m = db.members[id]; return m && !m.deleted && pass.indexOf(id) < 0; });
   const pick = pool.sort((a, b) => score(a) - score(b) || ((db.members[a].captainAt || '') < (db.members[b].captainAt || '') ? -1 : 1))[0] || null;
@@ -3822,7 +3855,9 @@ function captainMove(me, b) {
     const next = pickCaptain(t); briefCaptain(t); if (bookingOn(t) && bookingOn(t).by === me.id) notify(me.id, 'bookkeep', { place: t.venue.name, day: weekday(eventTimes(e).start) });
     charlie(t.id, next ? `${firstOf(me)} passed the captain’s job to ${firstOf(db.members[next])}. Thanks, ${firstOf(db.members[next])}.` : `${firstOf(me)} passed the captain’s job. Whoever gets there first, give the name at the door: ${doorName(t)}`);
   } else if (b.act === 'take') {
-    if (t.captain && t.captain !== me.id && seatedIds(t).indexOf(t.captain) >= 0) fail('this table has a captain');
+    const c1 = capOf(t), was = t.captain, open = c1.open && !t.venue;
+    if (was && was !== me.id && seatedIds(t).indexOf(was) >= 0 && !open) fail('this table has a captain');
+    if (open && was && was !== me.id) { c1.handedFrom = was; notify(was, 'captainoff', { day: weekday(eventTimes(e).start), other: firstOf(me), open: true }); }
     t.captain = me.id; me.captainAt = isoNow(); t.passed = arr(t.passed).filter((x) => x !== me.id); const c0 = capOf(t); c0.briefed = me.id; c0.since = isoNow(); delete c0.remind; resolveAlerts('nobook:' + t.id);
     charlie(t.id, `${firstOf(me)} is captain tonight: first one there, gives the name at the door (${doorName(t)})`);
   } else fail('unknown move');
@@ -4457,6 +4492,7 @@ function tableSummary(t, me, tog) {
     captain: t.captain && seatedIds(t).indexOf(t.captain) >= 0 && db.members[t.captain] ? { id: t.captain, first: firstOf(db.members[t.captain]), me: t.captain === me.id } : null, known: knownAt(t, me, tog, tm.start),
     spotIn: Date.now() >= tm.reveal && spotSet(t) && !(t.out && t.out[me.id]),
     capJobs: t.captain === me.id && !(t.out && t.out[me.id]) && !t.closed ? capJobs(t) : null,
+    spotOpen: !!(t.cap && t.cap.open && !t.venue && !t.closed && !(t.out && t.out[me.id])),
     capDone: t.captain === me.id && !(t.out && t.out[me.id]) && !t.closed ? (() => { const M = missions(t); return [M.spot.done, M.vote.done, M.checks.done].filter(Boolean).length; })() : null };
 }
 // people at this table you've already shared a table or a hang with, and how many times
@@ -4722,7 +4758,8 @@ const PUSH_TEXT = {
   lastcall: (o) => ({ body: `Dinner ${o.day} at ${o.time}. Can’t make it? Tell me by ${o.by || 'noon today'} and it’s free.`, url: './#home' }),
   spot: (o) => ({ body: `Change of plans for ${o.day}: your table’s spot changed. Tap for the details`, url: o.table ? './#table=' + o.table : './#table' }),
   spotlost: (o) => ({ body: `Your ${o.day} table just lost its spot. Book another in the next two hours, or it’s off`, url: o.table ? './#table=' + o.table : './#table' }),
-  captainoff: (o) => ({ body: `No booking came in, so ${o.other} took over as captain for ${o.day}. If you did book somewhere, cancel it or tell the table`, url: './#home' }),
+  spotopen: (o) => ({ body: `Your ${o.day} table still needs a spot. Anyone at the table can book it now, and whoever does is captain. It’s off if nobody does by ${o.by}`, url: o.table ? './#table=' + o.table : './#table' }),
+  captainoff: (o) => (o.quiet ? { body: `${o.other} took the captain’s job for ${o.day}, since you hadn’t opened your table yet. Your seat is still yours`, url: './#home' } : o.open ? { body: `${o.other} stepped in to book ${o.day}’s spot, so they’re captain now. If you booked somewhere too, cancel it`, url: './#home' } : { body: `No booking came in, so ${o.other} took over as captain for ${o.day}. If you did book somewhere, cancel it or tell the table`, url: './#home' }),
   merged: (o) => ({ body: `Plans changed for ${o.day}: you’re joining table ${o.no} instead, same evening.`, url: './#home' }),
   tableoff: (o) => ({ body: `Your ${o.day} table is off: ${o.why === 'nospot' ? 'no spot got booked in time' : o.why === 'admin' ? 'we had to cancel that evening' : o.why === 'place' ? 'the restaurant couldn’t host and no other spot was free' : 'too few people could still make it'}. You’re first in line next week, and you can find another evening now.`, url: './#home' }),
   cool: (o) => ({ body: `A few late changes lately, so I’m pausing your invitations until ${o.until}. Hangs are open as always.`, url: './#home' }),
@@ -4744,8 +4781,8 @@ const PUSH_TEXT = {
   popcancel: (o) => ({ body: `${o.other || 'The host'} called off “${o.title || 'the hang'}”.`, url: './#hangs' })
 };
 // about tonight: these always go out, whatever else someone got today
-const URGENT = ['reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'table', 'bookcancel', 'bookkeep', 'captainbrief', 'bookremind', 'captaintake', 'bookfix', 'spotlost', 'captainoff'];
-const MAIL_KINDS = { table: 'a private invitation', reveal: 'tonight’s spot', spot: 'your table’s spot changed', spotlost: 'your table needs a new spot', tableoff: 'your table is off', merged: 'your table changed', bookcancel: 'please cancel a booking', bookkeep: 'please keep your booking', captaintake: 'you’re captain now', captainbrief: 'you’re captain' };
+const URGENT = ['spotopen', 'reveal', 'spot', 'tableoff', 'merged', 'roundoff', 'lastcall', 'captain', 'table', 'bookcancel', 'bookkeep', 'captainbrief', 'bookremind', 'captaintake', 'bookfix', 'spotlost', 'captainoff'];
+const MAIL_KINDS = { spotopen: 'your table still needs a spot', table: 'a private invitation', reveal: 'tonight’s spot', spot: 'your table’s spot changed', spotlost: 'your table needs a new spot', tableoff: 'your table is off', merged: 'your table changed', bookcancel: 'please cancel a booking', bookkeep: 'please keep your booking', captaintake: 'you’re captain now', captainbrief: 'you’re captain' };
 // no phone to reach: the few notices that matter go by email (at most three a day), with a nudge to turn notifications on
 function mailNotice(m, kind, t, day) {
   if (!MAIL_KINDS[kind] || !m.email || !m.verified) return;
@@ -4825,7 +4862,18 @@ function tick(nowMs) {
     const st = eventTimes(e).start, c = capOf(t); if (st <= now) return;
     if (!t.captain || seatedIds(t).indexOf(t.captain) < 0) { if (!t.venue && now >= freeUntil(e)) alertOps('nobook:' + t.id, 'place', `Table ${t.no} on ${dayLabel(st)} has no captain and no spot. Book it, ask someone at the table to take the captain’s job, or call it off.`); return; }
     if (!t.venue) {
-      const since = Date.parse(c.since || t.publishedAt || 0) || 0;
+      const since = Date.parse(c.since || t.publishedAt || 0) || 0, cm = db.members[t.captain];
+      // a captain who hasn't even opened the table: early on, the job goes to someone at the table who has (once)
+      if (!c.handed && !seenTable(cm, t) && dayHours(now) && now >= since + Math.min(12 * HOUR, 0.35 * Math.max(0, closeAt(e) - since)) && seatedIds(t).some((id) => id !== t.captain && seenTable(db.members[id], t))) {
+        const was = t.captain; c.handed = isoNow(); c.handedFrom = was; c.quiet = true; pickCaptain(t, was);
+        if (t.captain && t.captain !== was) { c.briefed = t.captain; charlie(t.id, `${firstOf(db.members[t.captain])} is captain now, and the first job is booking the spot. Thanks, ${firstOf(db.members[t.captain])}`); notify(t.captain, 'captaintake', { day: weekday(st), table: t.id }); notify(was, 'captainoff', { day: weekday(st), other: firstOf(db.members[t.captain]), quiet: true }); }
+        else t.captain = was;
+      }
+      // four hours before the cutoff with nothing booked: anyone at the table can book it, and whoever does is captain
+      if (!c.open && now >= closeAt(e) - 4 * HOUR && now < closeAt(e) && spotOptions(t).some((o) => o.kind === 'book')) {
+        c.open = isoNow(); charlie(t.id, `Still no spot for ${weekday(st)}. Anyone here can book it now: tap I’ll book it on the table, and you’re captain. If nobody does by ${atTime(closeAt(e))}, the table is off`);
+        seatedIds(t).filter((id) => id !== t.captain).forEach((id) => notify(id, 'spotopen', { day: weekday(st), by: atTime(closeAt(e)), table: t.id }));
+      }
       if (!c.remind && dayHours(now) && now >= Math.max(st - 2 * DAY, since + 6 * HOUR) && spotOptions(t).some((o) => o.kind === 'book')) { c.remind = isoNow(); notify(t.captain, 'bookremind', { day: weekday(st), table: t.id }); }
       // still nothing a day and a half out: someone else willing takes over the captain's job (once)
       if (!c.handed && c.remind && dayHours(now) && now >= Math.max(st - 36 * HOUR, since + 12 * HOUR, Date.parse(c.remind) + 6 * HOUR) && now < closeAt(e) - 4 * HOUR) {
@@ -5182,7 +5230,7 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };
 
 },
@@ -5722,14 +5770,25 @@ function api(method, url, body) {
 function toast(t, m) { $('toastT').textContent = t; $('toastM').textContent = m; const el = $('toast'); el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3600); }
 // Charlie's note: a quick reaction to what you just picked. It pops up over the next step and goes by itself (a tap closes it)
 function charlieSays(text, ms) {
-  const el = $('cfloat'); if (!el || !text) return;
-  $('cfloatT').textContent = text; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
-  clearTimeout(charlieSays.t); charlieSays.t = setTimeout(() => el.classList.remove('on'), ms || Math.max(2600, Math.min(5200, 1400 + text.length * 40)));
+  const el = $('cfloat'), p = $('cfloatT'); if (!el || !text) return;
+  clearTimeout(charlieSays.t); clearTimeout(charlieSays.w);
+  el.classList.remove('on', 'typing'); void el.offsetWidth; el.classList.add('on', 'typing');
+  p.innerHTML = '<span class="cdots" aria-hidden="true"><i></i><i></i><i></i></span>';
+  charlieSays.w = setTimeout(() => { el.classList.remove('typing'); p.innerHTML = esc(text).split(' ').map((w, i) => `<span class="cw" style="animation-delay:${i * 30}ms">${w}</span>`).join(' '); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }, 600);
+  charlieSays.t = setTimeout(() => el.classList.remove('on'), 600 + (ms || Math.max(2600, Math.min(5400, 1500 + text.length * 40))));
 }
 // what Charlie says as you leave a step (the sign-up only, and never the same line twice in a row)
-const REACT = { tables: () => (SX.MIX.find((x) => x.id === A.P.mix) || {}).note, lens: () => (SX.LENS.find((l) => l.id === A.P.lens) || {}).note,
-  takes: () => (Object.keys(A.P.takes).length === 3 ? 'Good. I’ll make sure someone at your table disagrees with you. Politely. Now, part two: the people.' : ''),
-  life: () => (SX.LOOK.find((o) => o.id === A.P.look) || {}).note, future: () => NEXT_NOTE[A.P.next[0]] };
+const REACT = {
+  school: () => (A.P.first ? `Hey ${A.P.first}, so nice to meet you! Okay, let’s find your people.` : ''),
+  tables: () => (SX.MIX.find((x) => x.id === A.P.mix) || {}).note,
+  tracks: () => { const T = A.P.tracks.map((x) => SX.track(x).t), n = T.length; return !n ? '' : n === 1 ? `${T[0]}! Great corner to be in.` : n === 2 ? `Ooh, ${T[0]} and ${T[1]}. Nice combo!` : `Wow, ${nw(n)} corners of tech! I love a curious one. I’ll seat you mostly by ${T[0]}.`; },
+  interests: () => { const n = A.P.interests.length, a = SX.INTNAME[A.P.interests[0]]; return !n ? '' : n === 1 ? `${a}! Love a specialist.` : n >= 6 ? `Whoa, ${nw(n)} of them! You’ll never run out of things to talk about.` : `Oh nice, ${a} as your anchor. I already have a few people in mind.`; },
+  lens: () => (SX.LENS.find((l) => l.id === A.P.lens) || {}).note,
+  takes: () => { const v = Object.values(A.P.takes), no = v.filter((x) => x === 'disagree').length, yes = v.filter((x) => x === 'agree').length; if (v.length < 3) return '';
+    return no >= 2 ? 'Ooh, spicy! I’ll find someone at your table who pushes back. Politely. Now, part two: the people!' : yes >= 2 && !no ? 'Ha, so agreeable! Don’t worry, I’ll still find you someone to argue with. Now, part two: the people!' : 'Nice, a little of everything. I’ll make sure someone sees it differently. Now, part two: the people!'; },
+  life: () => (SX.LOOK.find((o) => o.id === A.P.look) || {}).note,
+  future: () => (A.P.next.length > 2 ? 'Ooh, keeping your options open. Smart! You’ll hear from people on every path.' : NEXT_NOTE[A.P.next[0]]),
+  profile: () => ((A.P.building || '').trim() ? 'Ooh, people are definitely going to ask you about that.' : (A.P.headline || '').trim() ? 'Love it. That’s a good opener.' : '') };
 function react(step) { if (!A.P || !A.view || A.view.me.done || !REACT[step]) return; const txt = REACT[step](); A.reacted = A.reacted || {}; if (!txt || A.reacted[step] === txt) return; A.reacted[step] = txt; setTimeout(() => charlieSays(txt), 260); }
 function oops(e) { toast('Something’s off', e && e.message ? cap(e.message) + '.' : 'Try again in a moment.'); }
 // a face, or the first letter on the school color; a photo that fails to load falls back to the letter
@@ -5929,10 +5988,10 @@ function renderTables() {
   gate('tablesNext', A.P.mix ? null : ['mixList', 'Pick the kind of dinners']);
 }
 function pickMix(id) { A.P.mix = id; renderTables(); }
-const NEXT_NOTE = { 'Start a company': 'A founder. I’ll seat you near a few builders, and at least one person who asks hard questions.', 'Join a startup': 'Startup-bound. Some of the best intros happen at a dinner table.',
-  'Big tech': 'Big tech. You’ll be the one who knows how things really work at scale.', 'Venture capital': 'A future investor. You’ll meet founders before anyone else does.',
-  'Back to my old industry': 'Going back with new tricks. That view is gold at a tech table.', 'Research or a PhD': 'A researcher. You’ll keep the rest of the table honest.',
-  'Still figuring it out': 'Still figuring it out is a great place to be at a dinner like this.' };
+const NEXT_NOTE = { 'Start a company': 'Ooh, a founder! I’ll seat you near a few builders, and at least one person who asks hard questions.', 'Join a startup': 'Startup-bound, nice! Some of the best intros happen at a dinner table.',
+  'Big tech': 'Oh nice, big tech. You’ll be the one who knows how things really work at scale.', 'Venture capital': 'Ooh, a future investor! You’ll meet founders before anyone else does.',
+  'Back to my old industry': 'Going back with new tricks? Love that. That view is gold at a tech table.', 'Research or a PhD': 'A PhD? Wow. You’ll keep the rest of the table honest.',
+  'Still figuring it out': 'Honestly? Still figuring it out is a great place to be at a dinner like this.' };
 function renderFuture() {
   $('futK').textContent = part('three', 'Where you’re headed');
   $('nextChips').innerHTML = SX.NEXT.map((x, i) => `<button class="chip ${A.P.next.indexOf(x) >= 0 ? 'sel' : ''}" aria-pressed="${A.P.next.indexOf(x) >= 0}" onclick="pickNext(${i})">${esc(x)}</button>`).join('');
@@ -6126,7 +6185,7 @@ function tableWho(t) {
 // what a seal says: the kind of table, or the round
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t, many) {
-  const job = t.captain && t.captain.me && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : '';
+  const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
   return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
@@ -6216,6 +6275,7 @@ function renderHome() {
 }
 // under an open invitation: you're the captain, and the next mission
 function capStripHTML(t) {
+  if (t.spotOpen && !(t.captain && t.captain.me) && !t.left) return `<button class="capstrip" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>Your table still needs a spot</b><small>Anyone can book it now, and whoever does is captain</small></div>${ICON.chev}</button>`;
   if (!t.captain || !t.captain.me || t.left) return '';
   const J = t.capJobs || {};
   const next = J.spotBy ? `Next: book the spot by ${J.spotBy}` : J.vote ? `Next: get the table voting, ${J.vote.voted} of ${J.vote.need} so far` : J.checks ? 'Last one: split the check at dinner' : 'All three missions done';
@@ -6446,12 +6506,13 @@ function drawTable() {
     ${before ? venue : ''}
     ${before && !t.left ? captainHTML(t) : ''}
     ${gameSumHTML(t)}
+    <div class="sp"></div>
     <div class="cardg who"><div class="ctitle">Who’s coming <span class="wn">${nw(people.length)} of you</span></div>
       <div class="whogrid" id="tv">${people.slice().sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).map((p, i) => `<button class="seat ${p.me ? 'me' : ''}" data-id="${p.id}" style="animation-delay:${i * 0.06}s" onclick="${p.me ? '' : `openProfile('${p.id}')`}">${av(p)}<div class="nm">${p.me ? 'You' : esc(p.first)}</div>${badge(p.school)}</button>`).join('')}</div>
       ${chips.length ? `<div class="whoshare"><div class="label">What you share <span>tap one</span></div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div><p class="tvcap" id="tvCap"></p></div>` : ''}
     </div>
     <div class="sp"></div>
-    <div class="cardg why"><div class="ctitle">${t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together'}</div>${t.why.map((l) => `<p>${hl(l)}</p>`).join('')}</div>
+    ${whyHTML(t)}
     ${sinceHTML(t)}
     <div class="sp"></div>
     ${people.filter((p) => !p.me).map((p) => pcardHTML(p, mine, { n: ((t.known || []).find((k) => k.id === p.id) || {}).n })).join('')}
@@ -6461,6 +6522,23 @@ function drawTable() {
     ${t.feedbackOpen && !t.left ? `<button class="btn ghost" onclick="openAfter('${t.id}')">${t.feedbackDone ? 'My picks from this table' : 'How was the table?'}</button>` : ''}
     ${before && !t.left ? `<button class="link" onclick="openDecline('${t.id}')">I can’t make it</button>` : ''}`;
   if (chips.length) setTimeout(() => { if (cur === 'table' && A.table === t) hiTag(chips[0]); }, 650);
+  whyDots();
+}
+// why these people: one reason per card, swiped (or stepped with the arrows) like tonight's question cards
+function whyHTML(t) {
+  const L = t.why || []; if (!L.length) return '';
+  const title = t.round > 1 ? (t.newcomer ? 'About this table' : 'Why you’re back') : 'Why I put you together', many = L.length > 1;
+  const nav = many ? `<div class="whynav"><button class="wnb" onclick="whyGo(-1)" aria-label="Previous reason">${SV('<path d="M15 18l-6-6 6-6"/>', 16)}</button><button class="wnb" onclick="whyGo(1)" aria-label="Next reason">${SV('<path d="M9 18l6-6-6-6"/>', 16)}</button></div>` : '';
+  return `<div class="cardg why"><div class="whyhead"><div class="ctitle">${title}</div>${nav}</div>
+    <div class="whyrail ${many ? '' : 'one'}" id="whyRail" onscroll="whyDots()">${L.map((l, i) => `<div class="whyc">${many ? `<span class="whyn">${i + 1} of ${L.length}</span>` : ''}<p>${hl(l)}</p></div>`).join('')}</div>
+    ${many ? `<div class="whydots" id="whyDots">${L.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}</div>`;
+}
+function whyGo(d) { const r = $('whyRail'); if (r && r.firstElementChild) r.scrollBy({ left: d * (r.firstElementChild.offsetWidth + 10), behavior: 'smooth' }); }
+function whyDots() {
+  const r = $('whyRail'), D = $('whyDots'); if (!r || !D || !r.firstElementChild) return;
+  const n = D.children.length, i = Math.max(0, Math.min(n - 1, Math.round(r.scrollLeft / (r.firstElementChild.offsetWidth + 10))));
+  [...D.children].forEach((el, k) => el.classList.toggle('on', k === i));
+  const B = r.parentNode.querySelectorAll('.wnb'); if (B.length === 2) { B[0].disabled = i === 0; B[1].disabled = i >= n - 1 || r.scrollLeft + r.clientWidth >= r.scrollWidth - 4; }
 }
 // what each of them said they'd do before this table, the morning after their last one
 function sinceHTML(t) {
@@ -6513,6 +6591,7 @@ function captainHTML(t) {
     <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
+  if (t.spotOpen) return `<div class="sp"></div><div class="cardg capcard"><div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>Your table still needs a spot</b><small>${esc(c.first)} hasn’t booked yet. Anyone can book it now, and whoever does is captain</small></div></div><button class="btn sm" style="margin-top:12px" onclick="captainTake('${t.id}', this)">I’ll book it</button></div>`;
   const p = (t.people || []).find((x) => x.id === c.id) || { first: c.first };
   return `<div class="sp"></div><div class="cardg capcard row">${av(p, 's')}<div class="grow"><b>${esc(c.first)} is the captain</b><div class="sub2">Picks the spot, rallies the vote and settles the checks. It rotates, so your turn comes too</div></div></div>`;
 }
