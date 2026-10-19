@@ -214,14 +214,40 @@ npm run film
 - 관리자 Places 탭의 목록 버튼 한 번으로 추가, 이미 있는 식당은 최신 정보로 갱신, 데모는 처음부터 이 목록 사용
 - 식당 정보는 바뀌니 파일럿 전에 한 번 더 확인 필요 (각 항목의 check에 조사 때 불확실했던 점 기록)
 
+### 대화하기 좋은 곳
+
+- 식당마다 소음(noise: quiet, moderate, lively)과 대화 점수(talk: 3 편함, 2 자리만 잘 잡으면 괜찮음, 1 저녁엔 어려움)
+- 근거는 SoundPrint 측정값, OpenTable과 Yelp 소음 평가, Globe, Crimson, Infatuation, Time Out 리뷰 (2026년 10월, 항목별 soundSource)
+- 조용하고 대화 편한 곳 6곳: Harvest, The Maharaja, TooHot, Ariana, Fallow Kin, Casa Portugal
+- 보통이지만 대화 편한 곳 9곳: Bar Enza, Henrietta's Table, Ama, Tasca, The Stockyard, Catalyst, Row 34, Bambara, Oak Bistro
+- 저녁엔 시끄러운 곳 8곳: Alden & Harlow, Grafton Street, Lou's, Russell House, Lone Star, Mex, La Fábrica, Little Donkey
+- seat: 예약 메모에 적을 자리 (예: the fireside room), sound: 방 분위기 한 줄
+- 관리자 장소 편집 화면에서 직접 수정 가능
+
+### 실제 빈자리 확인 (스팟 체크)
+
+- OpenTable, Resy, Tock은 빈자리 API를 공개하지 않아 실시간 확인 불가, 그래서 직접 본 기록을 사용
+- `server/spotchecks.js`: 식당 예약 페이지를 6명, 저녁 7시로 열어 7시 앞뒤로 보인 시간을 날짜별로 기록
+- 2026-10-19 오전 확인분: 10/23(금) 46곳, 10/21(수) 24곳 (OpenTable이 연속 조회를 막기 시작해 나머지 수요일은 비워둠, 추측으로 채우지 않음)
+- 10/23(금) 저녁 6~8시에 6명 자리 있던 곳 24곳, 없던 곳 22곳, La Fábrica는 6명 온라인 불가로 전화
+- 6~8시 사이 시간이 있으면 빈자리, 없으면 만석, 6명 기준 만석인데 테이블이 4명이면 "tight"(4명은 될 수도 있음)
+- 확인한 적 없는 날짜는 다른 날 기록을 참고 ("Had room both nights we looked")
+- 캡틴이 예약 페이지에서 자리가 없으면 "Mark it full" 한 번으로 그날 만석 표시, 같은 날 다른 캡틴 목록에서 바로 아래로
+- 더 새로운 기록이 이김, 4개월 지난 기록은 자동 삭제
+- 관리자 Places 탭에서 스팟 체크 JSON 붙여넣기로 추가 (`/api/admin/spot-check`)
+- 실시간이 아니라 기록이라 목록에 언제 봤는지 함께 표시, 확실한 자리는 제휴 식당 홀드뿐
+
 ### 캡틴이 보는 장소 목록
 
 - 그 날짜에 여는 곳만 표시: 요일 휴무, 관리자가 넣은 휴무일, 그날 우리 테이블이 이미 찬 곳은 제외
-- 6명 온라인 예약 가능한 곳이 먼저, 그다음 그날 우리 테이블이 적은 곳, 테이블 동네 순
+- 순서: 제휴 식당, 그다음 스팟 체크에서 6~8시 빈자리가 보인 곳, 확인 안 한 곳(다른 날 자리 있던 곳 먼저), 만석이던 곳
+- 같은 묶음 안에서는 대화 편한 곳, 조용한 곳 먼저, 그다음 6명 온라인 예약, 7시에 가까운 시간, 그날 우리 테이블 수, 동네
+- 만석으로 확인된 곳은 맨 아래 "Show them anyway" 버튼 뒤로
 - 위쪽 음식 칩으로 거르기: All, Tacos, Asian(중식, 일식, 한식, 태국과 베트남), Pizza & Italian, Indian, American, Mediterranean, Seafood, Vegetarian
-- 카드마다 음식 종류와 동네, 분위기, 단체 관련 한 줄, "Takes six online" 또는 "Call for six", 가격대, 예약 방법
+- 카드마다 음식 종류와 동네, 분위기, 빈자리 시간과 확인 시각("At 6:45, 7:00 and 7:15, when we looked today at 6:30 AM"), "Free for six" 또는 "Full around 7", "Quiet, easy to talk" 같은 대화 태그, 가격대, 예약 방법
+- 식당을 누르면 확인 기록, 방 분위기, 예약 메모에 적을 자리, 빈자리 시간 버튼
 - 10곳씩 보여주고 Show more로 나머지
-- 예약 버튼은 그 날짜, 시간, 인원이 채워진 채로 열림 (실제 빈자리는 예약 페이지에서 바로 확인)
+- 예약 버튼은 그 날짜, 인원, 확인된 빈자리 시간이 채워진 채로 열림
 
 ### 캡틴 예약의 안전장치
 

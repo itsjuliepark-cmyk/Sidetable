@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const SX = require('../public/shared.js');
 const T = require('./tables.js');
 const RESTAURANTS = require('./restaurants.js');
+const SPOTCHECKS = require('./spotchecks.js');
 
 const PORT = +process.env.PORT || 8800;
 const ROOT = path.join(__dirname, '..');
@@ -35,7 +36,7 @@ const HOUR = 36e5, DAY = 24 * HOUR;
 /* ---------- storage: one JSON file, written atomically ---------- */
 const DBF = path.join(DATA, 'db.json');
 const fresh = () => ({ v: 1, members: {}, clubs: {}, events: {}, seats: {}, tables: {}, chats: {}, dms: {}, feedback: {}, reports: [], log: [],
-  jobs: {}, saves: {}, intros: [], posts: [], waves: {}, links: {}, pops: {}, weeks: {}, verify: {}, places: {}, bookings: {}, ops: {}, alerts: [] });
+  jobs: {}, saves: {}, intros: [], posts: [], waves: {}, links: {}, pops: {}, weeks: {}, verify: {}, places: {}, bookings: {}, seen: {}, ops: {}, alerts: [] });
 let db = fresh();
 try { db = Object.assign(fresh(), JSON.parse(fs.readFileSync(DBF, 'utf8'))); } catch (e) {
   // a missing file is a first run; a file that won't parse (cut off, hand-edited) is never quietly replaced by an empty one
@@ -771,7 +772,8 @@ function savePlace(b) {
     note: clip(b.note, 160).trim(), vibe: clip(b.vibe, 80).trim(), terms: clip(b.terms, 400).trim(), closedOn: arr(b.closedOn).map(String).filter(ymdOk).slice(0, 60), off: b.off === undefined ? !!v.off : !!b.off,
     mode: b.mode === 'ask' ? 'ask' : b.mode === 'captain' ? 'captain' : 'hold', backup: !!b.backup,
     bookVia: inList(b.bookVia, ['opentable', 'resy', 'tock', 'web', 'phone']) || (b.mode === 'captain' ? 'web' : ''), bookUrl: cleanUrl(b.bookUrl), price: inList(b.price, ['$', '$$', '$$$']) || '', card: !!b.card,
-    cuisine: inList(b.cuisine, SX.CUISINES.map((c) => c.id)) || '', six: inList(b.six, ['online', 'call', 'unknown']) || 'unknown', group: clip(b.group, 120).trim() });
+    cuisine: inList(b.cuisine, SX.CUISINES.map((c) => c.id)) || '', six: inList(b.six, ['online', 'call', 'unknown']) || 'unknown', group: clip(b.group, 120).trim(),
+    noise: inList(b.noise, ['quiet', 'moderate', 'lively']) || '', talk: inList(+b.talk, [1, 2, 3]) || 0, seat: clip(b.seat, 100).trim(), sound: clip(b.sound, 100).trim() });
   if (v.mode === 'captain' && !v.bookUrl && !v.phone) fail('add a booking link or a phone number, so captains can book it');
   // 10. now a standing hold: evenings waiting for a yes are simply held
   if (v.mode === 'hold') Object.values(db.bookings || {}).forEach((x) => { if (x.vid === v.id && x.state === 'asked' && x.date >= ymdTz(Date.now())) { x.state = 'held'; delete x.more; resolveAlerts('unconfirmed:' + bkey(v.id, x.date)); tablesAt(v, x.date).forEach((t) => revealNow(t)); } });
@@ -788,13 +790,58 @@ function importRestaurants() {
     const was = Object.values(db.places || {}).find((v) => !v.gone && v.name.toLowerCase() === String(r.name).toLowerCase()), shut = arr(r.closed).map((d) => DOW[d]).filter((d) => d != null);
     try {
       savePlace({ id: was && was.id, name: r.name, address: r.address, area: r.area, nights: [0, 1, 2, 3, 4, 5, 6].filter((d) => shut.indexOf(d) < 0), tables: was ? was.tables : r.six === 'call' ? 1 : 2, seats: was ? was.seats : 6,
-        mode: 'captain', bookVia: r.bookVia, bookUrl: r.bookUrl, phone: r.phone, price: r.price, vibe: r.vibe, cuisine: r.cuisine, six: r.six, group: r.groupNote, note: was ? was.note : '', off: was ? was.off : false, closedOn: was ? was.closedOn : [] });
+        mode: 'captain', bookVia: r.bookVia, bookUrl: r.bookUrl, phone: r.phone, price: r.price, vibe: r.vibe, cuisine: r.cuisine, six: r.six, group: r.groupNote, note: was ? was.note : '', off: was ? was.off : false, closedOn: was ? was.closedOn : [],
+        noise: r.noise, talk: r.talk, seat: r.seat, sound: r.sound });
       if (was) updated++; else added++;
     } catch (e) { skipped.push(r.name + ': ' + e.message); }
   });
+  const checks = importChecks(SPOTCHECKS).read;
   log('places-import', String(added), String(updated)); save();
-  return { ok: true, added, updated, skipped };
+  return { ok: true, added, updated, skipped, checks };
 }
+/* ---------- spot checks: is there really a table for six around 7? ----------
+   OpenTable, Resy and Tock don't share availability, so what the app knows comes from looking. Ops reads a restaurant's own
+   booking page for a party of six on an evening and notes the times it offered (server/spotchecks.js, or pasted on the admin
+   page), and a captain who finds no table for their group near the time marks the place full (captainSeen), so the other
+   captains that night skip it. Each look is kept with when it happened, and the newest one wins. A place has room when it
+   offered a time within an hour of the table's time for at least as many people as the table; it's full when it offered
+   nothing in that hour for no more than that many, and tight when it had nothing for more (six full, the table is four). Nothing here is live: the list says when each place was looked at. */
+const NEAR = 60; // minutes either side of the table's time that still work (6:00 to 8:00 for a 7:00 dinner)
+const hmMin = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
+function seenAt(v, date, time, size) {
+  const s = own(db.seen || {}, bkey(v.id, date)); if (!s) return null;
+  const base = hmMin(time || '19:00'), near = arr(s.times).filter((x) => Math.abs(hmMin(x) - base) <= NEAR).sort((a, b) => hmMin(a) - hmMin(b)), o = { at: s.at, by: s.by || 'check', size: s.size };
+  if (s.call) return s.size <= size ? Object.assign(o, { state: 'call' }) : null;
+  if (near.length) return s.size >= size ? Object.assign(o, { state: 'free', times: near, best: near.slice().sort((a, b) => Math.abs(hmMin(a) - base) - Math.abs(hmMin(b) - base))[0] }) : null;
+  return Object.assign(o, { state: s.size <= size ? 'full' : 'tight' }); // nothing for six: maybe a table of four still fits
+}
+// the other evenings this place was read for six (not captains' marks): how many had a table within the hour
+function seenHist(v, date) {
+  const h = { room: 0, nights: 0 };
+  Object.keys(db.seen || {}).forEach((k) => {
+    const s = db.seen[k]; if (k.indexOf(v.id + '|') !== 0 || k === bkey(v.id, date) || s.by !== 'check' || s.call || s.size < 6) return;
+    h.nights++; if (arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR)) h.room++;
+  });
+  return h.nights ? h : null;
+}
+const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now); return d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : now - ms < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };
+// a spot check, by restaurant name, for one evening: { date, size, time, at, seen: { name: ['18:45', ...] or 'call' } }
+function importChecks(list) {
+  let read = 0; const unknown = [], P = Object.values(db.places || {}).filter((v) => !v.gone);
+  arr(list).forEach((c) => {
+    if (!c || !ymdOk(c.date) || !c.seen || typeof c.seen !== 'object') fail('a check needs a date and what was seen');
+    const size = Math.max(2, Math.min(12, Math.round(+c.size) || 6)), time = /^\d{2}:\d{2}$/.test(c.time || '') ? c.time : '19:00', at = Date.parse(c.at) ? new Date(Date.parse(c.at)).toISOString() : isoNow();
+    Object.keys(c.seen).forEach((name) => {
+      const v = P.find((x) => x.name.toLowerCase() === String(name).toLowerCase()); if (!v) { unknown.push(name); return; }
+      const k = bkey(v.id, c.date), was = own(db.seen = db.seen || {}, k), raw = c.seen[name];
+      if (was && Date.parse(was.at) > Date.parse(at)) return; // a newer look (a captain's, say) stands
+      db.seen[k] = raw === 'call' ? { size, time, at, by: 'check', call: true, times: [] } : { size, time, at, by: 'check', times: arr(raw).map(String).filter((x) => !isNaN(hmMin(x))).slice(0, 48) };
+      read++;
+    });
+  });
+  return { ok: true, read, unknown };
+}
+function saveCheck(b) { const r = importChecks(Array.isArray(b.checks) ? b.checks : [b]); log('spot-check', String(r.read), ''); save(); return r; }
 // a partner that now has fewer tables, fewer seats, a closed evening, or is paused: tables past what it can take go elsewhere
 function replaceAt(v) {
   Object.values(db.tables).filter((t) => t.published && !t.closed && t.venue && t.venue.id === v.id && (db.events[t.eventId] || {}).date >= ymdTz(Date.now())).forEach((t) => {
@@ -1229,19 +1276,35 @@ function bookLink(v, date, time, size) {
   if (v.bookVia === 'tock') return u.replace(/\/$/, '') + `/search?date=${date}&size=${size}&time=${encodeURIComponent(time)}`;
   return u;
 }
-// where this table could go that evening: partners with a table held for Hash Table (nothing to book), then spots the captain
-// books, same area first; the current spot stays on the list
-// every place open that evening with room for the table (its night, its closed dates, how many of our tables it takes): the
-// current and last spots first, partners next, then the ones that take a group this size online, then the least used by us that
-// night. Each booking link opens with the date, the time and the party size filled in, so the captain sees real times for six
+// where this table could go that evening: partners holding a table for Hash Table (nothing to book) first, then every place
+// the captain can book that's open that night with room for us (its nights, its closed dates, how many of our tables it takes).
+// Among those: the ones a look found a table for this many within the hour first, then the ones nobody has looked at for that
+// night (those that had room the other nights first), then the ones found full. Inside each, the quietest rooms first, since a
+// table of strangers has to hear each other, then the ones that take six online, the time nearest the table's, the least used
+// by us that night, and the same area. Each booking link opens with the date, the time and the party size filled in
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
-  const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id);
-  const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), load = {}; // tables grow to six, so places that take six online lead even for four
-  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))); P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); });
-  return P.sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (big(a) - big(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
-    .map((v) => ({ id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
-      cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', link: isPartner(v) ? '' : bookLink(v, e.date, e.time, size) }));
+  const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id), now = Date.now();
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {};
+  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date); } });
+  const odds = (v) => { const s = seen[v.id], h = had[v.id]; return s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3; };
+  const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), hush = (v) => (v.noise === 'quiet' ? 0 : v.noise === 'lively' ? 2 : 1); // tables grow to six, so six online leads even for four
+  const off = (v) => { const s = seen[v.id]; return s && s.best ? Math.abs(hmMin(s.best) - hmMin(e.time)) : 0; };
+  return P.sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (odds(a) - odds(b)) || ((b.talk || 2) - (a.talk || 2)) || (hush(a) - hush(b))
+    || (big(a) - big(b)) || (off(a) - off(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
+    .map((v) => { const s = seen[v.id], h = had[v.id]; return { id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
+      cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', talk: v.talk || 0, noise: v.noise || '', seat: v.seat || '', sound: v.sound || '',
+      seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
+}
+// a captain found no table for their group within the hour of the table's time: marked full for that evening, so the other
+// captains that night skip it (it stays on their list, at the bottom, with when it was found full)
+function captainSeen(me, b) {
+  const t = own(db.tables, b.table); if (!isCaptain(t, me)) fail('you’re not the captain of this table');
+  const e = db.events[t.eventId], v = own(db.places || {}, b.place); if (!v || isPartner(v) || v.gone) fail('that spot isn’t on the list');
+  if (Date.now() >= eventTimes(e).start) fail('that dinner has started');
+  (db.seen = db.seen || {})[bkey(v.id, e.date)] = { size: seatedIds(t).length, time: e.time, at: isoNow(), by: 'captain', who: me.id, times: [] };
+  log('captain-seen', t.id, v.id);
+  return { ok: true, cap: capView(t, me) };
 }
 function missions(t, now, light) {
   now = now || Date.now();
@@ -2149,6 +2212,7 @@ function tick(nowMs) {
     const w = db.weeks[wk], marked = live().some((m) => m.avail && m.avail.week === wk && m.avail.slots.length);
     if (marked && !(w && w.published)) alertOps('week:' + wk, 'week', w ? 'Next week’s tables are built but not published, and members are waiting for Sunday-night invitations. Publish them on the Tables tab.' : 'Next week’s tables aren’t built yet, and members are waiting for Sunday-night invitations. Build and publish them on the Tables tab.');
   }
+  const stale = addDays(today, -120); Object.keys(db.seen || {}).forEach((k) => { if (k.slice(k.indexOf('|') + 1) < stale) delete db.seen[k]; }); // spot checks older than four months say little
   Object.values(db.events).forEach((e) => {
     if (e.status !== 'published' || e.date < old) return;
     const tm = eventTimes(e); e.notified = e.notified || {};
@@ -2423,6 +2487,7 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/admin/venue') out = setVenue(b);
       else if (p === '/api/admin/place') out = savePlace(b);
       else if (p === '/api/admin/places-import') out = importRestaurants();
+      else if (p === '/api/admin/spot-check') out = saveCheck(b);
       else if (p === '/api/admin/place-off') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); v.off = !v.off; if (v.off) replaceAt(v); out = { ok: true }; }
       else if (p === '/api/admin/place-table') { const t = own(db.tables, b.table); if (!t) fail('no such table'); if (!placeTable(t)) fail('no partner has room that evening'); out = placesAdmin(); }
       else if (p === '/api/admin/place-answer') { const v = own(db.places || {}, b.id); if (!v) fail('no such place'); placeAnswer(v, String(b.date || ''), !!b.ok, 'admin'); out = placesAdmin(); }
@@ -2502,6 +2567,7 @@ const server = http.createServer(async (req, res) => {
       else if (p === '/api/captain') out = captainMove(me, b);
       else if (p === '/api/captain-spot') out = captainSpot(me, b);
       else if (p === '/api/captain-book') out = captainBook(me, b);
+      else if (p === '/api/captain-seen') out = captainSeen(me, b);
       else if (p === '/api/captain-nudge') out = captainNudge(me, b);
       else if (p === '/api/captain-checks') out = captainChecks(me, b);
       else if (p === '/api/captain-pref') { me.captain = inList(b.pref, ['yes', 'maybe', 'no']) || 'maybe'; out = { ok: true }; }
@@ -2549,5 +2615,5 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };

@@ -1618,3 +1618,23 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 /* the captain's spot list: food chips, and a green tag for places that take the whole table online */
 .spotfood{margin:14px -22px 2px;padding:0 22px 2px}
 .spottags i.ok{color:#2C6E5F;background:rgba(44,110,95,.12)}
+/* what a look at the booking page found (room, full), and how easy it is to talk there */
+.spottags i.ok2{color:#3C7A6B;background:rgba(44,110,95,.07)}
+.spottags i.no{color:#9A4B3C;background:rgba(190,96,74,.11)}
+.spottags i.calm{color:#3E5F86;background:rgba(80,120,170,.11)}
+.spottags i.loud{color:#8A6A3A;background:rgba(170,130,70,.12)}
+.spot small.spotseen{color:#2C6E5F;margin-top:3px}
+.spot small.spotseen.full,.spot small.spotseen.tight{color:#9A4B3C}
+.spot.full{opacity:.78}
+.spotsfull{margin:6px 0 4px}
+.spotsfull .spots{margin-top:8px}
+.seenbox,.talkbox{margin:12px 0 2px;padding:11px 13px;border-radius:14px;background:rgba(120,110,90,.07)}
+.seenbox b{display:block;font-size:14px;font-weight:650;color:var(--ink)}
+.seenbox small,.talkbox small{display:block;font-size:12.8px;line-height:1.4;color:var(--ink-soft);margin-top:2px}
+.seenbox.ok{background:rgba(44,110,95,.09)}
+.seenbox.ok b{color:#2C6E5F}
+.seenbox.no{background:rgba(190,96,74,.09)}
+.seenbox.no b{color:#9A4B3C}
+.talkbox{margin-top:8px}
+.talkbox .spottags{margin:0 0 4px}
+.link.nosix{display:block;text-align:left;margin:4px 0 0;font-size:13px}

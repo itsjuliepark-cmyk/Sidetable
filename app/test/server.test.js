@@ -1156,12 +1156,14 @@ test('a table of six that loses three while changes are free takes someone who m
   assert.ok(t.captain && seated.indexOf(t.captain) >= 0, 'and a captain who is still coming');
 });
 
-test('the restaurant list: each place says what it serves and if it takes six online; a captain sees every one open that night, six-online first, with the date and six filled in', () => {
+test('the restaurant list: each place says what it serves, if it takes six online and how easy it is to talk there; a captain sees every one open that night, the likeliest to have six first and quiet rooms first among those, with the date and six filled in', () => {
   const r1 = S.importRestaurants(), r2 = S.importRestaurants();
   assert.ok(r1.added >= 50 && !r1.skipped.length, 'the whole list goes in: ' + JSON.stringify(r1.skipped));
   assert.ok(r2.added === 0 && r2.updated === r1.added, 'a second time only brings them up to date');
   const P = Object.values(db().places).filter((v) => v.mode === 'captain' && v.cuisine);
   assert.ok(P.every((v) => SX.CUISINES.some((c) => c.id === v.cuisine) && ['online', 'call', 'unknown'].indexOf(v.six) >= 0), 'every one says what it serves');
+  assert.ok(P.every((v) => ['quiet', 'moderate', 'lively'].indexOf(v.noise) >= 0 && [1, 2, 3].indexOf(v.talk) >= 0 && v.sound), 'and how easy it is to talk there');
+  assert.ok(r1.checks > 40 && Object.keys(db().seen).length >= r1.checks, 'the spot checks we did come along: ' + r1.checks);
   const back = only(P.map((v) => v.id));
   try {
     const monday = [3, 4, 5, 6, 7, 8, 9].map(day).find((d) => new Date(d + 'T12:00:00Z').getUTCDay() === 1);
@@ -1170,12 +1172,49 @@ test('the restaurant list: each place says what it serves and if it takes six on
     assert.ok(O.length > 20, 'the whole list, not four: ' + O.length);
     const shutMon = P.filter((v) => v.nights.indexOf(1) < 0).map((v) => v.id);
     assert.ok(shutMon.length && O.every((o) => shutMon.indexOf(o.id) < 0), 'nothing closed on Mondays');
-    const k = O.findIndex((o) => o.six !== 'online');
-    assert.ok(k > 0 && O.slice(k).every((o) => o.six !== 'online'), 'the ones that take six online come first');
+    // had room when looked at, then not looked at (room the other nights first), then full; the easiest to talk in first inside each
+    const odds = (o) => (o.seen ? { free: 0, call: 2, full: 4 }[o.seen.state] : !o.had ? 2 : o.had.room === o.had.nights ? 1 : o.had.room ? 2 : 3), key = O.map((o) => [odds(o), -(o.talk || 2)]);
+    assert.ok(key.every((k2, i) => !i || key[i - 1][0] < k2[0] || (key[i - 1][0] === k2[0] && key[i - 1][1] <= k2[1])), 'likeliest to have six first, quietest first among those');
+    assert.ok(O.some((o) => o.had) && O.some((o) => !o.had && !o.seen), 'a night nobody looked at leans on the nights we did');
     const ot = O.find((o) => o.via === 'opentable'), rs = O.find((o) => o.via === 'resy'), ph = O.find((o) => o.via === 'phone');
     assert.ok(ot.link.indexOf('covers=6&dateTime=' + monday + 'T') > 0, 'OpenTable opens on that date for six: ' + ot.link);
     assert.ok(rs.link.indexOf('date=' + monday + '&seats=6') > 0, 'Resy too: ' + rs.link);
     assert.ok(!ph || /^tel:/.test(ph.link), 'a call-to-book place dials');
     assert.ok(O.every((o) => o.cuisine), 'and each says what it serves');
+  } finally { back(); }
+});
+
+test('spot checks: a place a look found a table for six at around 7 comes first, with the times and when it was looked at; full ones drop to the bottom; a captain can mark one full for the other captains', () => {
+  const mk = (tag, noise, talk) => S.savePlace({ name: tag + ' Room', address: '9 Elm St, Central Square', area: 'Central Square', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'opentable', bookUrl: 'https://www.opentable.com/r/' + tag.toLowerCase() + '-room', six: 'online', noise, talk }).id;
+  const A = mk('Seen', 'moderate', 2), B = mk('Hushed', 'quiet', 3), C = mk('Late', 'moderate', 2), D = mk('Phone', 'moderate', 2), E = mk('Calm', 'quiet', 3), F = mk('Din', 'lively', 1), back = only([A, B, C, D, E, F]);
+  try {
+    const date = day(26), other = day(33), hour = 36e5;
+    const r = S.importChecks([{ date, size: 6, time: '19:00', at: new Date(Date.now() - 2 * hour).toISOString(), seen: { 'Seen Room': ['17:30', '18:45', '19:00', '19:15'], 'Hushed Room': [], 'Late Room': ['21:00'], 'Phone Room': 'call', 'Nowhere Grill': ['19:00'] } }]);
+    assert.ok(r.read === 4 && r.unknown.join() === 'Nowhere Grill', 'by name, and a name not on the list is said back');
+    const ms = people(6, 'Look'), n = night(ms, 'topic', date), t = n.t, cap = db().members[t.captain];
+    if (t.venue && t.venue.id) { const vid = t.venue.id; t.venue = null; S.syncBooking(vid, n.e.date); }
+    const O = S.spotOptions(t), at = (id) => O.find((o) => o.id === id);
+    assert.deepStrictEqual(O.map((o) => o.id), [A, E, D, F, B, C], 'room at 7 first; then not looked at (quiet first, the phone-only one with them); full last, quiet first');
+    assert.ok(at(A).seen.state === 'free' && at(A).seen.times.join() === '18:45,19:00,19:15' && at(A).seen.best === '19:00' && /today|yesterday/.test(at(A).seen.when), 'the times near 7, and when it was looked at');
+    assert.ok(at(A).link.indexOf('dateTime=' + date + 'T19%3A00') > 0, 'the link opens at the free time');
+    assert.ok(at(B).seen.state === 'full' && at(C).seen.state === 'full' && at(D).seen.state === 'call' && !at(E).seen, 'nothing near 7 is full, even with a late table; too big online says call');
+    assert.ok(at(E).sound === '' && at(E).noise === 'quiet' && at(E).talk === 3, 'how loud it is comes along');
+    // a look for four says nothing about six
+    S.importChecks([{ date, size: 4, at: new Date(Date.now() - hour).toISOString(), seen: { 'Calm Room': ['19:00'] } }]);
+    assert.ok(!S.spotOptions(t).find((o) => o.id === E).seen, 'room for four isn’t room for six');
+    // and full for six isn't full for four: a table of four sees it as tight, below the ones nobody looked at
+    const t4 = night(people(4, 'Four'), 'topic', date).t, O4 = S.spotOptions(t4), i4 = (id) => O4.findIndex((o) => o.id === id);
+    assert.ok(O4[i4(B)].seen.state === 'tight' && i4(B) > i4(F) && O4[i4(A)].seen.state === 'free' && O4[i4(E)].seen.state === 'free' && i4(E) === 0, 'six full: maybe four fits, so it waits below the unknowns; room for four counts for four, and the quiet one leads');
+    // another night nobody looked at leans on this one
+    const n2 = night(people(6, 'Other'), 'topic', other), O2 = S.spotOptions(n2.t);
+    assert.ok(O2.find((o) => o.id === A).had.room === 1 && O2.find((o) => o.id === B).had.room === 0 && O2[0].id === A, 'it had room the night we looked, so it leads');
+    // the captain finds no table for six at A: marked full for that evening, for every captain that night
+    assert.throws(() => S.captainSeen(db().members[t.ids.find((id) => id !== cap.id)], { table: t.id, place: A }), /captain/);
+    S.captainSeen(cap, { table: t.id, place: A });
+    const O3 = S.spotOptions(t);
+    assert.ok(O3.find((o) => o.id === A).seen.state === 'full' && O3.find((o) => o.id === A).seen.by === 'captain' && O3[O3.length - 1].id !== E, 'a captain’s look counts, and the newest look wins');
+    assert.ok(O3.indexOf(O3.find((o) => o.id === A)) > O3.indexOf(O3.find((o) => o.id === F)), 'and it drops below every place that might have room');
+    S.importChecks([{ date, size: 6, at: new Date(Date.now() - hour).toISOString(), seen: { 'Seen Room': ['19:00'] } }]);
+    assert.strictEqual(S.spotOptions(t).find((o) => o.id === A).seen.by, 'captain', 'an older look doesn’t undo a newer one');
   } finally { back(); }
 });
