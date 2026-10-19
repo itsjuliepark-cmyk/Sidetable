@@ -112,9 +112,6 @@ Object.values(db.tables).filter((t) => t.eventId === soon.id).forEach((t, k) => 
   t.ids.slice(1, 4).forEach((id, j) => db.chats[t.id].push({ id: 'y' + id, from: id, text: ['Mine wrote a unit test that tested nothing. Very confidently.', 'It summarized a case for me and I didn’t check it. The cold call went… fine.', 'Looking forward to this one.'][j], at: new Date(Date.now() - 3600e3 * (5 - j)).toISOString() }));
 });
 
-// Jordan said they're happy to be a captain, and it's Jordan's turn at this week's tech table
-demo.captain = 'yes';
-{ const jt = Object.values(db.tables).find((t) => t.eventId === soon.id && t.ids.indexOf(demo.id) >= 0); if (jt) { jt.captain = demo.id; demo.captainAt = ago(2); jt.cap = { spot: null, nudges: [], checks: null, salutes: {}, hadChoice: S.spotOptions(jt).length > 1, briefed: demo.id }; } }
 // tonight's question: most of Jordan's tech table has voted already, so Jordan's vote (and one more) settles it
 Object.values(db.tables).filter((t) => t.eventId === soon.id && t.game).forEach((t) => {
   const others = t.ids.filter((id) => id !== demo.id), early = others.slice(0, Math.max(0, others.length - 1));
@@ -124,6 +121,10 @@ Object.values(db.tables).filter((t) => t.eventId === soon.id && t.game).forEach(
 const social = S.createEvent({ type: 'kindred', date: day(4), time: '19:00' }); Object.assign(db.events[social.id], { meal: 'dinner', generated: true });
 holdSeats(social, [demo].concat(members.slice(1, 40).filter((m, i) => i % 3 !== 1)), 6);
 S.draft({ event: social.id }); S.publish({ event: social.id });
+// Jordan said they're happy to be a captain, and it's Jordan's turn at this week's social table (someone else has the tech one)
+demo.captain = 'yes';
+{ const tt = Object.values(db.tables).find((t) => t.eventId === soon.id && t.ids.indexOf(demo.id) >= 0); if (tt && tt.captain === demo.id) S.pickCaptain(tt, demo.id);
+  const jt = Object.values(db.tables).find((t) => t.eventId === social.id && t.ids.indexOf(demo.id) >= 0); if (jt) { jt.captain = demo.id; demo.captainAt = ago(2); jt.cap = { spot: null, nudges: [], checks: null, salutes: {}, hadChoice: S.spotOptions(jt).length > 1, briefed: demo.id }; } }
 Object.values(db.tables).filter((t) => t.eventId === past.id && t.ids.indexOf(demo.id) >= 0).forEach((t) => { demo.read['inv:' + t.id] = ago(24 * 8); });
 // a second tech night and a second social night this week, without Jordan and with open chairs (tables of five), so someone who
 // can't make their night can be moved to another one
@@ -154,6 +155,7 @@ S.draft({ event: social2.id }); S.publish({ event: social2.id });
   pastTable.cap = { booking: { pid: sp.id, at: ago(24 * 9), size: ids.length, warned: ids.length, time: '19:00', name: demo.name, code: '', via: sp.bookVia }, spot: { vid: sp.id, at: ago(24 * 9), booked: true }, nudges: [ago(24 * 8)], checks: { at: ago(24 * 7) }, salutes: {}, hadChoice: true, briefed: demo.id, thanked: true };
   ids.filter((x) => x !== demo.id).slice(0, 3).forEach((id, k) => { pastTable.cap.salutes[id] = ago(24 * 6 + k); });
   const nt = S.roundTwo(pastTable);
+  if (nt && nt.captain === demo.id) S.pickCaptain(nt, demo.id); // Jordan's captain job this week is the social table
   if (nt) {
     const ne = db.events[nt.eventId], mine = members.filter((m) => ids.indexOf(m.id) < 0 && m.id !== demo.id).slice(16, 40).map((m) => m.id);
     db.standby = db.standby || {}; mine.forEach((id, k) => { db.standby[id] = { kind: 'any', dates: [ne.date], skip: null, until: ne.date, at: ago(48 - k) }; });

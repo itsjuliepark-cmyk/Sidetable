@@ -838,7 +838,7 @@ function tableWho(t) {
 // what a seal says: the kind of table, or the round
 const sealWord = (t) => (t.round > 1 && !t.newcomer ? `Round ${nw(t.round)}` : tableKind(t) === 'social' ? 'Social' : 'Tech');
 function envHTML(t, many) {
-  const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
+  const job = ((t.captain && t.captain.me) || t.spotOpen) && !t.opened ? `<span class="envtag">${FLAG}${many ? 'Open this one first' : 'Open soon'}</span>` : ''; // a captain's, or one whose table still needs someone to book
   return `<button class="env ${tableKind(t)}${job ? ' job' : ''}" onclick="openInvite('${t.id}')" aria-label="Open your invitation for a ${tableKind(t) === 'social' ? 'social' : 'tech'} table on ${esc(t.day)}"><i class="fold"></i>${job}<span class="seal">${sealWord(t)}</span><span class="to">A private invitation<b>for ${esc(A.view.me.first)}</b><small>${esc(t.day)} evening at ${esc(t.time)}</small></span></button>`;
 }
 // people at a table you've already sat with: "Maya again, your second table together"
@@ -933,7 +933,7 @@ function capStripHTML(t) {
   if (!t.captain || !t.captain.me || t.left) return '';
   const J = t.capJobs || {};
   const next = J.spotBy ? `Next: book the spot by ${J.spotBy}` : J.vote ? `Next: get the table voting, ${J.vote.voted} of ${J.vote.need} so far` : J.checks ? 'Last one: split the check at dinner' : 'All three missions done';
-  return `<button class="capstrip" onclick="openTable('${t.id}')"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${esc(next)}</small></div>${t.capDone ? capBar(t.capDone, true) : ICON.chev}</button>`;
+  return `<button class="capstrip mine" onclick="openTable('${t.id}')"><span class="capflag wave">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${esc(next)}</small></div>${t.capDone ? capBar(t.capDone, true) : ICON.chev}</button>`;
 }
 /* your month as a calendar (tap a dinner to open it). Below: round twos coming up, and the line you're carrying. */
 const LTI = SV('<rect x="2.5" y="10" width="19" height="4" rx="2"/><circle cx="6" cy="6.3" r="1.5"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="18" cy="6.3" r="1.5"/><circle cx="6" cy="17.7" r="1.5"/><circle cx="12" cy="17.7" r="1.5"/><circle cx="18" cy="17.7" r="1.5"/>', 17);
@@ -1015,7 +1015,7 @@ function capLetterHTML(t) {
   if (!t.captain || !t.captain.me) return '';
   const J = t.capJobs || {}, jobs = [J.spotBy && `book the spot by ${J.spotBy}`, J.vote && 'get everyone to vote on tonight’s question', J.checks && 'split the check at the end'].filter(Boolean);
   if (!jobs.length) return '';
-  return `<div class="icap"><span class="capflag">${FLAG}</span><div><b>You’re the captain this time</b><p>${cap(nw(jobs.length))} small ${jobs.length > 1 ? 'missions' : 'mission'}: ${esc(andList(jobs))}. I’ll walk you through ${jobs.length > 1 ? 'each one' : 'it'}, and you can pass it on if you’d rather not</p></div></div>`;
+  return `<div class="icap"><span class="capflag wave">${FLAG}</span><div><b>You’re the captain this time</b><p>${cap(nw(jobs.length))} small ${jobs.length > 1 ? 'missions' : 'mission'}: ${esc(andList(jobs))}. I’ll walk you through ${jobs.length > 1 ? 'each one' : 'it'}, and you can pass it on if you’d rather not</p></div></div>`;
 }
 function drawInvite(already) {
   const t = A.inv, k = tableKind(t), me = A.view.me, who = tableWho(t).toLowerCase();
@@ -1023,6 +1023,7 @@ function drawInvite(already) {
   $('inviteBody').innerHTML = `<div class="invwrap ${already ? 'open' : ''}" id="invwrap">
       <div class="inv-env ${k}" aria-hidden="true"><i class="flap"></i><span class="seal">${sealWord(t)}</span></div>
       <article class="invite ${k}">
+        ${t.captain && t.captain.me ? `<div class="capstamp" id="capStamp" aria-hidden="true">${FLAG}<b>Captain</b></div>` : ''}
         <div class="ihead"><span class="ihash">#</span><span>Hash Table</span></div>
         <div class="ik">A private invitation</div>
         <p class="dear">${esc(me.first)},</p>
@@ -1045,13 +1046,15 @@ function drawInvite(already) {
       </div>
     </div>`;
   if (!already) { const w = $('invwrap'); setTimeout(() => w.classList.add('opening'), 380); setTimeout(() => { w.classList.add('open'); celebrate(w, k); }, 1150); }
+  // a captain's letter: once the stamp lands, a burst of gold from it
+  if (t.captain && t.captain.me) setTimeout(() => { const s = $('capStamp'); if (s && cur === 'invite') celebrate(s, 'gold'); }, already ? 700 : 1900);
 }
 // a burst of pastel confetti and a few sparkles from where the seal was, once, when an invitation opens
 function celebrate(host, kind) {
   if (reduceMotion() || !host || !host.animate) return;
   const box = host.getBoundingClientRect(), layer = document.createElement('div'); layer.className = 'confetti'; host.appendChild(layer);
   const ox = box.width / 2, oy = Math.min(150, box.height * 0.3);
-  const COLORS = kind === 'social' ? ['#F3C6D3', '#F7D9B5', '#E58FA0', '#FFE3A8', '#D6C3F2', '#FFFFFF'] : ['#B9D6EE', '#C9BBF2', '#7FB3E8', '#F3C6D3', '#FFE3A8', '#FFFFFF'];
+  const COLORS = kind === 'gold' ? ['#F2D597', '#E2B864', '#FFF1C9', '#C8963A', '#FFFFFF', '#F7D9B5'] : kind === 'social' ? ['#F3C6D3', '#F7D9B5', '#E58FA0', '#FFE3A8', '#D6C3F2', '#FFFFFF'] : ['#B9D6EE', '#C9BBF2', '#7FB3E8', '#F3C6D3', '#FFE3A8', '#FFFFFF'];
   for (let i = 0; i < 46; i++) {
     const p = document.createElement('i'), ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.25, sp = 140 + Math.random() * 190, sz = 5 + Math.random() * 6;
     p.style.cssText = `left:${ox}px;top:${oy}px;width:${sz}px;height:${i % 3 ? sz * 0.45 : sz}px;background:${COLORS[i % COLORS.length]};border-radius:${i % 3 ? '2px' : '50%'}`;
@@ -1163,7 +1166,7 @@ function drawTable() {
     ${gameSumHTML(t)}
     <div class="sp"></div>
     <div class="cardg who"><div class="ctitle">Who’s coming <span class="wn">${nw(people.length)} of you</span></div>
-      <div class="whogrid" id="tv">${people.slice().sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).map((p, i) => `<button class="seat ${p.me ? 'me' : ''}" data-id="${p.id}" style="animation-delay:${i * 0.06}s" onclick="${p.me ? '' : `openProfile('${p.id}')`}">${av(p)}<div class="nm">${p.me ? 'You' : esc(p.first)}</div>${badge(p.school)}</button>`).join('')}</div>
+      <div class="whogrid" id="tv">${people.slice().sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).map((p, i) => `<button class="seat ${p.me ? 'me' : ''}" data-id="${p.id}" style="animation-delay:${i * 0.06}s" onclick="${p.me ? '' : `openProfile('${p.id}')`}">${av(p)}${t.captain && t.captain.id === p.id ? `<span class="seatflag ${p.me ? 'wave' : ''}" title="Captain">${FLAG}</span>` : ''}<div class="nm">${p.me ? 'You' : esc(p.first)}</div>${badge(p.school)}</button>`).join('')}</div>
       ${chips.length ? `<div class="whoshare"><div class="label">What you share <span>tap one</span></div><div class="chips scrollx" id="tvChips">${chips.map((k) => `<button class="chip ${mine.indexOf(k) >= 0 ? 'mine' : ''}" data-i="${esc(k)}" onclick="hiTag(this.dataset.i)">${esc(tagName(k))} <span style="opacity:.55">${counts[k]}</span></button>`).join('')}</div><p class="tvcap" id="tvCap"></p></div>` : ''}
     </div>
     <div class="sp"></div>
@@ -1273,13 +1276,13 @@ function missionChecks(C) {
 function captainHTML(t) {
   const c = t.captain, K = t.cap;
   if (!c) return t.left || ['set', 'tonight'].indexOf(t.phase) < 0 ? '' : `<div class="sp"></div><div class="cardg capcard"><div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>This table needs a captain</b><small>Book the spot, rally the vote, settle up. Three missions, one stripe</small></div></div><button class="btn sm" style="margin-top:12px" onclick="captainTake('${t.id}', this)">I’ll be captain</button></div>`;
-  if (c.me && K && K.spot) return `<div class="sp"></div><div class="cardg capbrief ${K.done === 3 ? 'won' : ''}" id="capBrief">
-    <div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div></div>
+  if (c.me && K && K.spot) return `<div class="sp"></div><div class="cardg capbrief me ${K.done === 3 ? 'won' : ''}" id="capBrief">
+    <div class="caphead"><span class="capflag wave">${FLAG}</span><div class="grow"><b>You’re the captain</b><small>${K.done === 3 ? 'Three for three. The stripe is yours after dinner' : 'Three missions, one stripe'}</small></div></div>
     ${capBar(K.done)}
     ${missionSpot(K.spot)}${missionVote(K.vote)}${missionChecks(K.checks)}
     <div class="capdoor">At the door: ${K.spot.booking ? `the table is under <b>${esc(K.spot.booking.name)}</b>` : `<b>“Hash Table, party of ${nw(t.size)}”</b>`}</div>
     <button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
-  if (c.me) return `<div class="sp"></div><div class="cardg capcard"><div class="ctitle">${FLAG} You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
+  if (c.me) return `<div class="sp"></div><div class="cardg capcard capbrief me"><div class="ctitle"><span class="capflag wave">${FLAG}</span> You’re the captain for this one</div><ul class="captasks"><li>Get there five minutes early and say <b>“Hash Table, party of ${nw(t.size)}”</b> at the door</li><li>Ask for separate checks when you sit down</li><li>Open the deck once everyone’s there</li></ul><button class="link" style="margin:8px 0 0;text-align:left" onclick="captainPass('${t.id}', this)">Pass it on</button></div>`;
   if (t.spotOpen) return `<div class="sp"></div><div class="cardg capcard"><div class="caphead"><span class="capflag">${FLAG}</span><div class="grow"><b>Your table still needs a spot</b><small>${esc(c.first)} hasn’t booked yet. Anyone can book it now, and whoever does is captain</small></div></div><button class="btn sm" style="margin-top:12px" onclick="captainTake('${t.id}', this)">I’ll book it</button></div>`;
   const p = (t.people || []).find((x) => x.id === c.id) || { first: c.first };
   return `<div class="sp"></div><div class="cardg capcard row">${av(p, 's')}<div class="grow"><b>${esc(c.first)} is the captain</b><div class="sub2">Picks the spot, rallies the vote and settles the checks. It rotates, so your turn comes too</div></div></div>`;
