@@ -205,24 +205,56 @@ npm run film
 - 6명은 온라인 예약 한도 경계라 전화 안내 함께 표시, 6명이면 카드 보증과 1인 $25~50 취소 수수료가 흔해 예약 전 확인 안내
 - 제휴 식당(상시 확보, 매번 확인)은 선택 기능으로 유지, 테이블을 잡아둔 곳이라 예약 없이 캡틴이 고르기만
 
-### 하버드와 MIT 근처 식당 목록
+### 하버드, MIT, HBS 사이 식당 목록
 
-- `server/restaurants.js`: Harvard Square, Allston, Brighton, Kendall, Central, Inman의 실제 식당 62곳 (2026년 10월 조사)
-- 식당마다 동네, 주소, 음식 종류, 가격대, 예약 방법(OpenTable 36, Resy 11, Tock 2, 자체 사이트 6, 전화 7), 예약 페이지, 전화번호, 6명 온라인 예약 여부(52곳 가능), 저녁 휴무일, 단체 관련 한 줄, 분위기 한 줄
-- 음식 종류: Tacos & Mexican, Chinese, Japanese, Korean, Thai & Vietnamese, Indian, Pizza & Italian, American, Mediterranean, Seafood, Vegetarian, 기타
-- 예약 링크는 식당 사이트에서 연결된 실제 페이지로 확인, OpenTable과 Resy는 브라우저로 열어 식당 이름과 날짜, 인원 자동 입력까지 확인
-- 관리자 Places 탭의 목록 버튼 한 번으로 추가, 이미 있는 식당은 최신 정보로 갱신, 데모는 처음부터 이 목록 사용
-- 식당 정보는 바뀌니 파일럿 전에 한 번 더 확인 필요 (각 항목의 check에 조사 때 불확실했던 점 기록)
+- `server/restaurants.js`: 102곳 (2026년 10월 20일, 다섯 지역 조사를 다시 함)
+- 지역: Harvard Square 21, Porter 4, Huron Village 2, Allston 14, Brighton 10, Kendall 12, East Cambridge 5, Cambridgeport 1, Central 13, Inman 7, 그리고 강 건너 Back Bay 7, Fenway 4, Kenmore 2
+- 고른 기준: 6명 자리가 구조적으로 잘 나오는 곳 (6인 테이블, 원탁, 큰 부스, 프라이빗 룸, 큰 홀, 온라인 6명 이상 예약), 대화가 되는 곳, 평일 저녁 자리가 잘 나는 곳
+- 식당마다 추가된 항목: 지도 좌표(OpenStreetMap), 6인 테이블 수(many, some, few), 프라이빗 룸과 설명, 전체 좌석 수, 온라인 최대 인원, 평일과 주말 예약 난이도(easy, some, hard), 종합 적합도(fit 1~5), 제휴 후보 여부, 단체 추가 요금이나 시간 제한(fee), 근거와 출처
+- 빠진 곳 11곳: 6명을 못 받거나(Giulia, Pammy's), 문 닫았거나(Dear Annie, Cafe Sushi 매장 식사 중단, Passage to India 이전), 대화가 어려운 바(SOJUba, Audubon, The Citizen) 등
+- 기존 목록에서 바로잡은 것: Grafton Street는 2022년부터 59 JFK St(옛 Park 자리), Lou's는 SevenRooms 예약, La Royal은 Huron Village에 매일 영업, Row 34는 시끄러운 편, The Helmand 사이트 주소 변경, Lulu's는 월화 마지막 착석 6:30
+- 근거가 약한 칸은 check에 "thin evidence"로 표시하고 중간값 사용
+- 평일, 주말 난이도는 방 크기, 예약 빈도, 리뷰로 판단한 조사 결과일 뿐 실시간 빈자리가 아님, 앱도 "Usually easy on weeknights"처럼 말함
+- Central 조사 중 일부 OpenTable 정보는 페이지 리더를 거쳐 읽혀 check에 재확인 필요로 표시
+- 관리자 Places 탭의 목록 버튼으로 추가와 갱신, 목록에서 빠진 식당은 삭제 대신 일시 중지 (이미 예약된 테이블은 유지)
 
 ### 대화하기 좋은 곳
 
-- 식당마다 소음(noise: quiet, moderate, lively)과 대화 점수(talk: 3 편함, 2 자리만 잘 잡으면 괜찮음, 1 저녁엔 어려움)
-- 근거는 SoundPrint 측정값, OpenTable과 Yelp 소음 평가, Globe, Crimson, Infatuation, Time Out 리뷰 (2026년 10월, 항목별 soundSource)
-- 조용하고 대화 편한 곳 6곳: Harvest, The Maharaja, TooHot, Ariana, Fallow Kin, Casa Portugal
-- 보통이지만 대화 편한 곳 9곳: Bar Enza, Henrietta's Table, Ama, Tasca, The Stockyard, Catalyst, Row 34, Bambara, Oak Bistro
-- 저녁엔 시끄러운 곳 8곳: Alden & Harlow, Grafton Street, Lou's, Russell House, Lone Star, Mex, La Fábrica, Little Donkey
-- seat: 예약 메모에 적을 자리 (예: the fireside room), sound: 방 분위기 한 줄
-- 관리자 장소 편집 화면에서 직접 수정 가능
+- 소음(noise: quiet 9곳, moderate 68곳, lively 25곳), 대화 점수(talk: 3 편함 20곳, 2 자리만 잘 잡으면 78곳, 1 어려움 4곳)
+- 조용하고 대화 편한 곳: Harvest, The Maharaja, Hong Kong Restaurant(1층 식당), Changsho, Ariana, India Quality, TooHot, Talulla, Fallow Kin
+- 보통이지만 대화 편한 곳: Henrietta's Table, Nubar, Nine Tastes, Ama, The Stockyard, Devlin's, The Helmand, The Capital Grille, Oak Bistro, Urban Hearth, Judy's Bay
+- seat: 예약 메모에 적을 자리, sound: 방 분위기 한 줄, 관리자 화면에서 수정 가능
+
+### 이동 거리로 고르기 (`server/trip.js`)
+
+- 지도 API 없이 비용 0: 걷기, 그리고 레드라인, 그린라인(본선, B, D, E, Lechmere 구간), 1, 47, 66, 69, 70번 버스의 실제 정류장 지도로 분 단위 소요 시간 계산
+- 걷기는 직선거리 1.25배를 분당 80m로, 타는 시간은 노선 속도와 정류장마다 30초, 타기 전 대기(지하철 4~6분, 버스 7~8분), 환승 때 다시 대기, 정류장까지 걷는 건 1.3km까지
+- 결과 예: HBS에서 Harvest 걸어서 16분, MIT에서 Harvard Square 레드라인 22분, Harvard Square에서 Kendall 18분
+- 회원이 오는 곳: 카드에서 고르는 동네 11곳 (Harvard Square, HBS와 Allston 캠퍼스, MIT와 Kendall, Central, Inman, Porter, East Cambridge, Lower Allston과 Brighton, Back Bay, Fenway와 BU, Longwood), 주소는 받지 않음
+- 고르지 않으면 프로그램 기준: Business School과 SEAS는 Allston 캠퍼스, Medical School과 Public Health는 Longwood, MIT는 Kendall, 나머지 하버드는 Harvard Square
+- 테이블마다 식당별로 가장 먼 사람의 시간과 평균을 계산, 아무도 혼자 멀리 오지 않게 가장 먼 사람을 더 무겁게 봄
+- 제휴 식당 자동 배정도 같은 기준 (좌표가 없으면 예전처럼 같은 동네 우선)
+
+### 캡틴 목록의 순서
+
+- 먼저 확인 기록으로 묶음: 6~8시 빈자리가 확인된 곳, 확인 안 한 곳, 6명 만석이던 곳(테이블이 더 작을 때), 만석이던 곳
+- 묶음 안에서는 테이블에 맞는 정도 점수 (낮을수록 좋음, 대략 분 단위)
+  - 이동: 가장 먼 사람 시간 + 평균의 절반
+  - 대화: talk 한 단계에 10, 소음 quiet 0, moderate 3, lively 9 (조용하고 대화 편한 곳이 시끄러운 곳보다 20분 거리만큼 유리)
+  - 6명 자리: 6인 테이블 many 0, some 4, few 10, 프라이빗 룸 -2
+  - 그날 요일의 예약 난이도: easy 0, some 5, hard 12 (금, 토는 주말 기준)
+  - 다른 날 기록: 같은 요일이면 ±8, 다른 요일이면 ±4
+  - 온라인 예약 인원 부족, 전화 예약, 그날 우리 테이블 수, 조사 적합도
+- 확인 안 됐어도 가능성 있는 첫 식당에 "Best fit for your table" 표시
+- 카드에 "Everyone’s there within 22 minutes", "Lots of tables for six", "Private room", "Usually easy on weeknights" 같은 줄과 태그
+- 식당을 누르면 "Getting there"에 동네별 인원과 시간 ("From MIT and Kendall, two of you: 23 minutes on the Red Line"), 단체 추가 요금이나 시간 제한 안내
+
+### 제휴 후보 (평일에 6인 테이블을 잡아달라고 부탁할 곳)
+
+- 조용하고 방이 있는 곳: Harvest(Fireplace Room 28, 앞쪽 알코브 24), Ariana(프라이빗 룸 22), Henrietta's Table(프라이빗 룸 45), Nubar(Berkeley Room 8~20, 비면 일반 손님도 앉힘), The Maharaja, Changsho
+- 크고 평일이 한가한 곳: Rail Stop(Brighton Hall 30), Pagu(프라이빗 룸 20, 메자닌 20), The Stockyard(Wine Room 15~40), Catalyst(Crick Room 14), Bambara(메자닌 50), Olé(뒷방 75)
+- 강 건너: The Capital Grille(작은 방 10~16), LUCIE(10~30), Joe's on Newbury(Wine Room 24)
+- 이 목록은 조사 결과의 partner 표시와 적합도 4 이상, 평일 easy 기준
 
 ### 실제 빈자리 확인 (스팟 체크)
 
@@ -232,7 +264,7 @@ npm run film
 - 2026-10-19 오전 확인분: 10/23(금) 46곳, 10/21(수) 24곳 (OpenTable이 연속 조회를 막기 시작해 나머지 수요일은 비워둠, 추측으로 채우지 않음)
 - 10/23(금) 저녁 6~8시에 6명 자리 있던 곳 24곳, 없던 곳 22곳, La Fábrica는 6명 온라인 불가로 전화
 - 6~8시 사이 시간이 있으면 빈자리, 없으면 만석, 6명 기준 만석인데 테이블이 4명이면 "tight"(4명은 될 수도 있음)
-- 확인한 적 없는 날짜는 다른 날 기록을 참고 ("Had room both nights we looked")
+- 확인한 적 없는 날짜는 다른 날 기록을 날짜와 함께 보여주고, 확인된 것처럼 말하지 않음 ("Nobody has checked Saturday yet, so nothing here is confirmed")
 - 더 새로운 기록이 이김, 4개월 지난 기록은 자동 삭제
 - 실시간이 아니라 기록이라 목록에 누가(we, you, another captain) 언제 봤는지 함께 표시, 확실한 자리는 제휴 식당 홀드뿐
 
@@ -249,7 +281,7 @@ npm run film
 ### 확인 안 한 날짜 예측
 
 - 다른 날 기록(스팟 체크, 캡틴 답)과 캡틴들이 실제로 예약한 테이블을 함께 사용
-- 같은 요일 기록이 있으면 그것만 ("Had room both Fridays we looked"), 없으면 전체
+- 같은 요일 기록이 있으면 그것만, 없으면 전체, 6명 만석은 4명 테이블에도 불리하게 반영, 데모의 가짜 예약은 제외
 - 인원 기준: 6명 자리 있음은 4명에게도 자리 있음, 4명 만석은 6명에게도 만석
 
 ### 운영진 Spot checks 탭
@@ -264,11 +296,10 @@ npm run film
 ### 캡틴이 보는 장소 목록
 
 - 그 날짜에 여는 곳만 표시: 요일 휴무, 관리자가 넣은 휴무일, 그날 우리 테이블이 이미 찬 곳은 제외
-- 순서: 제휴 식당, 그다음 스팟 체크에서 6~8시 빈자리가 보인 곳, 확인 안 한 곳(다른 날 자리 있던 곳 먼저), 만석이던 곳
-- 같은 묶음 안에서는 대화 편한 곳, 조용한 곳 먼저, 그다음 6명 온라인 예약, 7시에 가까운 시간, 그날 우리 테이블 수, 동네
+- 순서: 제휴 식당 먼저, 그다음은 위의 "캡틴 목록의 순서" (확인 기록 묶음, 그 안에서 테이블에 맞는 정도 점수)
 - 만석으로 확인된 곳은 맨 아래 "Show them anyway" 버튼 뒤로
 - 위쪽 음식 칩으로 거르기: All, Tacos, Asian(중식, 일식, 한식, 태국과 베트남), Pizza & Italian, Indian, American, Mediterranean, Seafood, Vegetarian
-- 카드마다 음식 종류와 동네, 분위기, 빈자리 시간과 확인 시각("At 6:45, 7:00 and 7:15, when we looked today at 6:30 AM"), "Free for six" 또는 "Full around 7", "Quiet, easy to talk" 같은 대화 태그, 가격대, 예약 방법
+- 카드마다 음식 종류와 동네, 분위기, 이동 시간, 빈자리 시간과 확인 시각("At 6:45, 7:00 and 7:15, when we looked today at 6:30 AM"), 확인 안 한 날은 다른 날 기록을 날짜와 함께("Other nights: room on Wed Oct 21"), "Free for six" 또는 "Full around 7", 대화, 6인 테이블, 예약 난이도 태그, 가격대
 - 식당을 누르면 확인 기록, 방 분위기, 예약 메모에 적을 자리, 빈자리 시간 버튼
 - 10곳씩 보여주고 Show more로 나머지
 - 예약 버튼은 그 날짜, 인원, 확인된 빈자리 시간이 채워진 채로 열림

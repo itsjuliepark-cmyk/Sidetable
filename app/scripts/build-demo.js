@@ -12,9 +12,9 @@ const html = read('public/index.html');
 // the scene pictures ride along inside the stylesheet
 const css = read('public/app.css').replace(/url\(\/img\/([a-z]+)\.jpg\)/g, (all, name) => 'url(data:image/jpeg;base64,' + fs.readFileSync(path.join(root, 'public/img', name + '.jpg')).toString('base64') + ')');
 const shared = read('public/shared.js');
-const mods = { 'tables.js': read('server/tables.js'), 'restaurants.js': read('server/restaurants.js'), 'spotchecks.js': read('server/spotchecks.js'), 'server.js': read('server/server.js'), 'seed.js': read('scripts/seed.js'), 'faces.js': read('scripts/faces.js') };
+const mods = { 'tables.js': read('server/tables.js'), 'restaurants.js': read('server/restaurants.js'), 'spotchecks.js': read('server/spotchecks.js'), 'trip.js': read('server/trip.js'), 'server.js': read('server/server.js'), 'seed.js': read('scripts/seed.js'), 'faces.js': read('scripts/faces.js') };
 // the saved demo data is keyed to this exact code, so a new build never runs on data from an older one
-const build = require('crypto').createHash('sha1').update([read('public/shared.js'), read('server/tables.js'), read('server/restaurants.js'), read('server/spotchecks.js'), read('server/server.js'), read('scripts/seed.js'), read('scripts/demo/runtime.js')].join('\n')).digest('hex').slice(0, 10);
+const build = require('crypto').createHash('sha1').update([read('public/shared.js'), read('server/tables.js'), read('server/restaurants.js'), read('server/spotchecks.js'), read('server/trip.js'), read('server/server.js'), read('scripts/seed.js'), read('scripts/demo/runtime.js')].join('\n')).digest('hex').slice(0, 10);
 const runtime = read('scripts/demo/runtime.js').replace('/*BUILD*/', build);
 const hooks = read('scripts/demo/hooks.js');
 

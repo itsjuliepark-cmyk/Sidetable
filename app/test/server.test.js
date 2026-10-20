@@ -1173,8 +1173,9 @@ test('the restaurant list: each place says what it serves, if it takes six onlin
     const shutMon = P.filter((v) => v.nights.indexOf(1) < 0).map((v) => v.id);
     assert.ok(shutMon.length && O.every((o) => shutMon.indexOf(o.id) < 0), 'nothing closed on Mondays');
     // had room when looked at, then not looked at (room the other nights first), then full; the easiest to talk in first inside each
-    const odds = (o) => (o.seen ? { free: 0, call: 2, full: 4 }[o.seen.state] : !o.had ? 2 : o.had.room === o.had.nights ? 1 : o.had.room ? 2 : 3), key = O.map((o) => [odds(o), -(o.talk || 2)]);
-    assert.ok(key.every((k2, i) => !i || key[i - 1][0] < k2[0] || (key[i - 1][0] === k2[0] && key[i - 1][1] <= k2[1])), 'likeliest to have six first, quietest first among those');
+    const key = O.map((o) => [o.tier, o.score]);
+    assert.ok(key.every((k2, i) => !i || key[i - 1][0] < k2[0] || (key[i - 1][0] === k2[0] && key[i - 1][1] <= k2[1])), 'what a look found first, then the best fit for the table');
+    assert.ok(O.filter((o) => o.best).length === 1 && O.find((o) => o.best).tier <= 1, 'one best fit, and it could work');
     assert.ok(O.some((o) => o.had) && O.some((o) => !o.had && !o.seen), 'a night nobody looked at leans on the nights we did');
     const ot = O.find((o) => o.via === 'opentable'), rs = O.find((o) => o.via === 'resy'), ph = O.find((o) => o.via === 'phone');
     assert.ok(ot.link.indexOf('covers=6&dateTime=' + monday + 'T') > 0, 'OpenTable opens on that date for six: ' + ot.link);
@@ -1207,7 +1208,8 @@ test('spot checks: a place a look found a table for six at around 7 comes first,
     assert.ok(O4[i4(B)].seen.state === 'tight' && i4(B) > i4(F) && O4[i4(A)].seen.state === 'free' && O4[i4(E)].seen.state === 'free' && i4(E) === 0, 'six full: maybe four fits, so it waits below the unknowns; room for four counts for four, and the quiet one leads');
     // another night nobody looked at leans on this one
     const n2 = night(people(6, 'Other'), 'topic', other), O2 = S.spotOptions(n2.t);
-    assert.ok(O2.find((o) => o.id === A).had.room === 1 && O2.find((o) => o.id === B).had.room === 0 && O2[0].id === A, 'it had room the night we looked, so it leads');
+    const i2 = (id) => O2.findIndex((o) => o.id === id);
+    assert.ok(O2[i2(A)].had.room === 1 && O2[i2(B)].had.room === 0 && i2(A) < i2(B), 'it had room the night we looked, so it ranks above the one that was full');
     // the captain finds no table for six at A: marked full for that evening, for every captain that night
     assert.throws(() => S.captainSeen(db().members[t.ids.find((id) => id !== cap.id)], { table: t.id, place: A }), /captain/);
     S.captainSeen(cap, { table: t.id, place: A, full: true });
@@ -1242,7 +1244,7 @@ test('back from a booking page: a captain says what it showed (times, nothing ne
     // a week on, the same weekday, and nobody has looked yet: it had room, so it leads; the full one is remembered
     const O3 = S.spotOptions(night(people(6, 'Capc'), 'topic', S.addDays(date, 7)).t), hA = O3.find((o) => o.id === A).had, hB = O3.find((o) => o.id === B).had;
     assert.ok(hA && hA.room === 1 && hA.nights === 1 && hA.day && O3[0].id === A, 'the same weekday a week on leans on what the captains saw');
-    assert.ok(hB && hB.room === 0 && O3[O3.length - 1].id === B, 'and remembers the one that was full');
+    assert.ok(hB && hB.room === 0 && O3.findIndex((o) => o.id === B) > O3.findIndex((o) => o.id === A), 'and remembers the one that was full');
     assert.ok(hA.list.length === 1 && hA.list[0].room && hA.list[0].how === 'look' && /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d+$/.test(hA.list[0].d), 'with the date it was seen: ' + JSON.stringify(hA.list));
     // a table our captain booked counts as a night with room; a made-up one (the demo's sample captains) never does
     const n4 = night(people(6, 'Capd'), 'topic', S.addDays(date, 1)), c4 = db().members[n4.t.captain], t5 = night(people(6, 'Cape'), 'topic', S.addDays(date, 8)).t;
@@ -1270,5 +1272,34 @@ test('the spot checks tab: each coming night with its tables, the places that ne
     const at = S.tzMs(sun, '20:45'); S.checksNudge(at); S.checksNudge(at); S.checksNudge(S.tzMs(sun, '19:00'));
     const notes = db().alerts.filter((a) => a.key === 'checks:' + S.addDays(sun, 1));
     assert.ok(notes.length === 1 && /Tuesday/.test(notes[0].text), 'once, naming the bare nights: ' + notes.length);
+  } finally { back(); }
+});
+
+test('the fairest trip: a rough map of walks, the T and the main buses; places easy for the whole table rank first; the card says where you come from', () => {
+  const TRIP = require('../server/trip.js');
+  const hsq = [42.3736, -71.1190], hbs = [42.3655, -71.1240], mit = [42.3600, -71.0915], harvest = [42.37377, -71.12183];
+  const w = TRIP.trip(hbs, harvest), r = TRIP.trip(mit, harvest), k = TRIP.trip(hsq, [42.3636, -71.0915]);
+  assert.ok(w.walk && w.min >= 10 && w.min <= 20, 'HBS to Harvard Square is a walk: ' + JSON.stringify(w));
+  assert.ok(!r.walk && r.lines.indexOf('the Red Line') >= 0 && r.min >= 15 && r.min <= 30, 'MIT to Harvard Square is the Red Line: ' + JSON.stringify(r));
+  assert.ok(k.min >= 12 && k.min <= 28, 'Harvard Square to Kendall: ' + JSON.stringify(k));
+  const mk = (tag, lat, lng) => S.savePlace({ name: tag + ' Table', address: '1 Test St, Cambridge', area: 'Test', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'opentable', bookUrl: 'https://www.opentable.com/r/' + tag.toLowerCase() + '-table', six: 'online', noise: 'moderate', talk: 2, lat, lng }).id;
+  const AL = mk('Barry', 42.3638, -71.1290), KE = mk('Tech', 42.3636, -71.0915), back = only([AL, KE]);
+  assert.throws(() => S.savePlace({ id: AL, name: 'Barry Table', address: '1 Test St, Cambridge', nights: [1], mode: 'captain', bookUrl: 'https://www.opentable.com/r/x', lat: 10, lng: 10 }), /Boston/, 'a map pin has to be around Boston');
+  try {
+    const ms = people(6, 'Trip'), t = night(ms, 'topic', day(41)).t, seated = t.ids.map((id) => db().members[id]);
+    seated.forEach((m) => { m.profile.from = 'hbs'; });
+    let O = S.spotOptions(t);
+    assert.ok(O[0].id === AL && O[0].best && O[0].trip.walkAll && O[0].trip.max <= 12 && O[1].trip.max >= 25, 'a table coming from HBS gets the Allston spot first, a short walk for all: ' + JSON.stringify(O.map((o) => o.trip)));
+    seated.forEach((m) => { m.profile.from = 'mit'; });
+    O = S.spotOptions(t);
+    assert.strictEqual(O[0].id, KE, 'and a table coming from MIT, the Kendall one');
+    seated.forEach((m, i) => { m.profile.from = i % 2 ? 'mit' : 'hbs'; });
+    const T = S.spotOptions(t).find((o) => o.id === AL).trip;
+    assert.ok(T.groups.length === 2 && T.groups.every((g) => g.n >= 1 && g.t) && T.max >= T.avg, 'who comes from where, by area: ' + JSON.stringify(T));
+    // the card keeps the area, and only areas on the list
+    const m0 = seated[0];
+    S.saveProfile(m0, { first: m0.first, profile: Object.assign({}, m0.profile, { from: 'backbay' }) }); assert.strictEqual(m0.profile.from, 'backbay');
+    S.saveProfile(m0, { first: m0.first, profile: Object.assign({}, m0.profile, { from: 'mars' }) }); assert.strictEqual(m0.profile.from, '', 'only the areas on the list');
+    assert.strictEqual(SX.fromOf('harvard', 'Business School', ''), 'hbs'); assert.strictEqual(SX.fromOf('mit', 'Sloan', ''), 'mit'); assert.strictEqual(SX.fromOf('harvard', 'Medical School', ''), 'longwood');
   } finally { back(); }
 });

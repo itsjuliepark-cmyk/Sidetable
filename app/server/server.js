@@ -14,6 +14,7 @@ const SX = require('../public/shared.js');
 const T = require('./tables.js');
 const RESTAURANTS = require('./restaurants.js');
 const SPOTCHECKS = require('./spotchecks.js');
+const TRIP = require('./trip.js');
 
 const PORT = +process.env.PORT || 8800;
 const ROOT = path.join(__dirname, '..');
@@ -176,7 +177,8 @@ function cleanProfile(b) {
     headline: clip(b.headline, 80).trim(), building: clip(b.building, 160).trim(), openTo: arr(b.openTo).filter((x, i, a) => SX.OPEN_TO.indexOf(x) >= 0 && a.indexOf(x) === i),
     links: arr(b.links).map((l) => cleanUrl(l)).filter(Boolean).slice(0, 2),
     mix: inList(b.mix, SX.MIX.map((x) => x.id)), perWeek: Math.max(1, Math.min(5, Math.round(+b.perWeek) || 2)),
-    next: [].concat(b.next || []).filter((x, i, a) => SX.NEXT.indexOf(x) >= 0 && a.indexOf(x) === i), plan: clip(b.plan, 100).trim(), dream: clip(b.dream, 120).trim()
+    next: [].concat(b.next || []).filter((x, i, a) => SX.NEXT.indexOf(x) >= 0 && a.indexOf(x) === i), plan: clip(b.plan, 100).trim(), dream: clip(b.dream, 120).trim(),
+    from: inList(b.from, SX.FROM.map((x) => x.id)) || ''
   };
   const tech = p.mix === 'social' || (tracks.length && interests.length >= 1 && p.lens && Object.keys(takes).length === 3);
   p.done = !!(p.mix && tech && Object.keys(answers).length === SX.QS.length && p.rhythm && p.look && p.next.length);
@@ -750,11 +752,13 @@ function placeFits(v, t, e) {
   return !!v && !v.off && !v.gone && arr(v.nights).indexOf(dowOf(e.date)) >= 0 && arr(v.closedOn).indexOf(e.date) < 0 && ((db.bookings || {})[bkey(v.id, e.date)] || {}).state !== 'declined'
     && (v.seats || 6) >= seatedIds(t).length && placeLoad(v, e.date, t.id) < Math.min(v.tables || 1, ((db.bookings || {})[bkey(v.id, e.date)] || {}).cap || 99);
 }
+// a partner's trip for this table in minutes (the longest plus half the average), or the same-area rule when it has no map pin
+function tripCost(t, v, e) { const T = tableTrip(seatedIds(t), v); return T ? Math.round(T.max + T.avg / 2) : (v.area || '') === e.area ? 20 : 30; }
 function placeTable(t, prefer) {
   const e = db.events[t.eventId]; if (!e || t.closed || (t.venue && t.venue.name)) return t.venue || null;
   const P = Object.values(db.places || {}).filter(isPartner), pv = prefer && own(db.places || {}, prefer);
   const v = (isPartner(pv) && placeFits(pv, t, e) ? pv : null)
-    || P.filter((x) => placeFits(x, t, e)).sort((a, b) => (!!a.backup - !!b.backup) || ((b.area || '') === e.area) - ((a.area || '') === e.area) || placeLoad(a, e.date) - placeLoad(b, e.date) || placeUses(a) - placeUses(b) || (a.name < b.name ? -1 : 1))[0];
+    || P.filter((x) => placeFits(x, t, e)).sort((a, b) => (!!a.backup - !!b.backup) || (tripCost(t, a, e) - tripCost(t, b, e)) || placeLoad(a, e.date) - placeLoad(b, e.date) || placeUses(a) - placeUses(b) || (a.name < b.name ? -1 : 1))[0];
   if (!v) return null;
   t.venue = { id: v.id, name: v.name, address: v.address, note: v.note || 'Ask for the Hash Table group' };
   syncBooking(v.id, e.date);
@@ -774,6 +778,18 @@ function savePlace(b) {
     bookVia: inList(b.bookVia, ['opentable', 'resy', 'tock', 'web', 'phone']) || (b.mode === 'captain' ? 'web' : ''), bookUrl: cleanUrl(b.bookUrl), price: inList(b.price, ['$', '$$', '$$$']) || '', card: !!b.card,
     cuisine: inList(b.cuisine, SX.CUISINES.map((c) => c.id)) || '', six: inList(b.six, ['online', 'call', 'unknown']) || 'unknown', group: clip(b.group, 120).trim(),
     noise: inList(b.noise, ['quiet', 'moderate', 'lively']) || '', talk: inList(+b.talk, [1, 2, 3]) || 0, seat: clip(b.seat, 100).trim(), sound: clip(b.sound, 100).trim() });
+  // for a table of six: where it is (for travel), how many tables seat six, a private room, how easy an evening usually is
+  const has = (k) => b[k] !== undefined && b[k] !== null && b[k] !== '';
+  if (has('lat') || has('lng')) { const la = +b.lat, lo = +b.lng; if (la > 41 && la < 43.5 && lo > -72.5 && lo < -70) { v.lat = Math.round(la * 1e5) / 1e5; v.lng = Math.round(lo * 1e5) / 1e5; } else fail('that map pin isn’t around Boston'); }
+  if (has('sixTables')) v.sixTables = inList(b.sixTables, ['many', 'some', 'few']) || '';
+  if (b.privateRoom !== undefined) v.privateRoom = !!b.privateRoom;
+  if (has('privateNote')) v.privateNote = clip(b.privateNote, 80).trim();
+  if (has('weekday')) v.weekday = inList(b.weekday, ['easy', 'some', 'hard']) || '';
+  if (has('weekend')) v.weekend = inList(b.weekend, ['easy', 'some', 'hard']) || '';
+  if (has('maxOnline')) v.maxOnline = Math.max(0, Math.min(40, Math.round(+b.maxOnline) || 0));
+  if (has('capacity')) v.capacity = Math.max(0, Math.min(2000, Math.round(+b.capacity) || 0));
+  if (has('fit')) v.fit = inList(Math.round(+b.fit), [1, 2, 3, 4, 5]) || 0;
+  if (b.fee !== undefined) v.fee = clip(b.fee, 90).trim(); // what a group pays on top, or a time limit, said before booking
   if (v.mode === 'captain' && !v.bookUrl && !v.phone) fail('add a booking link or a phone number, so captains can book it');
   // 10. now a standing hold: evenings waiting for a yes are simply held
   if (v.mode === 'hold') Object.values(db.bookings || {}).forEach((x) => { if (x.vid === v.id && x.state === 'asked' && x.date >= ymdTz(Date.now())) { x.state = 'held'; delete x.more; resolveAlerts('unconfirmed:' + bkey(v.id, x.date)); tablesAt(v, x.date).forEach((t) => revealNow(t)); } });
@@ -790,14 +806,19 @@ function importRestaurants() {
     const was = Object.values(db.places || {}).find((v) => !v.gone && v.name.toLowerCase() === String(r.name).toLowerCase()), shut = arr(r.closed).map((d) => DOW[d]).filter((d) => d != null);
     try {
       savePlace({ id: was && was.id, name: r.name, address: r.address, area: r.area, nights: [0, 1, 2, 3, 4, 5, 6].filter((d) => shut.indexOf(d) < 0), tables: was ? was.tables : r.six === 'call' ? 1 : 2, seats: was ? was.seats : 6,
-        mode: 'captain', bookVia: r.bookVia, bookUrl: r.bookUrl, phone: r.phone, price: r.price, vibe: r.vibe, cuisine: r.cuisine, six: r.six, group: r.groupNote, note: was ? was.note : '', off: was ? was.off : false, closedOn: was ? was.closedOn : [],
-        noise: r.noise, talk: r.talk, seat: r.seat, sound: r.sound });
+        mode: 'captain', bookVia: r.bookVia, bookUrl: r.bookUrl, phone: r.phone, price: r.price, vibe: r.vibe, cuisine: r.cuisine, six: r.six, group: r.groupNote, note: was ? was.note : '', off: was ? (was.leftList ? false : was.off) : false, closedOn: was ? was.closedOn : [],
+        noise: r.noise, talk: r.talk, seat: r.seat, sound: r.sound, lat: r.lat, lng: r.lng, sixTables: r.sixTables, privateRoom: !!r.privateRoom, privateNote: r.privateNote || '',
+        weekday: r.weekday, weekend: r.weekend, maxOnline: r.maxOnline || 0, capacity: r.seats || 0, fit: r.fit, fee: r.fee || '' });
       if (was) updated++; else added++;
+      const v = Object.values(db.places).find((x) => !x.gone && x.name.toLowerCase() === String(r.name).toLowerCase()); if (v) { v.fromList = true; delete v.leftList; }
     } catch (e) { skipped.push(r.name + ': ' + e.message); }
   });
+  // a place that left the list (closed, or bad for six) is paused, not deleted: tables already booked there keep it
+  const names = RESTAURANTS.map((r) => String(r.name).toLowerCase()); let paused = 0;
+  Object.values(db.places || {}).forEach((v) => { if (v.fromList && !v.gone && names.indexOf(v.name.toLowerCase()) < 0 && !v.leftList) { v.leftList = true; v.off = true; paused++; } });
   const checks = importChecks(SPOTCHECKS).read;
   log('places-import', String(added), String(updated)); save();
-  return { ok: true, added, updated, skipped, checks };
+  return { ok: true, added, updated, skipped, checks, paused };
 }
 /* ---------- spot checks: is there really a table for six around 7? ----------
    OpenTable, Resy and Tock don't share availability, and reading their pages by machine is against their terms (OpenTable
@@ -1331,25 +1352,57 @@ function bookLink(v, date, time, size) {
   if (v.bookVia === 'tock') return u.replace(/\/$/, '') + `/search?date=${date}&size=${size}&time=${encodeURIComponent(time)}`;
   return u;
 }
+// how far a place is for these people: each one's minutes from where they usually come from (an area from their card, or
+// their program's campus), the longest, the average, and who comes from where (areas only, never addresses)
+const originOf = (m) => SX.fromOf(m.school, m.program, m.profile && m.profile.from);
+function tableTrip(ids, v) {
+  if (!v || !isFinite(v.lat) || !isFinite(v.lng)) return null;
+  const groups = {}; let max = 0, sum = 0, n = 0;
+  ids.forEach((id) => {
+    const m = db.members[id]; if (!m) return;
+    const f = originOf(m), F = SX.FROM.find((x) => x.id === f), r = F && TRIP.trip([F.lat, F.lng], [v.lat, v.lng]); if (!r) return;
+    const g = groups[f] = groups[f] || { id: f, t: F.t, n: 0, min: r.min, walk: r.walk, lines: r.lines };
+    g.n++; max = Math.max(max, r.min); sum += r.min; n++;
+  });
+  return n ? { max, avg: Math.round(sum / n), walkAll: Object.values(groups).every((g) => g.walk), groups: Object.values(groups).sort((a, b) => b.n - a.n || a.min - b.min) } : null;
+}
+// how well a place suits this table, lower is better, in rough minutes: the trip (the longest one counts most, so nobody is
+// stuck with a long ride), a room where six can talk (a quiet, easy room is worth about twenty minutes over a loud one),
+// tables that seat six, how easy that kind of evening usually is to book, and what other nights showed
+const NOISE = { quiet: 0, moderate: 3, lively: 9 }, SIXT = { many: 0, some: 4, few: 10 }, EASE = { easy: 0, some: 5, hard: 12 };
+const weekendOf = (date) => { const d = dowOf(date); return d === 5 || d === 6; }; // Friday and Saturday nights
+function placeScore(v, x) {
+  const T = x.trip, ease = EASE[x.weekend ? v.weekend : v.weekday];
+  let s = (T ? T.max + T.avg / 2 : 25) + (3 - (v.talk || 2)) * 10 + (v.noise in NOISE ? NOISE[v.noise] : 3) + (v.sixTables in SIXT ? SIXT[v.sixTables] : 5) - (v.privateRoom ? 2 : 0) + (ease == null ? 5 : ease);
+  if (x.had) s += (0.5 - x.had.room / x.had.nights) * (x.had.day ? 16 : 8); // the same weekday says more than another night
+  if (v.six === 'call') s += 5; else if (v.six !== 'online') s += 2;
+  if (v.maxOnline && v.maxOnline < x.size) s += 6;
+  if (x.off) s += (x.off / 15) * 2;
+  return s + (x.load || 0) * 6 + (v.fit ? (5 - v.fit) * 2 : 3);
+}
 // where this table could go that evening: partners holding a table for Hash Table (nothing to book) first, then every place
 // the captain can book that's open that night with room for us (its nights, its closed dates, how many of our tables it takes).
 // Among those: the ones a look found a table for this many within the hour first, then the ones nobody has looked at for that
-// night (those that had room the other nights first), then the ones found full. Inside each, the quietest rooms first, since a
-// table of strangers has to hear each other, then the ones that take six online, the time nearest the table's, the least used
-// by us that night, and the same area. Each booking link opens with the date, the time and the party size filled in
+// night, then the ones that were full for six (with a smaller table), then the ones found full. Inside each, the best fit for
+// these people (placeScore): a short trip for everyone, quiet, tables for six, an easy kind of evening. The first one that
+// could work is marked as the best fit. Each booking link opens with the date, the time and the party size filled in
 function spotOptions(t) {
   const e = db.events[t.eventId]; if (!e) return [];
-  const cur = t.venue && (t.venue.id || t.venue.pid), size = seatedIds(t).length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id), now = Date.now();
-  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), load = {}, seen = {}, had = {}, booked = bookedAt();
-  P.forEach((v) => { load[v.id] = placeLoad(v, e.date, t.id); if (!isPartner(v)) { seen[v.id] = seenAt(v, e.date, e.time, size); if (!seen[v.id]) had[v.id] = seenHist(v, e.date, size, booked); } });
-  const odds = (v) => { const s = seen[v.id], h = had[v.id]; return s ? { free: 0, call: 2, tight: 3, full: 4 }[s.state] : !h ? 2 : h.room === h.nights ? 1 : h.room ? 2 : 3; };
-  const big = (v) => (v.six === 'online' ? 0 : v.six === 'call' ? 2 : 1), hush = (v) => (v.noise === 'quiet' ? 0 : v.noise === 'lively' ? 2 : 1); // tables grow to six, so six online leads even for four
-  const off = (v) => { const s = seen[v.id]; return s && s.best ? Math.abs(hmMin(s.best) - hmMin(e.time)) : 0; };
-  return P.sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (odds(a) - odds(b)) || ((b.talk || 2) - (a.talk || 2)) || (hush(a) - hush(b))
-    || (big(a) - big(b)) || (off(a) - off(b)) || (load[a.id] - load[b.id]) || (((b.area || '') === e.area) - ((a.area || '') === e.area)) || (a.name < b.name ? -1 : 1))
-    .map((v) => { const s = seen[v.id], h = had[v.id]; return { id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
+  const cur = t.venue && (t.venue.id || t.venue.pid), ids = seatedIds(t), size = ids.length, prev = t.round > 1 && db.tables[t.prev], last = prev && prev.venue && (prev.venue.pid || prev.venue.id), now = Date.now(), weekend = weekendOf(e.date);
+  const P = Object.values(db.places || {}).filter((v) => !v.gone && (v.id === cur || (!v.backup && placeFits(v, t, e)))), X = {}, booked = bookedAt();
+  P.forEach((v) => {
+    const s = isPartner(v) ? null : seenAt(v, e.date, e.time, size), h = s || isPartner(v) ? null : seenHist(v, e.date, size, booked), trip = tableTrip(ids, v);
+    const x = X[v.id] = { s, h, trip, size, weekend, load: placeLoad(v, e.date, t.id), off: s && s.best ? Math.abs(hmMin(s.best) - hmMin(e.time)) : 0, had: h, tier: !s ? 1 : { free: 0, call: 1, tight: 2, full: 3 }[s.state] };
+    x.score = placeScore(v, x);
+  });
+  const out = P.sort((a, b) => ((b.id === cur) - (a.id === cur)) || ((b.id === last) - (a.id === last)) || (isPartner(b) - isPartner(a)) || (X[a.id].tier - X[b.id].tier) || (X[a.id].score - X[b.id].score) || (a.name < b.name ? -1 : 1))
+    .map((v) => { const x = X[v.id], s = x.s, h = x.h; return { id: v.id, name: v.name, area: v.area || '', note: v.vibe || '', mine: v.id === cur, last: v.id === last, kind: isPartner(v) ? 'partner' : 'book', address: v.address, via: v.bookVia || '', price: v.price || '', card: !!v.card, phone: v.phone || '',
       cuisine: v.cuisine || '', six: v.six || 'unknown', group: v.group || '', talk: v.talk || 0, noise: v.noise || '', seat: v.seat || '', sound: v.sound || '',
+      sixTables: v.sixTables || '', privateRoom: !!v.privateRoom, privateNote: v.privateNote || '', fee: v.fee || '', maxOnline: v.maxOnline || 0, ease: (weekend ? v.weekend : v.weekday) || '', weekend,
+      trip: x.trip, score: Math.round(x.score), tier: x.tier,
       seen: s ? { state: s.state, times: s.times || [], best: s.best || '', when: seenLabel(Date.parse(s.at), now), by: s.by, size: s.size, mine: !!s.who && s.who === t.captain } : null, had: h || null, link: isPartner(v) ? '' : bookLink(v, e.date, (s && s.best) || e.time, size) }; });
+  const top = out.find((o) => o.kind === 'book' && o.tier <= 1); if (top) top.best = true;
+  return out;
 }
 // what a captain saw on a booking page, back in the app: times for their group (b.times), nothing near the table's time
 // (b.full), or "call us for a group this size" (b.call). Kept for that evening, so every captain that night sees it right away
@@ -2674,5 +2727,5 @@ function start(port) {
   return server.listen(port || PORT, () => console.log('Hash Table beta on http://localhost:' + (port || PORT) + '  (admin: /admin, data: ' + DATA + ')'));
 }
 if (require.main === module) start();
-module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen, checksAdmin, checksNudge,
+module.exports = { server, start, db: () => db, save, newMember, saveProfile, createEvent, bookSeat, cancelSeat, draft, move, setVenue, publish, feedback, postChat, postDm, playGame, advanceGame, gameView, startGame, ensurePopGame, reinvite, fillChair, roundTwo, savePlace, placeTable, placesAdmin, placeMail, placeAnswer, placeView, syncBooking, saveOps, opsAdmin, opsDuty, alertOps, shrink, closeTable, callOff, pickCaptain, captainMove, lateChanges, cooling, setVenue, monthView, monthNow, notify, closeAt, importRestaurants, importChecks, captainSeen, tableTrip, placeScore, checksAdmin, checksNudge,
   isMutual, canDm, view, tableView, setAvail, availView, matchWeek, publishWeek, targetWeek, addDays, ymdTz, createPop, joinPop, cancelPop, pops, popView, postPopChat, postJob, board, saveJob, askIntro, answerIntro, createPost, vote, plus, reply, deletePost, pulse, people, personView, wave, threads, adminState, adminEvent, newClub, startVerify, finishVerify, tick, eventTimes, tzMs, cleanProfile, report, erase, cancelEvent, freeUntil, captainSpot, captainBook, bookLink, captainNudge, captainChecks, missions, captainStats, spotOptions, briefCaptain, setDb: (x) => { db = Object.assign(fresh(), x); migrateDb(); } };

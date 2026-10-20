@@ -1658,3 +1658,12 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .backnudge small{display:block;font-size:12.5px;line-height:1.4;color:var(--ink-soft);margin-top:1px}
 .backnudge svg{flex:none;opacity:.5}
 .spot small.spotseen.had{color:var(--ink-soft)}
+/* how far it is for the table, the best fit, tables for six */
+.spot small.spottrip{color:var(--ink-2);margin-top:3px}
+.spottags i.best{color:#fff;background:linear-gradient(135deg,#C8963A,#A9762A)}
+.spottags i.six{color:#5A4A86;background:rgba(110,90,170,.11)}
+.tripbox{margin:8px 0 2px;padding:11px 13px;border-radius:14px;background:rgba(80,120,170,.07)}
+.tripbox b{display:block;font-size:14px;font-weight:650;color:var(--ink);margin-bottom:2px}
+.tripbox small{display:block;font-size:12.8px;line-height:1.45;color:var(--ink-soft)}
+
+.hint.feehint{margin-top:6px;color:#8A6A3A}

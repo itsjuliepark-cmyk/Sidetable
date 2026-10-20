@@ -142,6 +142,17 @@
     { id: 'acts', t: 'People to do things with', note: 'Yes! I’ll turn dinners into Saturday plans.' }
   ];
   const DIETS = ['Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Gluten-free', 'Alcohol-free table'];
+  // where someone usually comes from for dinner: an area, never an address. It sets how far each spot is for a table. The
+  // default follows the program (Business School and SEAS: the Allston campus; Medical School and Public Health: Longwood; MIT: Kendall)
+  const FROM = [
+    { id: 'hsq', t: 'Harvard Square', lat: 42.3736, lng: -71.1190 }, { id: 'hbs', t: 'HBS and the Allston campus', lat: 42.3655, lng: -71.1240 },
+    { id: 'mit', t: 'MIT and Kendall', lat: 42.3600, lng: -71.0915 }, { id: 'central', t: 'Central Square', lat: 42.3655, lng: -71.1037 },
+    { id: 'inman', t: 'Inman and Union Square', lat: 42.3745, lng: -71.1000 }, { id: 'porter', t: 'Porter and Davis', lat: 42.3884, lng: -71.1191 },
+    { id: 'eastcam', t: 'East Cambridge', lat: 42.3700, lng: -71.0780 }, { id: 'allston', t: 'Lower Allston and Brighton', lat: 42.3525, lng: -71.1320 },
+    { id: 'backbay', t: 'Back Bay', lat: 42.3500, lng: -71.0800 }, { id: 'fenway', t: 'Fenway and BU', lat: 42.3490, lng: -71.1000 },
+    { id: 'longwood', t: 'Longwood', lat: 42.3358, lng: -71.1040 }];
+  const fromOf = (school, program, own) => (own && FROM.some((x) => x.id === own) ? own : school === 'mit' ? 'mit' : program === 'Business School' || program === 'Engineering (SEAS)' ? 'hbs'
+    : program === 'Medical School' || program === 'Public Health' ? 'longwood' : 'hsq');
   // what kind of dinners someone wants Charlie to invite them to
   // what a restaurant serves: its label on a spot, and the group the captain's spot list filters by (Asian covers four)
   const CUISINES = [{ id: 'tacos', t: 'Tacos & Mexican', g: 'tacos' }, { id: 'chinese', t: 'Chinese', g: 'asian' }, { id: 'japanese', t: 'Japanese', g: 'asian' }, { id: 'korean', t: 'Korean', g: 'asian' },
@@ -496,6 +507,6 @@
       last];
   }
 
-  return { CUISINES, FOOD, SCHOOLS, YEARS, TRACKS, NEAR, INTS, INTNAME, LENS, BEFORE, BASE_TAKES, STANCE, AXES, QS, RHYTHM, LIFE, LIFE_PUBLIC, LIFEV, ACTS, ACTV, LOOK, DIETS, VIBES, MIX, NEXT, NEXTV, OPEN_TO, JOB, POSTS,
+  return { CUISINES, FOOD, SCHOOLS, YEARS, TRACKS, NEAR, INTS, INTNAME, LENS, BEFORE, BASE_TAKES, STANCE, AXES, QS, RHYTHM, LIFE, LIFE_PUBLIC, LIFEV, ACTS, ACTV, LOOK, DIETS, FROM, fromOf, VIBES, MIX, NEXT, NEXTV, OPEN_TO, JOB, POSTS,
     PERSONAS, TRAITS, AXWORD, axes, codeOf, persona, bestWith, track, takesFor, deck, KINDS, CARDS, card };
 });
