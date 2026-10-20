@@ -825,22 +825,24 @@ function seenAt(v, date, time, size) {
 // the other evenings someone looked at this place (a spot check or a captain), and the tables our captains booked there: how
 // often it had a table for this many within the hour. The same weekday when we have it (Fridays fill up, Mondays don't),
 // any evening otherwise. booked: { place id: [{ date, size }] }
+// Each night comes with its date and how we know (a look, or a booking), so the list can say "room on Wed Oct 21" rather than
+// pass a guess off as a check
 function seenHist(v, date, size, booked) {
-  const all = { room: 0, nights: 0 }, same = { room: 0, nights: 0 }, dow = dowOf(date), seen = {};
-  const add = (d, room) => { [all].concat(dowOf(d) === dow ? [same] : []).forEach((h) => { h.nights++; if (room) h.room++; }); };
+  const ev = [], dow = dowOf(date), seen = {};
   Object.keys(db.seen || {}).forEach((k) => {
     if (k.indexOf(v.id + '|') !== 0) return; const d = k.slice(v.id.length + 1), s = db.seen[k]; if (d === date || s.call) return;
     const room = arr(s.times).some((x) => Math.abs(hmMin(x) - hmMin(s.time || '19:00')) <= NEAR); seen[d] = true;
-    if (room ? s.size >= size : s.size <= size) add(d, room);
+    if (!room || s.size >= size) ev.push({ date: d, room, how: 'look', n: s.size }); // full for six counts against a table of four too: the careful reading
   });
-  arr((booked || {})[v.id]).forEach((x) => { if (x.date !== date && !seen[x.date] && x.size >= size) { seen[x.date] = true; add(x.date, true); } });
-  const h = same.nights ? Object.assign(same, { day: weekday(tzMs(date, '12:00')) }) : all;
-  return h.nights ? h : null;
+  arr((booked || {})[v.id]).forEach((x) => { if (x.date !== date && !seen[x.date] && x.size >= size) { seen[x.date] = true; ev.push({ date: x.date, room: true, how: 'booked' }); } });
+  const same = ev.filter((x) => dowOf(x.date) === dow), use = same.length ? same : ev; if (!use.length) return null;
+  return Object.assign({ room: use.filter((x) => x.room).length, nights: use.length, list: use.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3).map((x) => ({ d: shortDay(x.date), room: x.room, how: x.how, n: x.n || 0 })) }, same.length ? { day: weekday(tzMs(date, '12:00')) } : {});
 }
-// the tables our captains booked, by place: evidence the place had room that evening
+const shortDay = (d) => { const ms = tzMs(d, '12:00'); return fmt(ms, { weekday: 'short' }) + ' ' + fmt(ms, { month: 'short', day: 'numeric' }); }; // Wed Oct 21
+// the tables our captains booked, by place: evidence the place had room that evening (the demo's made-up bookings aren't)
 function bookedAt() {
   const out = {};
-  Object.values(db.tables).forEach((x) => { const bk = x.published && !x.closed && bookingOn(x), e = db.events[x.eventId]; if (bk && e && e.status !== 'cancelled') (out[bk.pid] = out[bk.pid] || []).push({ date: e.date, size: bk.size }); });
+  Object.values(db.tables).forEach((x) => { const bk = x.published && !x.closed && bookingOn(x), e = db.events[x.eventId]; if (bk && !bk.sample && e && e.status !== 'cancelled') (out[bk.pid] = out[bk.pid] || []).push({ date: e.date, size: bk.size }); });
   return out;
 }
 const seenLabel = (ms, now) => { const d = ymdTz(ms), today = ymdTz(now), ago = now - ms; return ago < 2 * 60000 ? 'just now' : ago < HOUR ? Math.round(ago / 60000) + ' minutes ago' : d === today ? 'today at ' + timeLabel(ms) : d === addDays(today, -1) ? 'yesterday at ' + timeLabel(ms) : ago < 6 * DAY ? weekday(ms) + ' at ' + timeLabel(ms) : fmt(ms, { month: 'short', day: 'numeric' }); };

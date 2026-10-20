@@ -1321,7 +1321,7 @@ button.cd:active{transform:scale(.94)}
 .capdoor{margin-top:4px;padding:10px 12px;border-radius:12px;background:rgba(235,200,119,.14);font-size:13.5px;color:var(--ink-2)}
 .spots{display:grid;gap:9px;margin:14px 0 6px}
 .spot{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:14px 15px;border-radius:16px;border:1px solid var(--line-2);background:#fff;transition:border-color .2s,box-shadow .2s,opacity .2s}
-.spot b{display:block;font-family:var(--italic);font-style:italic;font-size:18px;font-weight:400;color:var(--ink)}
+.spot b{display:block;font-size:16px;font-weight:650;letter-spacing:-.01em;color:var(--ink)}
 .spot small{display:block;font-size:12.8px;color:var(--ink-soft);margin-top:2px}
 .spot.sel{border-color:rgba(200,150,58,.7);box-shadow:0 0 0 3px rgba(235,200,119,.22)}
 .spot .tag{flex:none;font-size:11.5px;font-weight:600;color:#9A7228;background:rgba(235,200,119,.22);padding:4px 9px;border-radius:999px}
@@ -1657,3 +1657,4 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .backnudge b{display:block;font-size:14px;font-weight:650;color:var(--ink)}
 .backnudge small{display:block;font-size:12.5px;line-height:1.4;color:var(--ink-soft);margin-top:1px}
 .backnudge svg{flex:none;opacity:.5}
+.spot small.spotseen.had{color:var(--ink-soft)}

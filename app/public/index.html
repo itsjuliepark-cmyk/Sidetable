@@ -1333,12 +1333,9 @@ const toMinT = (x) => { const [a, b] = String(x).split(':').map(Number); return 
 const mHM = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 const labT = (m) => hmPM(mHM(m));
 const around = (S) => hmPM(S.time || '19:00').replace(':00', ''); // 7 PM
-// how the other nights went at a place nobody has looked at for this one: the same weekday when we have it
-function hadWords(h, lead) {
-  const unit = h.day ? h.day + 's' : 'nights';
-  return h.nights === 1 ? `${lead} the last ${h.day || 'night'} we looked` : h.nights === 2 ? `${lead} both ${unit} we looked` : `${lead} all ${nw(h.nights)} ${unit} we looked`;
-}
-const hadPart = (h) => `Room on ${nw(h.room)} of the ${nw(h.nights)} ${h.day ? h.day + 's' : 'nights'} we looked`;
+// how other nights went at a place nobody has checked for this one, with their dates: never dressed up as a check
+const nightOf = (S) => String(S.when || '').split(' at ')[0] || 'that night'; // Saturday
+const hadLine = (h, S) => 'Other nights: ' + andList(h.list.map((x) => (x.how === 'booked' ? `a captain booked it ${x.d}` : `${x.room ? 'room' : x.n > S.size ? 'full for ' + nw(x.n) : 'full'} on ${x.d}`)));
 // what a look at the booking page found for that evening, or the other nights someone looked
 function seenTag(o, S) {
   const s = o.seen, h = o.had;
@@ -1346,14 +1343,11 @@ function seenTag(o, S) {
   if (s && s.state === 'full') return `<i class="no">${s.by === 'captain' ? (s.mine ? 'You found it full' : 'A captain found it full') : 'Full around ' + esc(around(S).replace(' PM', ''))}</i>`;
   if (s && s.state === 'tight') return `<i class="no">Full for ${nw(s.size || 6)} around ${esc(around(S).replace(' PM', ''))}</i>`;
   if (s && s.state === 'call') return `<i>Only by phone for ${nw(s.size || 6)}</i>`;
-  if (h && h.room === h.nights) return `<i class="ok2">${hadWords(h, 'Had room')}</i>`;
-  if (h && !h.room) return `<i>${hadWords(h, 'Full')}</i>`;
-  if (h) return `<i>${hadPart(h)}</i>`;
-  return '';
+  return S.looked ? `<i>Not checked for ${esc(nightOf(S))}</i>` : ''; // when nobody checked that night at all, the line on top says so once
 }
 function spotHTML(o, S) {
-  const seen = o.kind !== 'partner' ? seenTag(o, S) : '', big = o.kind !== 'partner' && !(o.seen && o.seen.state === 'free') ? (o.six === 'online' ? '<i>Takes six online</i>' : o.six === 'call' ? '<i>Call for six</i>' : '') : '';
-  const s = o.seen, when = s ? `<small class="spotseen ${s.state}">${s.state === 'free' ? `At ${esc(fewTimes(s.times, S.time))}, when ${seenWho(s)} looked ${esc(s.when)}` : `${esc(cap(seenWho(s)))} looked ${esc(s.when)}${s.state === 'tight' ? `. A table for ${nw(S.size)} might still fit` : ''}`}</small>` : '';
+  const seen = o.kind !== 'partner' ? seenTag(o, S) : '', big = o.kind !== 'partner' && o.six === 'call' && !(o.seen && o.seen.state === 'free') ? '<i>Call for six</i>' : '';
+  const s = o.seen, when = !s && o.had && o.had.list ? `<small class="spotseen had">${esc(hadLine(o.had, S))}</small>` : s ? `<small class="spotseen ${s.state}">${s.state === 'free' ? `At ${esc(fewTimes(s.times, S.time))}, when ${seenWho(s)} looked ${esc(s.when)}` : `${esc(cap(seenWho(s)))} looked ${esc(s.when)}${s.state === 'tight' ? `. A table for ${nw(S.size)} might still fit` : ''}`}</small>` : '';
   return `<button class="spot ${o.mine ? 'sel' : ''} ${isFull(o) ? 'full' : ''}" onclick="${o.kind === 'partner' ? `pickSpot('${o.id}', this)` : `openBook('${o.id}')`}"><div class="grow"><b>${esc(o.name)}</b><small>${esc(whereOf(o))}</small>${o.note ? `<small class="spotnote">${esc(o.note)}</small>` : ''}${when}
     <span class="spottags">${o.last ? '<i class="gold">Last time’s spot</i>' : ''}${o.kind === 'partner' ? '<i class="gold">Held for us, nothing to book</i>' : `${seen}${talkTag(o)}${big}${o.price ? `<i>${esc(o.price)}</i>` : ''}<i>${esc(VIATAG[o.via] || 'Their site')}</i>${o.card ? '<i>Card for six</i>' : ''}`}</span></div>${o.mine ? `<span class="tag">${S.state === 'booked' ? 'Booked' : S.state === 'picked' ? 'Your pick' : 'Charlie’s pick'}</span>` : ''}</button>`;
 }
@@ -1361,9 +1355,9 @@ function openSpot(food) {
   const t = A.table, S = t.cap.spot; if (food) { A.spotFood = food; A.spotMore = false; A.spotFull = false; } const f = A.spotFood || 'all';
   const have = SX.FOOD.filter((x) => x.id === 'all' || S.options.some((o) => (foodOf(o).g || 'other') === x.id));
   const pick = S.options.filter((o) => f === 'all' || o.mine || o.last || (foodOf(o).g || 'other') === f), list = pick.filter((o) => !isFull(o) || o.mine || o.last), full = pick.filter((o) => isFull(o) && !o.mine && !o.last);
-  const shown = A.spotMore ? list : list.slice(0, 10), free = S.options.filter((o) => o.seen && o.seen.state === 'free').length, looked = S.options.some((o) => o.seen), gone = S.options.filter((o) => o.seen && (o.seen.state === 'full' || o.seen.state === 'tight')).length;
+  const shown = A.spotMore ? list : list.slice(0, 10), free = S.options.filter((o) => o.seen && o.seen.state === 'free').length, looked = S.looked = S.options.some((o) => o.seen), gone = S.options.filter((o) => o.seen && (o.seen.state === 'full' || o.seen.state === 'tight')).length;
   const at = hmPM(S.time || '19:00'), lede = free ? `${free === 1 ? 'One place' : cap(nw(free)) + ' places'} had a table around ${at.replace(':00', '')} when someone last looked, so ${free === 1 ? 'it’s' : 'they’re'} on top, quietest first${gone ? `. The ${gone === 1 ? 'one' : nw(gone)} that ${gone === 1 ? 'was' : 'were'} full ${gone === 1 ? 'sits' : 'sit'} at the bottom` : ''}`
-    : looked ? `Nothing anyone looked at had a table around ${at.replace(':00', '')}, so open a few. Quietest rooms first` : `Nobody has looked at times for that night yet, so the quietest rooms come first. Open one, and tell me what you saw when you’re back`;
+    : looked ? `Nothing anyone looked at had a table around ${at.replace(':00', '')}, so open a few. Quietest rooms first` : `Nobody has checked ${esc(nightOf(S))} yet, so nothing here is confirmed. The quietest rooms come first, then the ones that had a table on other nights. Open one, and tell me what you saw when you’re back`;
   openSheet(`<h3>Book the spot</h3><div class="sub2">A table for ${nw(S.size)} on ${esc(S.when)}. ${lede}</div>
     ${have.length > 2 ? `<div class="chips scrollx spotfood">${have.map((x) => `<button class="chip ${f === x.id ? 'sel' : ''}" onclick="openSpot('${x.id}')">${esc(x.t)}</button>`).join('')}</div>` : ''}
     <div class="spots">${shown.map((o) => spotHTML(o, S)).join('') || `<p class="hint">${full.length ? 'Everything in this one was full when we looked. Try another' : 'Nothing in this one is open that evening. Try another'}</p>`}</div>
@@ -1379,8 +1373,7 @@ function seenNote(o, S) {
   if (s && s.state === 'full') return `<div class="seenbox no"><b>${s.by === 'captain' ? (s.mine ? 'You found it full' : 'Another captain found it full') : `Nothing for ${nw(s.size || 6)} from ${span}`}</b><small>${s.by === 'captain' ? `No table for ${nw(s.size || 6)} from ${span}, ${esc(s.when)}` : `When we looked ${esc(s.when)}`}. Things open up, but another spot is the safer bet</small></div>`;
   if (s && s.state === 'tight') return `<div class="seenbox no"><b>Nothing for ${nw(s.size || 6)} from ${span}</b><small>When ${seenWho(s)} looked ${esc(s.when)}. A table for ${nw(S.size)} might still fit, but it won’t stretch if more people join</small></div>`;
   if (s && s.state === 'call') return `<div class="seenbox"><b>${esc(cap(nw(s.size || 6)))} is too many to book online here</b><small>${esc(cap(seenWho(s)))} looked ${esc(s.when)}, so call them</small></div>`;
-  if (h) return `<div class="seenbox"><b>Nobody has looked at this night yet</b><small>${h.room === h.nights ? hadWords(h, 'It had room') : !h.room ? hadWords(h, 'It was full') : hadPart(h)}. Open it, and tell me what you saw when you’re back</small></div>`;
-  return `<div class="seenbox"><b>Nobody has looked at this one yet</b><small>Open it, and tell me what you saw when you’re back</small></div>`;
+  return `<div class="seenbox"><b>Nobody has checked ${esc(nightOf(S))} here yet</b><small>${h && h.list ? esc(hadLine(h, S)) + '. ' : ''}Open it, and tell me what you saw when you’re back</small></div>`;
 }
 // booking it yourself: open the restaurant's booking page (date, time and party size filled in), then tell Charlie
 function openBook(id) {

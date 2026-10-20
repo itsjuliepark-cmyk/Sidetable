@@ -168,6 +168,8 @@ Object.values(db.tables).filter((t) => t.published && !t.closed && !t.venue && t
   const opts = S.spotOptions(t).filter((o) => o.kind === 'book'), c = db.members[t.captain]; if (!opts.length || !c) return;
   try { S.captainBook(c, { table: t.id, place: opts[k % opts.length].id, time: db.events[t.eventId].time, name: c.name }); } catch (e) {}
 });
+// they're made up, so they never count as a real restaurant having room (spot checks)
+Object.values(db.tables).forEach((t) => { if (t.cap && t.cap.booking) t.cap.booking.sample = true; });
 
 // 3. next week: most people have marked their evenings and how many dinners they want (Jordan: two)
 const week = S.targetWeek(), eve = (d) => S.addDays(week, d) + '|dinner';

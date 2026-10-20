@@ -1243,6 +1243,14 @@ test('back from a booking page: a captain says what it showed (times, nothing ne
     const O3 = S.spotOptions(night(people(6, 'Capc'), 'topic', S.addDays(date, 7)).t), hA = O3.find((o) => o.id === A).had, hB = O3.find((o) => o.id === B).had;
     assert.ok(hA && hA.room === 1 && hA.nights === 1 && hA.day && O3[0].id === A, 'the same weekday a week on leans on what the captains saw');
     assert.ok(hB && hB.room === 0 && O3[O3.length - 1].id === B, 'and remembers the one that was full');
+    assert.ok(hA.list.length === 1 && hA.list[0].room && hA.list[0].how === 'look' && /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d+$/.test(hA.list[0].d), 'with the date it was seen: ' + JSON.stringify(hA.list));
+    // a table our captain booked counts as a night with room; a made-up one (the demo's sample captains) never does
+    const n4 = night(people(6, 'Capd'), 'topic', S.addDays(date, 1)), c4 = db().members[n4.t.captain], t5 = night(people(6, 'Cape'), 'topic', S.addDays(date, 8)).t;
+    S.captainBook(c4, { table: n4.t.id, place: C, name: c4.name });
+    const hC = () => S.spotOptions(t5).find((o) => o.id === C).had;
+    assert.ok(hC() && hC().room === 1 && hC().list[0].how === 'booked', 'a real booking says the place had room');
+    n4.t.cap.booking.sample = true;
+    assert.ok(!hC(), 'a sample booking says nothing');
   } finally { back(); }
 });
 
