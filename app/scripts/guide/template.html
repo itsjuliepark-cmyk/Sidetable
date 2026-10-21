@@ -1,0 +1,681 @@
+<title>Hash Table Spot Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a captain's desk. The night and the table sit on top, a ranked list sits beside a drawn map of the river between
+   the campuses, and the full table and the how-to are one tab away */
+:root {
+  --paper: #F4F2EC; --card: #FFFFFF; --ink: #1D2125; --ink-2: #3F464E; --soft: #646B73; --faint: #8A9097;
+  --line: rgba(29, 33, 37, .10); --line-2: rgba(29, 33, 37, .18);
+  --gold: #A9762A; --gold-2: #C8963A; --gold-soft: rgba(200, 150, 58, .14); --on-gold: #FFFFFF;
+  --calm: #3B5D86; --calm-soft: rgba(70, 110, 160, .12); --good: #2C6E5F; --good-soft: rgba(44, 110, 95, .12);
+  --warn: #9A4B3C; --warn-soft: rgba(190, 96, 74, .12); --six: #5A4A86; --six-soft: rgba(110, 90, 170, .12);
+  --land: #EEEBE3; --water: #CADCE6; --water-ink: #5C7F95; --park: #DAE5D0; --campus: #E7E0D3; --road: #FFFFFF; --road-2: #F7EBD2;
+  --red: #C9473B; --green: #3A8A57; --orange: #D98C2B; --blue: #3A69A8;
+  --shadow: 0 1px 2px rgba(29, 33, 37, .06), 0 8px 24px -12px rgba(29, 33, 37, .18);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #14171A; --card: #1C2024; --ink: #ECEAE5; --ink-2: #C9CCD0; --soft: #9CA2A9; --faint: #7D838A;
+  --line: rgba(236, 234, 229, .09); --line-2: rgba(236, 234, 229, .17);
+  --gold: #E0B565; --gold-2: #C8963A; --gold-soft: rgba(224, 181, 101, .14); --on-gold: #1C1708;
+  --calm: #9CBBE3; --calm-soft: rgba(120, 160, 220, .14); --good: #8FD0B6; --good-soft: rgba(110, 200, 170, .12);
+  --warn: #F0A592; --warn-soft: rgba(240, 140, 120, .13); --six: #C3B5F0; --six-soft: rgba(170, 150, 240, .14);
+  --land: #1A1E22; --water: #1D3443; --water-ink: #7FA6BE; --park: #1C2A21; --campus: #24231F; --road: #2C3238; --road-2: #3A3428;
+  --red: #E06A5E; --green: #5DB07B; --orange: #E8A04A; --blue: #6F9BD6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px -12px rgba(0, 0, 0, .6); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --paper: #14171A; --card: #1C2024; --ink: #ECEAE5; --ink-2: #C9CCD0; --soft: #9CA2A9; --faint: #7D838A;
+  --line: rgba(236, 234, 229, .09); --line-2: rgba(236, 234, 229, .17);
+  --gold: #E0B565; --gold-2: #C8963A; --gold-soft: rgba(224, 181, 101, .14); --on-gold: #1C1708;
+  --calm: #9CBBE3; --calm-soft: rgba(120, 160, 220, .14); --good: #8FD0B6; --good-soft: rgba(110, 200, 170, .12);
+  --warn: #F0A592; --warn-soft: rgba(240, 140, 120, .13); --six: #C3B5F0; --six-soft: rgba(170, 150, 240, .14);
+  --land: #1A1E22; --water: #1D3443; --water-ink: #7FA6BE; --park: #1C2A21; --campus: #24231F; --road: #2C3238; --road-2: #3A3428;
+  --red: #E06A5E; --green: #5DB07B; --orange: #E8A04A; --blue: #6F9BD6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px -12px rgba(0, 0, 0, .6); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; border-radius: 8px; }
+a { color: inherit; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { padding-block: 28px 18px; display: grid; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--soft); }
+.brand svg { width: 18px; height: 18px; color: var(--gold); }
+h1 { margin: 0; font-size: clamp(28px, 4.2vw, 42px); line-height: 1.08; letter-spacing: -.02em; font-weight: 650; text-wrap: balance; }
+.lede { margin: 0; max-width: 68ch; color: var(--ink-2); font-size: 16px; }
+.truth { margin: 4px 0 0; max-width: 78ch; font-size: 13.5px; color: var(--soft); }
+
+/* the night and the table */
+.plan { display: grid; grid-template-columns: auto auto 1fr; gap: 14px 18px; align-items: start; padding: 16px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); border: 1px solid var(--line); }
+.field { display: grid; gap: 6px; min-width: 0; }
+.lab { font-size: 12.5px; font-weight: 600; color: var(--soft); }
+.ctl { height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--paper); }
+.origins { display: flex; flex-wrap: wrap; gap: 8px; }
+.org { display: inline-flex; align-items: center; gap: 2px; padding: 3px 4px 3px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--paper); font-size: 13.5px; }
+.org.on { border-color: color-mix(in srgb, var(--gold-2) 55%, transparent); background: var(--gold-soft); }
+.org .nm { margin-right: 6px; white-space: nowrap; }
+.org b { min-width: 18px; text-align: center; font-family: var(--mono); font-weight: 500; }
+.step { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; display: grid; place-items: center; color: var(--ink-2); }
+.step:hover { background: var(--line); }
+.step:disabled { opacity: .3; cursor: default; }
+.step svg { width: 14px; height: 14px; }
+.more { border: 0; background: none; padding: 6px 4px; font-size: 13.5px; color: var(--soft); text-decoration: underline; text-underline-offset: 3px; }
+.summary { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.summary b { color: var(--ink); font-weight: 600; }
+
+/* filters and views */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-block: 16px 10px; }
+.chip { height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card); font-size: 13.5px; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.sep { width: 1px; height: 22px; background: var(--line-2); margin: 0 4px; }
+.sortsel { height: 34px; border-radius: 999px; padding: 0 12px; border: 1px solid var(--line-2); background: var(--card); font-size: 13.5px; }
+.tabs { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); width: fit-content; max-width: 100%; overflow-x: auto; }
+.tab { border: 0; background: none; height: 34px; padding: 0 14px; border-radius: 10px; font-size: 14px; font-weight: 500; color: var(--soft); white-space: nowrap; }
+.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+.count { font-size: 13.5px; color: var(--soft); }
+.rowhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding-block: 8px 12px; }
+
+/* list beside the map */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; align-items: start; padding-bottom: 40px; }
+.list { display: grid; gap: 12px; min-width: 0; }
+.mapcol { position: sticky; top: 12px; min-width: 0; }
+.mapbox { position: relative; height: min(calc(100vh - 40px), 700px); min-height: 460px; border-radius: 20px; overflow: hidden; background: var(--land); border: 1px solid var(--line); box-shadow: var(--shadow); }
+#mapsvg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#mapsvg.dragging { cursor: grabbing; }
+.mk { cursor: pointer; }
+.mk .dot { fill: var(--card); stroke: var(--ink-2); stroke-width: 1.6; }
+.mk.top .dot { fill: var(--gold-2); stroke: var(--card); stroke-width: 2; }
+.mk .num { font: 600 10.5px var(--sans); fill: var(--on-gold); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.mk.dim { opacity: .35; }
+.mk.hot .dot, .mk.sel .dot { stroke: var(--ink); stroke-width: 3; }
+.mk.sel .halo { fill: var(--gold-soft); stroke: var(--gold-2); stroke-width: 1.5; }
+.halo { fill: none; stroke: none; }
+.og .sq { fill: var(--ink); }
+.og text { font: 600 11px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--land); stroke-width: 3px; }
+.lbl { font: 500 11.5px var(--sans); fill: var(--soft); text-anchor: middle; paint-order: stroke; stroke: var(--land); stroke-width: 3px; pointer-events: none; }
+.lbl.big { font-weight: 600; fill: var(--ink-2); font-size: 12.5px; }
+.lbl.river { fill: var(--water-ink); stroke: var(--water); font-weight: 500; }
+.lbl.stn { font-size: 10.5px; fill: var(--faint); }
+.stn-dot { fill: var(--card); stroke: var(--ink-2); stroke-width: 1.2; }
+.mapctl { position: absolute; right: 12px; top: 12px; display: grid; gap: 6px; }
+.mapctl button { width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--card); display: grid; place-items: center; box-shadow: var(--shadow); }
+.mapctl svg { width: 16px; height: 16px; }
+.legend { position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px 12px; max-width: calc(100% - 24px); padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(6px); font-size: 12px; color: var(--soft); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
+.legend i.t { background: var(--gold-2); } .legend i.o { background: var(--card); border: 1.5px solid var(--ink-2); } .legend i.f { background: var(--ink); border-radius: 2px; }
+.pop { position: absolute; z-index: 3; width: 264px; max-width: calc(100% - 24px); padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line-2); box-shadow: var(--shadow); transform: translate(-50%, calc(-100% - 16px)); }
+.pop h4 { margin: 0; font-size: 15px; font-weight: 650; }
+.pop p { margin: 2px 0 0; font-size: 12.8px; color: var(--soft); }
+.pop .acts { margin-top: 10px; }
+.pop .x { position: absolute; right: 6px; top: 6px; width: 28px; height: 28px; border: 0; background: none; border-radius: 8px; color: var(--soft); }
+
+/* a place */
+.spot { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 16px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); transition: border-color .2s, box-shadow .2s; }
+.spot.hot, .spot.sel { border-color: color-mix(in srgb, var(--gold-2) 60%, transparent); box-shadow: var(--shadow); }
+.spot.shut { opacity: .62; }
+.rank { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--mono); background: var(--paper); color: var(--soft); border: 1px solid var(--line); }
+.spot.top .rank { background: var(--gold-2); color: var(--on-gold); border-color: transparent; }
+.spot h3 { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 650; letter-spacing: -.01em; }
+.where { margin: 2px 0 0; font-size: 13.5px; color: var(--soft); }
+.vibe { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+.trip { margin: 10px 0 0; font-size: 14px; display: grid; gap: 1px; }
+.trip b { font-weight: 600; }
+.trip span { font-size: 12.8px; color: var(--soft); }
+.seen { margin: 8px 0 0; font-size: 13px; padding: 7px 10px; border-radius: 10px; }
+.seen.ok { background: var(--good-soft); color: var(--good); } .seen.no { background: var(--warn-soft); color: var(--warn); } .seen.mid { background: var(--paper); color: var(--soft); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--paper); color: var(--ink-2); border: 1px solid var(--line); }
+.tag.calm { background: var(--calm-soft); color: var(--calm); border-color: transparent; }
+.tag.six { background: var(--six-soft); color: var(--six); border-color: transparent; }
+.tag.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.tag.best { background: var(--gold-2); color: var(--on-gold); border-color: transparent; }
+.heads { margin: 8px 0 0; font-size: 13px; color: var(--warn); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 11px; border: 1px solid var(--line-2); background: var(--card); font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.quiet { border-color: transparent; background: var(--paper); color: var(--ink-2); font-weight: 500; }
+.btn svg { width: 14px; height: 14px; }
+.btn.done { background: var(--good-soft); color: var(--good); border-color: transparent; }
+details.why { margin-top: 10px; font-size: 13.5px; }
+details.why summary { cursor: pointer; color: var(--soft); width: fit-content; }
+details.why .in { display: grid; gap: 6px; padding: 10px 12px; margin-top: 8px; border-radius: 12px; background: var(--paper); color: var(--ink-2); }
+details.why .in p { margin: 0; }
+details.why .src { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; }
+details.why .src a { color: var(--soft); }
+.empty { padding: 28px 18px; border-radius: 18px; background: var(--card); border: 1px dashed var(--line-2); color: var(--soft); text-align: center; }
+.showshut { justify-self: start; border: 0; background: none; color: var(--soft); text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; font-size: 13.5px; }
+
+/* the whole list as a table */
+.tblwrap { overflow-x: auto; border-radius: 18px; border: 1px solid var(--line); background: var(--card); margin-bottom: 40px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
+th { position: sticky; top: 0; background: var(--card); font-size: 12.5px; font-weight: 600; color: var(--soft); z-index: 1; }
+th button { border: 0; background: none; padding: 0; font-weight: 600; color: inherit; display: inline-flex; align-items: center; gap: 4px; }
+th[aria-sort] button { color: var(--ink); }
+td.nm { white-space: normal; min-width: 200px; max-width: 280px; }
+td.nm b { font-weight: 600; } td.nm span { display: block; font-size: 12.5px; color: var(--soft); }
+tr.shut td { opacity: .55; }
+tbody tr:hover td { background: color-mix(in srgb, var(--gold-soft) 60%, transparent); }
+.lvl { display: inline-flex; gap: 3px; vertical-align: middle; }
+.lvl i { width: 8px; height: 8px; border-radius: 2px; background: var(--line-2); }
+.lvl i.on { background: var(--calm); }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.pill.easy { background: var(--good-soft); color: var(--good); } .pill.some { background: var(--paper); color: var(--soft); border: 1px solid var(--line); } .pill.hard { background: var(--warn-soft); color: var(--warn); }
+.linkbtn { border: 0; background: none; padding: 0; text-align: left; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 13.5px; }
+
+/* how to book */
+.howto { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; padding-bottom: 40px; align-items: start; }
+.steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding: 16px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); counter-increment: s; }
+.steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--gold-2); color: var(--on-gold); font: 600 13px var(--mono); }
+.steps h3 { margin: 0; font-size: 16px; font-weight: 650; }
+.steps p { margin: 4px 0 0; color: var(--ink-2); max-width: 62ch; }
+.script { display: grid; gap: 10px; position: sticky; top: 12px; }
+.paper { padding: 16px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
+.paper h3 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
+.paper .for { margin: -2px 0 8px; font-size: 13px; color: var(--soft); }
+.say { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--paper); font-size: 14.5px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; }
+.paper .acts { margin-top: 10px; }
+.paper ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+.paper li + li { margin-top: 4px; }
+
+footer { padding-block: 10px 40px; color: var(--soft); font-size: 13px; display: grid; gap: 6px; max-width: 90ch; }
+footer p { margin: 0; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: var(--paper); font-size: 14px; transition: .25s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 980px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .mapcol { position: relative; top: 0; order: -1; }
+  .mapbox { height: 52vh; min-height: 340px; }
+  .howto { grid-template-columns: minmax(0, 1fr); }
+  .script { position: static; }
+}
+@media (max-width: 640px) {
+  .bar { flex-wrap: nowrap; overflow-x: auto; margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+  .bar::-webkit-scrollbar { display: none; }
+  .tabs { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tab { padding: 0 6px; font-size: 13px; }
+  .rowhead { gap: 6px; }
+  .plan { grid-template-columns: 1fr 1fr; padding: 14px; }
+  .plan .field.grow { grid-column: 1 / -1; }
+  .ctl { width: 100%; }
+  .spot { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .rank { display: none; }
+  .spot.top .rank { display: grid; width: auto; height: 24px; padding: 0 9px; border-radius: 999px; justify-self: start; }
+  .legend { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 3.4 7.6 20.6M16.4 3.4l-2.2 17.2M4.2 8.7h16.2M3.4 15.3h16.2" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" fill="none"/></svg>Hash Table, for captains</div>
+    <h1>Where to book your table of six</h1>
+    <p class="lede" id="lede">Restaurants between HBS, Harvard and MIT, picked for six people who want to talk. Set your night and where everyone’s coming from, and the list sorts itself, quiet rooms and fair trips first. Every booking button opens with your night, time and party filled in</p>
+    <p class="truth">This is research, not live availability. It tells you which rooms take a table of six and how an evening usually goes. The booking page has the final word on what’s free</p>
+  </header>
+
+  <section class="plan" aria-label="Your night and your table">
+    <div class="field"><label class="lab" for="pDate">Night</label><input class="ctl mono" type="date" id="pDate"></div>
+    <div class="field"><label class="lab" for="pTime">Time</label><select class="ctl mono" id="pTime"></select></div>
+    <div class="field grow"><span class="lab" id="oLab">Who’s coming from where</span><div class="origins" id="origins" role="group" aria-labelledby="oLab"></div></div>
+    <div class="summary" id="summary" aria-live="polite"></div>
+  </section>
+
+  <div class="bar" id="filters" role="group" aria-label="Filters"></div>
+  <div class="rowhead">
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="t-spots" aria-controls="v-spots" data-view="spots">Map and list</button>
+      <button class="tab" role="tab" id="t-table" aria-controls="v-table" data-view="table">All in one table</button>
+      <button class="tab" role="tab" id="t-howto" aria-controls="v-howto" data-view="howto">How to book six</button>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <main>
+    <section id="v-spots" role="tabpanel" aria-labelledby="t-spots">
+      <div class="split">
+        <div class="list" id="list"></div>
+        <div class="mapcol">
+          <div class="mapbox" id="mapbox">
+            <svg id="mapsvg" role="img" aria-label="Map of the restaurants between HBS, Harvard and MIT"></svg>
+            <div class="mapctl">
+              <button type="button" id="zin" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              <button type="button" id="zout" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              <button type="button" id="zfit" aria-label="Show every place"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg></button>
+            </div>
+            <div class="legend" aria-hidden="true"><span><i class="t"></i>Top ten for your table</span><span><i class="o"></i>Also open that night</span><span><i class="f"></i>Where your table comes from</span></div>
+            <div class="pop" id="pop" hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="v-table" role="tabpanel" aria-labelledby="t-table" hidden>
+      <div class="tblwrap"><table id="tbl"></table></div>
+    </section>
+
+    <section id="v-howto" role="tabpanel" aria-labelledby="t-howto" hidden>
+      <div class="howto">
+        <ol class="steps">
+          <li><div><h3>Pick from the top of the list</h3><p>It’s sorted for your table: a room where six can talk, tables that seat six, an evening that’s usually easy to book, and a trip that’s fair to everyone. The person coming from farthest counts most</p></div></li>
+          <li><div><h3>Open its booking page</h3><p>The button opens OpenTable, Resy or Tock with your night, time and party size already in. What you see there is what’s really free</p></div></li>
+          <li><div><h3>No 7:00? Anything from 6:00 to 8:00 works</h3><p>Take the time closest to your table’s. If nothing shows for six, try the next place on the list instead of a smaller table, since the booking won’t stretch later</p></div></li>
+          <li><div><h3>Six won’t go online? Call</h3><p>Some places only take five or fewer online, or book groups by phone. The script on this page has your night filled in</p></div></li>
+          <li><div><h3>Leave a note for the table you want</h3><p>Paste the booking note into the special requests box. Each place card says which table to ask for, like a booth away from the bar or the room by the fireplace</p></div></li>
+          <li><div><h3>Check the fee before you confirm</h3><p>For six, many places hold a card and charge per person if you cancel late, often inside 24 to 48 hours. A few add a tip for groups. Book only one place</p></div></li>
+          <li><div><h3>Tell Charlie it’s booked</h3><p>In the app, tap I booked it and add the time and the name it’s under. If a place was full, say so there too, and the other captains that night skip it</p></div></li>
+        </ol>
+        <div class="script">
+          <div class="paper"><h3>On the phone</h3><p class="for" id="sayFor"></p><p class="say" id="sayCall"></p><div class="acts"><button type="button" class="btn" id="copyCall">Copy the script</button></div></div>
+          <div class="paper"><h3>In the special requests box</h3><p class="say" id="sayNote"></p><div class="acts"><button type="button" class="btn" id="copyNote">Copy the note</button></div></div>
+          <div class="paper"><h3>When it’s full everywhere</h3><ul><li>Weeknights are much easier than Friday and Saturday, so try another night with your table if you can</li><li>Places with a private room or lots of tables for six free up more often</li><li>Book a few days ahead. Some places only open bookings three days out</li></ul></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p id="foot1"></p>
+    <p>Travel times are estimates: walking, the Red and Green Lines and buses 1, 47, 66, 69 and 70, with a few minutes of waiting. Map data from OpenStreetMap contributors, under the Open Database License</p>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="application/json" id="data">/*DATA*/</script>
+<script>
+(() => {
+'use strict';
+const D = JSON.parse(document.getElementById('data').textContent);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const nw = (n) => NUMW[n] || String(n);
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const toMin = (x) => { const [a, b] = String(x).split(':').map(Number); return a * 60 + b; };
+const hm = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const lab = (x) => { const m = toMin(x), h = Math.floor(m / 60); return ((h + 11) % 12 + 1) + ':' + String(m % 60).padStart(2, '0') + (h >= 12 ? ' PM' : ' AM'); };
+const andList = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
+const ymd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const dateOf = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+const store = { get() { try { return JSON.parse(localStorage.getItem('htSpotGuide') || 'null'); } catch (e) { return null; } }, set(v) { try { localStorage.setItem('htSpotGuide', JSON.stringify(v)); } catch (e) {} } };
+const toast = (m) => { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); };
+async function copy(text, btn, done) {
+  try { await navigator.clipboard.writeText(text); toast(done || 'Copied'); if (btn) { const was = btn.innerHTML; btn.classList.add('done'); btn.textContent = 'Copied'; setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = was; }, 1600); } }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(done || 'Copied'); } catch (e2) { toast('Select the text and copy it'); } ta.remove(); }
+}
+
+/* ---------- travel: walking, or the T and the main buses over a small map of real stops (same as the app) ---------- */
+const WALK = 80, DETOUR = 1.25, ACCESS = 1.3, SWITCH = 0.25;
+function km(a, b) { const R = 6371, r = Math.PI / 180, dLa = (b[0] - a[0]) * r, dLo = (b[1] - a[1]) * r; const h = Math.sin(dLa / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+const walkMin = (a, b) => (km(a, b) * 1000 * DETOUR) / WALK;
+const NODES = [], EDGES = [];
+D.lines.forEach((L, li) => L.stops.forEach((p, i) => NODES.push({ li, i, p })));
+NODES.forEach((n, a) => { EDGES[a] = []; NODES.forEach((m, b) => { if (a === b) return; const L = D.lines[n.li]; if (m.li === n.li && Math.abs(m.i - n.i) === 1) EDGES[a].push([b, (km(n.p, m.p) / L.speed) * 60 + 0.5]); else if (m.li !== n.li && km(n.p, m.p) <= SWITCH) EDGES[a].push([b, walkMin(n.p, m.p) + D.lines[m.li].wait]); }); });
+const memo = new Map();
+function trip(from, to) {
+  const key = from.join(',') + '|' + to.join(','); if (memo.has(key)) return memo.get(key);
+  const walk = walkMin(from, to), dist = NODES.map(() => Infinity), prev = NODES.map(() => -1), done = NODES.map(() => false);
+  NODES.forEach((n, i) => { if (km(from, n.p) <= ACCESS) dist[i] = walkMin(from, n.p) + D.lines[n.li].wait; });
+  for (;;) { let u = -1; dist.forEach((d, i) => { if (!done[i] && d < Infinity && (u < 0 || d < dist[u])) u = i; }); if (u < 0) break; done[u] = true; EDGES[u].forEach(([v, w]) => { if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; } }); }
+  let best = Infinity, end = -1; NODES.forEach((n, i) => { if (dist[i] < Infinity && km(n.p, to) <= ACCESS) { const t = dist[i] + walkMin(n.p, to); if (t < best) { best = t; end = i; } } });
+  const lines = []; for (let i = end; i >= 0; i = prev[i]) { const nm = D.lines[NODES[i].li].name; if (lines[0] !== nm) lines.unshift(nm); }
+  const out = walk <= best + 3 ? { min: Math.max(1, Math.round(walk)), walk: true, lines: [] } : { min: Math.round(best), walk: false, lines };
+  memo.set(key, out); return out;
+}
+
+/* ---------- state ---------- */
+const FROM = D.from, FROMBY = {}; FROM.forEach((f) => { FROMBY[f.id] = f; });
+const MAIN = ['hbs', 'hsq', 'mit', 'central'];
+const GROUPS = [['harvard', 'Harvard and Porter', ['Harvard Square', 'Porter Square', 'Huron Village']], ['allston', 'Allston and Brighton', ['Allston', 'Brighton']], ['kendall', 'Kendall and East Cambridge', ['Kendall Square', 'East Cambridge', 'Cambridgeport']], ['central', 'Central and Inman', ['Central Square', 'Inman Square']], ['boston', 'Back Bay and Fenway', ['Back Bay', 'Fenway', 'Kenmore']]];
+const groupOf = (area) => (GROUPS.find((g) => g[2].indexOf(area) >= 0) || ['other'])[0];
+const FOOD = D.food, CUIS = {}; D.cuisines.forEach((c) => { CUIS[c.id] = c; });
+const nextNight = () => { const d = new Date(); d.setDate(d.getDate() + 1); return ymd(d); };
+const saved = store.get() || {};
+const S = {
+  date: saved.date && saved.date >= ymd(new Date()) ? saved.date : nextNight(), time: saved.time || '19:00',
+  from: saved.from && Object.keys(saved.from).length ? saved.from : { hbs: 3, mit: 3 }, more: !!saved.more,
+  f: Object.assign({ quiet: false, priv: false, six: false, easy: false, online: false, area: 'all', food: 'all', price: 'all' }, saved.f || {}),
+  sort: saved.sort || 'fit', view: 'spots', sel: null, hot: null, shut: false,
+};
+const keep = () => store.set({ date: S.date, time: S.time, from: S.from, more: S.more, f: S.f, sort: S.sort });
+const size = () => Object.values(S.from).reduce((a, b) => a + b, 0);
+const night = () => dateOf(S.date);
+const weekend = () => { const d = night().getDay(); return d === 5 || d === 6; };
+const nightLabel = () => { const d = night(); return DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate(); };
+
+/* ---------- spot checks: what booking pages showed for six on a few nights (same rules as the app) ---------- */
+function seenFor(p) {
+  const c = D.checks.find((x) => x.date === S.date); if (!c || !(p.name in c.seen)) return null;
+  const raw = c.seen[p.name], base = toMin(S.time), n = size();
+  if (raw === 'call') return { state: 'call', at: c.at, size: c.size };
+  const near = raw.filter((x) => Math.abs(toMin(x) - base) <= 60).sort((a, b) => toMin(a) - toMin(b));
+  if (near.length) return c.size >= n ? { state: 'free', times: near, at: c.at, size: c.size } : null;
+  return { state: c.size <= n ? 'full' : 'tight', at: c.at, size: c.size };
+}
+function hadFor(p) {
+  const dow = night().getDay(), n = size(), ev = [];
+  D.checks.forEach((c) => { if (c.date === S.date || !(p.name in c.seen) || c.seen[p.name] === 'call') return; const room = c.seen[p.name].some((x) => Math.abs(toMin(x) - toMin(c.time || '19:00')) <= 60); if (!room || c.size >= n) ev.push({ date: c.date, room }); });
+  const same = ev.filter((x) => dateOf(x.date).getDay() === dow), use = same.length ? same : ev; if (!use.length) return null;
+  return { room: use.filter((x) => x.room).length, nights: use.length, day: same.length ? DAYS[dow] : '', list: use };
+}
+const shortDay = (s) => { const d = dateOf(s); return DOW[d.getDay()] + ' ' + MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate(); };
+
+/* ---------- how well a place suits this table (lower is better, rough minutes; same weights as the app) ---------- */
+const NOISE = { quiet: 0, moderate: 3, lively: 9 }, SIXT = { many: 0, some: 4, few: 10 }, EASE = { easy: 0, some: 5, hard: 12 };
+function tableTrip(p) {
+  const groups = []; let max = 0, sum = 0, n = 0;
+  Object.keys(S.from).forEach((id) => { const k = S.from[id]; if (!k) return; const F = FROMBY[id], r = trip([F.lat, F.lng], [p.lat, p.lng]); groups.push({ id, t: F.short || F.t, n: k, min: r.min, walk: r.walk, lines: r.lines }); max = Math.max(max, r.min); sum += r.min * k; n += k; });
+  return n ? { max, avg: Math.round(sum / n), walkAll: groups.every((g) => g.walk), groups: groups.sort((a, b) => b.n - a.n || a.min - b.min) } : null;
+}
+function derive(p) {
+  const dow = DOW[night().getDay()], open = p.closed.indexOf(dow) < 0, T = tableTrip(p), seen = seenFor(p), had = seen ? null : hadFor(p), n = size(), wk = weekend();
+  let ease = (wk ? p.weekend : p.weekday) || 'some'; if (had && !had.room && ease === 'easy') ease = 'some'; // every look was full: not 'usually easy'
+  let s = (T ? T.max + T.avg / 2 : 25) + (3 - (p.talk || 2)) * 10 + (p.noise in NOISE ? NOISE[p.noise] : 3) + (p.sixTables in SIXT ? SIXT[p.sixTables] : 5) - (p.privateRoom ? 2 : 0) + EASE[ease];
+  if (had) s += (0.5 - had.room / had.nights) * (had.day ? 16 : 12);
+  if (p.six === 'call') s += 5; else if (p.six !== 'online') s += 2;
+  if (p.maxOnline && p.maxOnline < n) s += 6;
+  if (seen && seen.times) s += (Math.min(...seen.times.map((x) => Math.abs(toMin(x) - toMin(S.time)))) / 15) * 2;
+  s += p.fit ? (5 - p.fit) * 2 : 3;
+  const tier = !seen ? 1 : { free: 0, call: 1, tight: 2, full: 3 }[seen.state];
+  return Object.assign(p, { open, T, seen, had, ease, score: Math.round(s), tier });
+}
+
+/* ---------- filters ---------- */
+const FILT = [['quiet', 'Quiet rooms', (p) => p.noise === 'quiet' || p.talk === 3], ['priv', 'Private room', (p) => p.privateRoom], ['six', 'Lots of tables for six', (p) => p.sixTables === 'many' || p.privateRoom],
+  ['easy', () => (weekend() ? 'Easy on weekends' : 'Easy on weeknights'), (p) => p.ease === 'easy'], ['online', () => `Books ${nw(size())} online`, (p) => p.six === 'online' && (!p.maxOnline || p.maxOnline >= size())]];
+function drawFilters() {
+  const chip = (k, t, on) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${on}">${esc(t)}</button>`;
+  $('filters').innerHTML = FILT.map(([k, t]) => chip(k, typeof t === 'function' ? t() : t, S.f[k])).join('')
+    + '<span class="sep" aria-hidden="true"></span>' + [['all', 'Everywhere']].concat(GROUPS.map((g) => [g[0], g[1]])).map(([k, t]) => `<button type="button" class="chip" data-area="${k}" aria-pressed="${S.f.area === k}">${esc(t)}</button>`).join('')
+    + '<span class="sep" aria-hidden="true"></span>' + FOOD.map((x) => `<button type="button" class="chip" data-food="${x.id}" aria-pressed="${S.f.food === x.id}">${esc(x.id === 'all' ? 'Any food' : x.t)}</button>`).join('')
+    + '<span class="sep" aria-hidden="true"></span>' + [['all', 'Any price'], ['$', '$'], ['$$', '$$'], ['$$$', '$$$']].map(([k, t]) => `<button type="button" class="chip" data-price="${k}" aria-pressed="${S.f.price === k}">${esc(t)}</button>`).join('')
+    + `<span class="sep" aria-hidden="true"></span><label class="count" for="sortSel">Sort</label><select class="sortsel" id="sortSel"><option value="fit">Best fit for your table</option><option value="trip">Shortest trip for everyone</option><option value="quiet">Quietest first</option><option value="name">A to Z</option></select>`;
+  $('sortSel').value = S.sort;
+}
+function pass(p) {
+  if (!FILT.every(([k, , fn]) => !S.f[k] || fn(p))) return false;
+  if (S.f.area !== 'all' && groupOf(p.area) !== S.f.area) return false;
+  if (S.f.food !== 'all' && ((CUIS[p.cuisine] || {}).g || 'other') !== S.f.food) return false;
+  if (S.f.price !== 'all' && p.price !== S.f.price) return false;
+  return true;
+}
+const SORTS = {
+  fit: (a, b) => (b.open - a.open) || (a.tier - b.tier) || (a.score - b.score) || a.name.localeCompare(b.name),
+  trip: (a, b) => (b.open - a.open) || ((a.T ? a.T.max : 99) - (b.T ? b.T.max : 99)) || ((a.T ? a.T.avg : 99) - (b.T ? b.T.avg : 99)) || (a.score - b.score),
+  quiet: (a, b) => (b.open - a.open) || ((b.talk || 2) - (a.talk || 2)) || ((NOISE[a.noise] || 3) - (NOISE[b.noise] || 3)) || (a.score - b.score),
+  name: (a, b) => (b.open - a.open) || a.name.localeCompare(b.name),
+};
+
+/* ---------- words for a place ---------- */
+const whereOf = (p) => [p.cuisine !== 'other' && (CUIS[p.cuisine] || {}).t, p.area].filter(Boolean).join(' in ');
+function tripWords(T) {
+  if (!T) return { head: '', sub: '' };
+  const head = T.walkAll ? `A walk for everyone, ${T.max} minutes at most` : T.groups.length === 1 ? `${T.max} minutes for all of you` : `Everyone’s there within ${T.max} minutes`;
+  const sub = T.groups.map((g) => `${g.t} ${g.min} min ${g.walk ? 'walk' : 'on ' + andList(g.lines.map((l) => l.replace(/^the /, '')))}`).join(', ');
+  return { head, sub };
+}
+function talkTag(p) { return p.noise === 'quiet' ? '<span class="tag calm">Quiet, easy to talk</span>' : p.talk === 3 ? '<span class="tag calm">Easy to talk</span>' : p.talk === 1 ? '<span class="tag warn">Loud at dinner</span>' : p.noise === 'lively' ? '<span class="tag">Lively</span>' : ''; }
+function sixTags(p) { return (p.privateRoom ? '<span class="tag six">Private room</span>' : '') + (p.sixTables === 'many' ? '<span class="tag six">Lots of tables for six</span>' : p.sixTables === 'few' ? '<span class="tag warn">Few tables for six</span>' : ''); }
+function easeTag(p) { const w = weekend() ? 'weekends' : 'weeknights'; return p.ease === 'easy' ? `<span class="tag good">Usually easy on ${w}</span>` : p.ease === 'hard' ? `<span class="tag warn">Usually hard on ${w}</span>` : ''; }
+function seenLine(p) {
+  const s = p.seen, n = size(), ago = 'when we looked Oct 19';
+  if (s && s.state === 'free') return `<p class="seen ok">Open for ${nw(s.size)} at ${esc(andList(s.times.slice(0, 4).map((x) => lab(x).replace(' PM', ''))))} ${ago}</p>`;
+  if (s && s.state === 'full') return `<p class="seen no">Nothing for ${nw(s.size)} from ${lab(hm(toMin(S.time) - 60))} to ${lab(hm(toMin(S.time) + 60))} ${ago}</p>`;
+  if (s && s.state === 'tight') return `<p class="seen no">Full for ${nw(s.size)} ${ago}, so a table for ${nw(n)} might still fit</p>`;
+  if (s && s.state === 'call') return `<p class="seen mid">The booking page said to call for ${nw(s.size)} ${ago}</p>`;
+  if (p.had) return `<p class="seen mid">Other nights we looked: ${esc(andList(p.had.list.map((x) => (x.room ? 'room' : 'full') + ' on ' + shortDay(x.date))))}</p>`;
+  return '';
+}
+const VIA = { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock' };
+function bookLink(p) {
+  const u = p.bookUrl || '', add = (q) => u + (u.indexOf('?') >= 0 ? '&' : '?') + q, n = size();
+  if (p.bookVia === 'phone' || !u) return '';
+  if (p.bookVia === 'opentable') return add(`covers=${n}&dateTime=${S.date}T${encodeURIComponent(S.time)}`);
+  if (p.bookVia === 'resy') return add(`date=${S.date}&seats=${n}`);
+  if (p.bookVia === 'tock') return u.replace(/\/$/, '') + `/search?date=${S.date}&size=${n}&time=${encodeURIComponent(S.time)}`;
+  return u;
+}
+const mapsLink = (p) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.name + ', ' + p.address);
+function noteFor(p) { const n = size(); return `Party of ${nw(n)} for a Hash Table dinner, students meeting for the first time. If you can, we’d love ${p && p.seat ? p.seat : 'a table where we can hear each other'}. Thank you!`; }
+function callFor(p) { const n = size(); return `Hi! I’d like to book a table for ${nw(n)} on ${nightLabel()} at ${lab(S.time)}, under the name ________.${p && p.seat ? ` If you can, could we have ${p.seat}?` : ' If you can, somewhere we can talk.'} And is there a fee or a time limit for a party of ${nw(n)}?`; }
+function actions(p, small) {
+  const link = bookLink(p), n = size();
+  const book = link ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${VIA[p.bookVia] ? `Book for ${nw(n)} on ${VIA[p.bookVia]}` : 'Book on their site'}</a>` : '';
+  const call = p.phone ? `<button type="button" class="btn${link ? ' quiet' : ''}" data-copy="phone" data-id="${p.id}" title="Copy the number">${link ? '' : 'Call to book '}<span class="mono">${esc(p.phone)}</span></button>` : '';
+  if (small) return `<div class="acts">${book || call}<button type="button" class="btn quiet" data-go="${p.id}">Details</button></div>`;
+  return `<div class="acts">${book}${call}<button type="button" class="btn quiet" data-copy="note" data-id="${p.id}">Copy booking note</button><a class="btn quiet" href="${esc(mapsLink(p))}" target="_blank" rel="noopener">Directions</a></div>`;
+}
+function card(p, i, ranked) {
+  const t = tripWords(p.T), top = ranked && p.open && i < 10, best = ranked && p.open && i === 0 && p.tier <= 1;
+  const heads = [p.hours, p.fee].filter(Boolean).map((x) => `<p class="heads">Heads up: ${esc(x.charAt(0).toLowerCase() + x.slice(1))}</p>`).join('') + (p.maxOnline && p.maxOnline < size() ? `<p class="heads">Heads up: online booking stops at ${nw(p.maxOnline)}, so call for ${nw(size())}</p>` : '') + (!p.open ? `<p class="heads">Closed for dinner on ${DAYS[night().getDay()]}s, or no bookings that night</p>` : '');
+  const why = [p.seat ? `<p><b>Ask for</b> ${esc(p.seat)}</p>` : '', p.privateNote ? `<p><b>Rooms</b> ${esc(cap(p.privateNote))}</p>` : '', p.sound ? `<p><b>The room</b> ${esc(p.sound)}</p>` : '', p.check ? `<p><b>What this rests on</b> ${esc(p.check)}</p>` : '',
+    p.sources.length ? `<div class="src">${p.sources.map((u, k) => { let h = ''; try { h = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { h = 'source ' + (k + 1); } return `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(h)}</a>`; }).join('')}</div>` : ''].join('');
+  return `<article class="spot${top ? ' top' : ''}${p.open ? '' : ' shut'}${S.sel === p.id ? ' sel' : ''}" id="c-${p.id}" data-id="${p.id}">
+    <div class="rank" aria-hidden="true">${ranked ? i + 1 : ''}</div>
+    <div style="min-width:0"><h3>${esc(p.name)}</h3><p class="where">${esc(whereOf(p))}${p.price ? ', ' + esc(p.price) : ''}</p>${p.vibe ? `<p class="vibe">${esc(p.vibe)}</p>` : ''}
+    ${t.head ? `<p class="trip"><b>${esc(t.head)}</b><span>${esc(t.sub)}</span></p>` : ''}${seenLine(p)}
+    <div class="tags">${best ? '<span class="tag best">Best fit for your table</span>' : ''}${talkTag(p)}${sixTags(p)}${easeTag(p)}${p.maxOnline ? `<span class="tag">Online up to ${p.maxOnline}</span>` : p.six === 'call' ? '<span class="tag">Call for six</span>' : ''}</div>
+    ${heads}${actions(p)}
+    <details class="why"><summary>Why it’s here</summary><div class="in">${why}</div></details></div></article>`;
+}
+
+/* ---------- the night and the table ---------- */
+function drawPlan() {
+  const t = []; for (let m = 17 * 60 + 30; m <= 20 * 60 + 30; m += 15) t.push(hm(m));
+  $('pTime').innerHTML = t.map((x) => `<option value="${x}">${lab(x)}</option>`).join(''); $('pTime').value = S.time;
+  $('pDate').value = S.date; $('pDate').min = ymd(new Date());
+  drawOrigins();
+}
+const PLUS = '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>', MINUS = '<svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function drawOrigins() {
+  const ids = FROM.map((f) => f.id).filter((id) => S.more || MAIN.indexOf(id) >= 0 || S.from[id]), n = size();
+  $('origins').innerHTML = ids.map((id) => { const k = S.from[id] || 0, F = FROMBY[id]; return `<span class="org${k ? ' on' : ''}"><span class="nm">${esc(F.t)}</span><button type="button" class="step" data-o="${id}" data-d="-1" aria-label="One fewer from ${esc(F.t)}"${k ? '' : ' disabled'}>${MINUS}</button><b aria-label="${k} from ${esc(F.t)}">${k}</b><button type="button" class="step" data-o="${id}" data-d="1" aria-label="One more from ${esc(F.t)}"${n >= 8 ? ' disabled' : ''}>${PLUS}</button></span>`; }).join('')
+    + `<button type="button" class="more" id="moreBtn">${S.more ? 'Fewer areas' : 'More areas'}</button>`;
+}
+function drawSummary(shown, open) {
+  const n = size();
+  $('summary').innerHTML = `<span><b>A table for ${nw(n)}</b> on <b>${esc(nightLabel())}</b> at <b>${lab(S.time)}</b></span><span>${n < 4 ? 'Hash Table tables are four to six, so add a few more' : `${open} places open that night, sorted for where your ${nw(n)} come from`}</span>`;
+  $('count').textContent = `${shown} of ${D.places.length} places`;
+}
+
+/* ---------- everything that changes with the night, the table or the filters ---------- */
+let LIST = [];
+function render() {
+  D.places.forEach(derive);
+  const all = D.places.filter(pass).sort(SORTS[S.sort] || SORTS.fit), open = all.filter((p) => p.open), shut = all.filter((p) => !p.open);
+  LIST = open.concat(S.shut ? shut : []);
+  drawSummary(all.length, D.places.filter((p) => p.open).length);
+  const ranked = S.sort === 'fit';
+  $('list').innerHTML = (open.length ? open.map((p, i) => card(p, i, ranked)).join('') : `<div class="empty">Nothing fits all of those filters on ${esc(DAYS[night().getDay()])}. Try turning one off</div>`)
+    + (shut.length ? (S.shut ? shut.map((p) => card(p, 0, false)).join('') + '<button type="button" class="showshut" id="shutBtn">Hide the ones closed that night</button>' : `<button type="button" class="showshut" id="shutBtn">${shut.length === 1 ? 'One more is' : cap(nw(shut.length)) + ' more are'} closed or not booking that night. Show ${shut.length === 1 ? 'it' : 'them'}</button>`) : '');
+  drawTable(all); drawMarks(open, ranked); drawOriginsOnMap(); placePop();
+  $('sayCall').textContent = callFor(LIST[0]); $('sayNote').textContent = noteFor(LIST[0]);
+  $('sayFor').textContent = LIST[0] ? `Filled in for ${LIST[0].name}, the top of your list. Each place card copies its own note` : '';
+  $('foot1').textContent = `${D.places.length} restaurants, researched in ${D.researched} from each restaurant’s own site, its booking page, The Infatuation, Eater Boston, the Boston Globe, Boston Magazine, The Harvard Crimson, Cambridge Day and SoundPrint. Where the evidence was thin, the middle value is used and “What this rests on” says so. Restaurants change, so the booking page and a phone call have the final word`;
+}
+
+/* ---------- the table view ---------- */
+const COLS = [['rank', '#'], ['name', 'Place'], ['area', 'Area'], ['food', 'Food'], ['price', 'Price'], ['trip', 'Trip, at most'], ['talk', 'Easy to talk'], ['noise', 'Noise'], ['six', 'Tables for six'], ['priv', 'Private room'], ['online', 'Online up to'], ['wkd', 'Weeknights'], ['wke', 'Weekends'], ['book', 'Book']];
+let TS = { k: 'rank', dir: 1 };
+function drawTable(all) {
+  const ranked = all.filter((p) => p.open).concat(all.filter((p) => !p.open)), rank = {}; ranked.forEach((p, i) => { rank[p.id] = i + 1; });
+  const val = { rank: (p) => rank[p.id], name: (p) => p.name, area: (p) => p.area, food: (p) => (CUIS[p.cuisine] || {}).t || '', price: (p) => p.price.length, trip: (p) => (p.T ? p.T.max : 99), talk: (p) => -(p.talk || 2), noise: (p) => NOISE[p.noise] || 3, six: (p) => SIXT[p.sixTables] || 5, priv: (p) => (p.privateRoom ? 0 : 1), online: (p) => -(p.maxOnline || 0), wkd: (p) => EASE[p.weekday] || 5, wke: (p) => EASE[p.weekend] || 5, book: (p) => p.bookVia };
+  const rows = all.slice().sort((a, b) => { const x = val[TS.k](a), y = val[TS.k](b); return (x < y ? -1 : x > y ? 1 : 0) * TS.dir || (rank[a.id] - rank[b.id]); });
+  const lvl = (n) => `<span class="lvl" aria-label="${n} of 3">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const pill = (v) => `<span class="pill ${v}">${v === 'easy' ? 'Usually easy' : v === 'hard' ? 'Usually hard' : 'Sometimes full'}</span>`;
+  $('tbl').innerHTML = `<thead><tr>${COLS.map(([k, t]) => `<th scope="col"${TS.k === k ? ` aria-sort="${TS.dir > 0 ? 'ascending' : 'descending'}"` : ''}>${k === 'book' ? t : `<button type="button" data-sort="${k}">${t}</button>`}</th>`).join('')}</tr></thead><tbody>`
+    + rows.map((p) => { const link = bookLink(p); return `<tr class="${p.open ? '' : 'shut'}"><td class="mono">${rank[p.id]}</td><td class="nm"><button type="button" class="linkbtn" data-go="${p.id}">${esc(p.name)}</button><span>${esc(p.vibe)}</span></td><td>${esc(p.area)}</td><td>${esc(p.cuisine === 'other' ? 'More' : (CUIS[p.cuisine] || {}).t || '')}</td><td>${esc(p.price)}</td><td class="mono">${p.T ? p.T.max + ' min' : ''}</td><td>${lvl(p.talk || 2)}</td><td>${esc(cap(p.noise))}</td><td>${esc(cap(p.sixTables))}</td><td>${p.privateRoom ? 'Yes' : ''}</td><td class="mono">${p.maxOnline || ''}</td><td>${pill(p.weekday)}</td><td>${pill(p.weekend)}</td><td>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(VIA[p.bookVia] || 'Their site')}</a>` : `<span class="mono">${esc(p.phone)}</span>`}</td></tr>`; }).join('') + '</tbody>';
+}
+
+/* ---------- the map: drawn from OpenStreetMap shapes, no tiles ---------- */
+const G = D.map, NS = 'http://www.w3.org/2000/svg';
+const proj = (lat, lng) => [(lng - G.lng0) * G.kx, (G.lat0 - lat) * G.ky];
+const svg = $('mapsvg');
+let VB = { x: 0, y: 0, w: 1000, h: 600 }, W = 600, H = 400;
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); Object.keys(attrs || {}).forEach((k) => e.setAttribute(k, attrs[k])); if (parent) parent.appendChild(e); return e; };
+const layers = {};
+function buildMap() {
+  const bg = el('rect', { x: G.box[0], y: G.box[1], width: G.box[2], height: G.box[3], fill: 'var(--land)' }, svg);
+  void bg;
+  el('path', { d: G.campus, fill: 'var(--campus)' }, svg); el('path', { d: G.park, fill: 'var(--park)' }, svg); el('path', { d: G.water, fill: 'var(--water)', 'fill-rule': 'evenodd' }, svg);
+  layers.sec = el('path', { d: G.secondary, fill: 'none', stroke: 'var(--road)', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }, svg);
+  layers.pri = el('path', { d: G.primary, fill: 'none', stroke: 'var(--road)', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }, svg);
+  layers.trk = el('path', { d: G.trunk, fill: 'none', stroke: 'var(--road-2)', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }, svg);
+  [['green', 'var(--green)'], ['orange', 'var(--orange)'], ['blue', 'var(--blue)'], ['red', 'var(--red)']].forEach(([k, c]) => el('path', { d: G[k], fill: 'none', stroke: c, 'stroke-width': 2.4, 'stroke-opacity': .78, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, svg));
+  layers.stn = el('g', {}, svg); layers.lbl = el('g', {}, svg); layers.org = el('g', {}, svg); layers.mk = el('g', {}, svg);
+  D.stations.forEach((s) => { const [x, y] = proj(s.lat, s.lng), g = el('g', { 'data-x': x, 'data-y': y, class: 'stn' }, layers.stn); el('circle', { r: 3.2, class: 'stn-dot' }, g); const t = el('text', { class: 'lbl stn', y: -7 }, g); t.textContent = s.name; });
+  D.labels.forEach((l) => { const [x, y] = proj(l.lat, l.lng), g = el('g', { 'data-x': x, 'data-y': y }, layers.lbl), t = el('text', { class: 'lbl' + (l.k ? ' ' + l.k : '') }, g); t.textContent = l.t; });
+}
+let MK = {};
+function drawMarks(open, ranked) {
+  layers.mk.innerHTML = ''; MK = {};
+  const ord = open.slice().reverse(); // the best ones drawn last, on top
+  ord.forEach((p) => {
+    const i = open.indexOf(p), [x, y] = proj(p.lat, p.lng), top = ranked && i < 10;
+    const g = el('g', { class: 'mk' + (top ? ' top' : '') + (S.sel === p.id ? ' sel' : ''), 'data-id': p.id, 'data-x': x, 'data-y': y, tabindex: 0, role: 'button', 'aria-label': p.name + (top ? ', number ' + (i + 1) : '') }, layers.mk);
+    el('circle', { r: 15, class: 'halo' }, g); el('circle', { r: top ? 10 : 6, class: 'dot' }, g);
+    if (top) { const t = el('text', { class: 'num' }, g); t.textContent = i + 1; }
+    MK[p.id] = g;
+  });
+  scaleMarks();
+}
+function drawOriginsOnMap() {
+  layers.org.innerHTML = '';
+  Object.keys(S.from).forEach((id) => { const k = S.from[id]; if (!k) return; const F = FROMBY[id], [x, y] = proj(F.lat, F.lng), g = el('g', { class: 'og', 'data-x': x, 'data-y': y }, layers.org); el('rect', { x: -5, y: -5, width: 10, height: 10, rx: 2, class: 'sq' }, g); const t = el('text', { x: 9, y: 4 }, g); t.textContent = `${F.short || F.t}, ${k}`; });
+  scaleMarks();
+}
+const mpp = () => VB.w / W; // meters per pixel
+function scaleMarks() {
+  const s = mpp();
+  [layers.mk, layers.org, layers.lbl, layers.stn].forEach((L) => { if (!L) return; L.querySelectorAll(':scope > g').forEach((g) => g.setAttribute('transform', `translate(${g.dataset.x} ${g.dataset.y}) scale(${s})`)); });
+  layers.stn.style.display = s < 7 ? '' : 'none';
+  layers.lbl.querySelectorAll('.lbl:not(.big):not(.river)').forEach((t) => { t.style.display = s < 10 ? '' : 'none'; });
+  layers.sec.setAttribute('stroke-width', Math.min(5, Math.max(.6, 11 / s))); layers.pri.setAttribute('stroke-width', Math.min(7, Math.max(1, 16 / s))); layers.trk.setAttribute('stroke-width', Math.min(8, Math.max(1.2, 20 / s)));
+}
+function setVB(v) {
+  const minW = 500, maxW = Math.min(G.box[2], G.box[3] * W / H); // never wider or taller than the drawn area
+  const cx = v.x + v.w / 2, cy = v.y + (v.h || v.w * H / W) / 2; // zoom limits keep the middle where it was
+  v.w = Math.min(maxW, Math.max(minW, v.w)); v.h = v.w * H / W; v.x = cx - v.w / 2; v.y = cy - v.h / 2;
+  v.x = Math.min(G.box[0] + G.box[2] - v.w, Math.max(G.box[0], v.x)); v.y = Math.min(G.box[1] + G.box[3] - v.h, Math.max(G.box[1], v.y));
+  VB = v; svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); scaleMarks(); placePop();
+}
+function fitTo(points, pad) {
+  if (!points.length) return;
+  const xs = points.map((p) => p[0]), ys = points.map((p) => p[1]); let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const padM = pad || 500; x0 -= padM; x1 += padM; y0 -= padM; y1 += padM;
+  let w = x1 - x0, h = y1 - y0; if (w / h < W / H) { const nw2 = h * W / H; x0 -= (nw2 - w) / 2; w = nw2; } else { const nh = w * H / W; y0 -= (nh - h) / 2; h = nh; }
+  setVB({ x: x0, y: y0, w, h });
+}
+const fitAll = () => fitTo(LIST.filter((p) => p.open).map((p) => proj(p.lat, p.lng)).concat(Object.keys(S.from).filter((id) => S.from[id]).map((id) => proj(FROMBY[id].lat, FROMBY[id].lng))), 450);
+function resize() { const r = svg.getBoundingClientRect(); if (!r.width) return; const cx = VB.x + VB.w / 2, cy = VB.y + VB.h / 2; W = r.width; H = r.height; const w = VB.w; setVB({ x: cx - w / 2, y: cy - (w * H / W) / 2, w, h: 0 }); }
+function zoomAt(f, px, py) { const mx = VB.x + px * mpp(), my = VB.y + py * mpp(), w = VB.w * f; setVB({ x: mx - (mx - VB.x) * f, y: my - (my - VB.y) * f, w, h: 0 }); }
+// pan with one pointer, pinch with two, wheel to zoom
+const pts = new Map(); let drag = null, moved = 0;
+svg.addEventListener('pointerdown', (e) => { svg.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); drag = { vb: Object.assign({}, VB), pts: new Map(pts) }; moved = 0; });
+svg.addEventListener('pointermove', (e) => {
+  if (!pts.has(e.pointerId) || !drag) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+  const r = svg.getBoundingClientRect(), a = [...pts.values()], b = [...drag.pts.values()];
+  if (a.length === 1 && b.length === 1) { const dx = a[0][0] - b[0][0], dy = a[0][1] - b[0][1]; moved = Math.max(moved, Math.abs(dx) + Math.abs(dy)); if (moved > 3) svg.classList.add('dragging'); setVB({ x: drag.vb.x - dx * drag.vb.w / W, y: drag.vb.y - dy * drag.vb.w / W, w: drag.vb.w, h: 0 }); }
+  else if (a.length >= 2 && b.length >= 2) {
+    const d1 = Math.hypot(b[0][0] - b[1][0], b[0][1] - b[1][1]), d2 = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]); moved = 99;
+    const f = d1 / Math.max(1, d2), mx = (b[0][0] + b[1][0]) / 2 - r.left, my = (b[0][1] + b[1][1]) / 2 - r.top, nx = (a[0][0] + a[1][0]) / 2 - r.left, ny = (a[0][1] + a[1][1]) / 2 - r.top;
+    const m0 = drag.vb.w / W, wx = drag.vb.x + mx * m0, wy = drag.vb.y + my * m0, w = drag.vb.w * f, m1 = w / W;
+    setVB({ x: wx - nx * m1, y: wy - ny * m1, w, h: 0 });
+  }
+});
+const endPtr = (e) => { pts.delete(e.pointerId); svg.classList.remove('dragging'); drag = pts.size ? { vb: Object.assign({}, VB), pts: new Map(pts) } : null; };
+svg.addEventListener('pointerup', (e) => { const mk = e.target.closest && e.target.closest('.mk'); if (moved < 4 && mk) select(mk.dataset.id, { from: 'map' }); else if (moved < 4 && !mk) unselect(); endPtr(e); });
+svg.addEventListener('pointercancel', endPtr);
+svg.addEventListener('wheel', (e) => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomAt(Math.exp(e.deltaY * 0.0016), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+svg.addEventListener('keydown', (e) => { const mk = e.target.closest && e.target.closest('.mk'); if (mk && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(mk.dataset.id, { from: 'map' }); } });
+$('zin').onclick = () => zoomAt(0.66, W / 2, H / 2); $('zout').onclick = () => zoomAt(1.5, W / 2, H / 2); $('zfit').onclick = () => { unselect(); fitAll(); };
+new ResizeObserver(resize).observe(svg);
+
+/* ---------- picking a place ---------- */
+const byId = (id) => D.places.find((p) => p.id === id);
+function select(id, o) {
+  S.sel = id; const p = byId(id); if (!p) return;
+  document.querySelectorAll('.spot.sel, .mk.sel').forEach((e) => e.classList.remove('sel'));
+  const c = $('c-' + id); if (c) c.classList.add('sel'); if (MK[id]) { MK[id].classList.add('sel'); MK[id].parentNode.appendChild(MK[id]); }
+  const [x, y] = proj(p.lat, p.lng);
+  if (o && o.center) setVB({ x: x - VB.w / 2, y: y - VB.h / 2, w: Math.min(VB.w, 3200), h: 0 });
+  else if ((o && o.pan) || x < VB.x || x > VB.x + VB.w || y < VB.y || y > VB.y + VB.h) setVB({ x: x - VB.w / 2, y: y - VB.h * 0.6, w: VB.w, h: 0 }); // a little below the middle, so the card above it fits
+  showPop(p);
+  if (o && o.from === 'map' && c && window.matchMedia('(min-width: 981px)').matches) c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function unselect() { S.sel = null; document.querySelectorAll('.spot.sel, .mk.sel').forEach((e) => e.classList.remove('sel')); $('pop').hidden = true; }
+function showPop(p) {
+  const t = tripWords(p.T), pop = $('pop');
+  pop.innerHTML = `<button type="button" class="x" aria-label="Close">${'<svg viewBox="0 0 16 16" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'}</button><h4>${esc(p.name)}</h4><p>${esc(whereOf(p))}${p.price ? ', ' + esc(p.price) : ''}</p>${t.head ? `<p>${esc(t.head)}</p>` : ''}${p.open ? '' : '<p>Closed or not booking that night</p>'}${actions(p, true)}`;
+  pop.hidden = false; pop.querySelector('.x').onclick = unselect; placePop();
+}
+function placePop() {
+  const pop = $('pop'); if (pop.hidden || !S.sel) return; const p = byId(S.sel); if (!p) return;
+  const [x, y] = proj(p.lat, p.lng), px = (x - VB.x) / mpp(), py = (y - VB.y) / mpp();
+  if (px < 0 || px > W || py < 0 || py > H) { pop.style.visibility = 'hidden'; return; }
+  pop.style.visibility = ''; const half = Math.min(132, (W - 24) / 2); pop.style.left = Math.min(W - half - 12, Math.max(half + 12, px)) + 'px'; pop.style.top = Math.max(pop.offsetHeight + 24, py) + 'px';
+}
+function goTo(id) {
+  if (S.view !== 'spots') setView('spots');
+  const p = byId(id); if (p && !p.open && !S.shut) { S.shut = true; render(); }
+  const c = $('c-' + id); select(id, { center: true });
+  if (c) setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: window.matchMedia('(min-width: 981px)').matches ? 'center' : 'start' }), 40);
+}
+
+/* ---------- views ---------- */
+const VIEWS = ['spots', 'table', 'howto'];
+function setView(v) {
+  S.view = VIEWS.indexOf(v) >= 0 ? v : 'spots';
+  VIEWS.forEach((k) => { $('v-' + k).hidden = k !== S.view; $('t-' + k).setAttribute('aria-selected', String(k === S.view)); $('t-' + k).tabIndex = k === S.view ? 0 : -1; });
+  $('filters').hidden = S.view === 'howto';
+  try { history.replaceState(null, '', '#' + S.view); } catch (e) {}
+  if (S.view === 'spots') requestAnimationFrame(resize);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  const tab = t.closest('.tab'); if (tab) { setView(tab.dataset.view); return; }
+  const st = t.closest('.step'); if (st) { const id = st.dataset.o, d = +st.dataset.d; S.from[id] = Math.max(0, (S.from[id] || 0) + d); if (!S.from[id]) delete S.from[id]; if (size() > 8) S.from[id]--; drawOrigins(); drawFilters(); keep(); render(); return; }
+  if (t.closest('#moreBtn')) { S.more = !S.more; drawOrigins(); keep(); return; }
+  const f = t.closest('[data-f]'); if (f) { S.f[f.dataset.f] = !S.f[f.dataset.f]; f.setAttribute('aria-pressed', String(S.f[f.dataset.f])); keep(); render(); return; }
+  const ar = t.closest('[data-area]'); if (ar) { S.f.area = ar.dataset.area; drawFilters(); keep(); render(); fitAll(); return; }
+  const fd = t.closest('[data-food]'); if (fd) { S.f.food = fd.dataset.food; drawFilters(); keep(); render(); return; }
+  const pr = t.closest('[data-price]'); if (pr) { S.f.price = pr.dataset.price; drawFilters(); keep(); render(); return; }
+  if (t.closest('#shutBtn')) { S.shut = !S.shut; render(); return; }
+  const cp = t.closest('[data-copy]'); if (cp) { const p = byId(cp.dataset.id); if (cp.dataset.copy === 'phone') copy(p.phone, null, 'Number copied: ' + p.phone); else copy(noteFor(p), cp, 'Booking note copied'); return; }
+  const go = t.closest('[data-go]'); if (go) { goTo(go.dataset.go); return; }
+  const so = t.closest('[data-sort]'); if (so) { const k = so.dataset.sort; TS = { k, dir: TS.k === k ? -TS.dir : 1 }; render(); return; }
+  if (t.closest('#copyCall')) { copy($('sayCall').textContent, t.closest('button'), 'Script copied'); return; }
+  if (t.closest('#copyNote')) { copy($('sayNote').textContent, t.closest('button'), 'Note copied'); return; }
+  const sp = t.closest('.spot'); if (sp && !t.closest('a, button, summary, details')) { select(sp.dataset.id, { pan: true }); }
+});
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'pDate' && e.target.value) { S.date = e.target.value; drawFilters(); keep(); render(); }
+  if (e.target.id === 'pTime') { S.time = e.target.value; keep(); render(); }
+  if (e.target.id === 'sortSel') { S.sort = e.target.value; keep(); render(); }
+});
+$('list').addEventListener('pointerover', (e) => { const c = e.target.closest('.spot'); const id = c && c.dataset.id; if (id === S.hot) return; if (S.hot && MK[S.hot]) MK[S.hot].classList.remove('hot'); S.hot = id; if (id && MK[id]) MK[id].classList.add('hot'); });
+document.querySelector('.tabs').addEventListener('keydown', (e) => { if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return; const i = VIEWS.indexOf(S.view), j = (i + (e.key === 'ArrowRight' ? 1 : VIEWS.length - 1)) % VIEWS.length; setView(VIEWS[j]); $('t-' + VIEWS[j]).focus(); });
+
+/* ---------- start ---------- */
+buildMap(); drawPlan(); drawFilters();
+const r0 = svg.getBoundingClientRect(); W = r0.width || 600; H = r0.height || 400;
+render(); fitAll();
+setView((location.hash || '').slice(1) || 'spots');
+})();
+</script>

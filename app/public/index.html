@@ -1267,6 +1267,8 @@ const capBar = (n, sm) => `<span class="capbar ${sm ? 'sm' : ''}">${[0, 1, 2].ma
 function missionRow(n, done, title, sub, action) { return `<div class="mission ${done ? 'done' : ''}"><span class="mnum">${done ? ICON.check : n}</span><div class="grow"><b>${title}</b><small>${sub}</small></div>${action || ''}</div>`; }
 const VIA = { opentable: 'Book on OpenTable', resy: 'Book on Resy', tock: 'Book on Tock', web: 'Book on their site', phone: 'Call to book' };
 const VIATAG = { opentable: 'OpenTable', resy: 'Resy', tock: 'Tock', web: 'Their site', phone: 'Call' };
+// the captains' spot guide: every place on a map and in one table, with how to book six (scripts/build-guide.js)
+const SPOT_GUIDE = 'https://claude.ai/artifact/J3Q4RgF95GdzorSQkeX28k';
 function missionSpot(S) {
   const cur = (S.options || []).find((o) => o.mine), B = S.booking;
   if (S.state === 'open' && !S.options.length) return missionRow(1, false, 'Book the spot', 'No spot on the list fits this evening yet. Charlie’s team is on it');
@@ -1379,7 +1381,8 @@ function openSpot(food) {
     ${list.length > shown.length ? `<button class="btn ghost sm" style="margin:4px 0 8px" onclick="A.spotMore=true;openSpot()">Show ${list.length - shown.length} more</button>` : ''}
     ${full.length ? (A.spotFull ? `<div class="spotsfull"><p class="hint">Full for six around ${esc(at.replace(':00', ''))} when someone looked. Tables do open up, so it can still be worth a peek</p><div class="spots">${full.map((o) => spotHTML(o, S)).join('')}</div></div>`
       : `<button class="link" style="display:block;margin:2px 0 8px" onclick="A.spotFull=true;openSpot()">${full.length === 1 ? 'One more was full' : cap(nw(full.length)) + ' more were full'} around ${esc(at.replace(':00', ''))}. Show ${full.length === 1 ? 'it' : 'them'} anyway</button>`) : ''}
-    <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>`);
+    <p class="hint">${S.state === 'late' ? `Book by ${esc(S.by)}, or the table is off so nobody goes looking for it` : `Book by ${esc(S.by)}. After that the restaurant needs the count, and the spot is locked`}</p>
+    <a class="link guidelink" href="${SPOT_GUIDE}" target="_blank" rel="noopener">See them all on a map, with how to book six</a>`);
 }
 // getting there: for each area the table comes from, how many and how long (a walk, or which line)
 function tripBox(o) {
@@ -1412,6 +1415,7 @@ function openBook(id) {
     ${o.link ? `<a class="btn" href="${esc(o.link)}" target="_blank" rel="noopener" onclick="return bookOut(event, 1)">${esc(['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `Times for ${nw(S.size)} on ${VIATAG[via]}` : VIA[via] || 'Book on their site')}${via === 'phone' && o.phone ? ' ' + esc(o.phone) : ''}</a>` : ''}
     ${['opentable', 'resy', 'tock'].indexOf(via) >= 0 ? `<p class="hint" style="margin-top:6px">Opens with ${esc(S.when)} and ${nw(S.size)} people filled in, so you see what’s really free</p>` : ''}
     ${o.phone && via !== 'phone' ? `<a class="link" style="display:block;text-align:center" href="tel:${esc(o.phone.replace(/[^\d+]/g, ''))}" onclick="return bookOut(event, 1)">Six won’t go online? Call ${esc(o.phone)}</a>` : ''}
+    ${o.hours ? `<p class="hint feehint">Heads up: ${esc(o.hours.charAt(0).toLowerCase() + o.hours.slice(1))}</p>` : ''}
     ${o.fee ? `<p class="hint feehint">Heads up: ${esc(o.fee.charAt(0).toLowerCase() + o.fee.slice(1))}</p>` : ''}${o.maxOnline && o.maxOnline < S.size ? `<p class="hint feehint">Heads up: online booking stops at ${nw(o.maxOnline)}, so call for ${nw(S.size)}</p>` : ''}
     <p class="hint" style="margin-top:6px">${o.card ? 'They hold a card for six. ' : ''}Check the cancellation fee before you confirm (for six it’s often charged per person inside 24 to 48 hours), and book only this one place</p>
     ${o.kind === 'book' && !isFull(o) ? `<button class="link nosix" onclick="markFull(this)">Nothing for ${nw(S.size)} from ${lab(base - 60)} to ${lab(base + 60)}? Mark it full for the other captains</button>` : ''}

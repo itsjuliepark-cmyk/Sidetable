@@ -1285,6 +1285,7 @@ test('the fairest trip: a rough map of walks, the T and the main buses; places e
   const mk = (tag, lat, lng) => S.savePlace({ name: tag + ' Table', address: '1 Test St, Cambridge', area: 'Test', nights: [0, 1, 2, 3, 4, 5, 6], tables: 3, seats: 6, mode: 'captain', bookVia: 'opentable', bookUrl: 'https://www.opentable.com/r/' + tag.toLowerCase() + '-table', six: 'online', noise: 'moderate', talk: 2, lat, lng }).id;
   const AL = mk('Barry', 42.3638, -71.1290), KE = mk('Tech', 42.3636, -71.0915), back = only([AL, KE]);
   assert.throws(() => S.savePlace({ id: AL, name: 'Barry Table', address: '1 Test St, Cambridge', nights: [1], mode: 'captain', bookUrl: 'https://www.opentable.com/r/x', lat: 10, lng: 10 }), /Boston/, 'a map pin has to be around Boston');
+  assert.ok(db().places[AL].nights.length === 7 && db().places[AL].name === 'Barry Table' && db().places[AL].lat === 42.3638, 'and a save that fails changes nothing');
   try {
     const ms = people(6, 'Trip'), t = night(ms, 'topic', day(41)).t, seated = t.ids.map((id) => db().members[id]);
     seated.forEach((m) => { m.profile.from = 'hbs'; });

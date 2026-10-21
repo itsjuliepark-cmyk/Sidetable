@@ -1667,3 +1667,4 @@ button.longrow{width:100%;text-align:left;background:none;font:inherit;color:inh
 .tripbox small{display:block;font-size:12.8px;line-height:1.45;color:var(--ink-soft)}
 
 .hint.feehint{margin-top:6px;color:#8A6A3A}
+.link.guidelink{display:block;text-align:center;margin:6px 0 4px}
