@@ -207,7 +207,7 @@ npm run film
 
 ### 하버드, MIT, HBS 사이 식당 목록
 
-- `server/restaurants.js`: 120곳 (2026년 10월 20일 1차 조사, 22일 2차 조사)
+- `server/restaurants.js`: 120곳 (2026년 10월 20일 1차 조사, 22일 2차, 3차 조사)
 - 지역: Harvard Square, Porter, Huron Village 31, Allston, Brighton 24, Kendall, East Cambridge, Cambridgeport 22, Central, Inman, Riverside, Mid-Cambridge 24, 강 건너 Back Bay, Fenway, Kenmore 19
 - 예약 방법: OpenTable 67, Resy 15, 자체 사이트 15, 전화 21, Tock 2
 - 고른 기준: 6명 자리가 구조적으로 잘 나오는 곳 (6인 테이블, 원탁, 큰 부스, 프라이빗 룸, 큰 홀, 온라인 6명 이상 예약), 대화가 되는 곳, 평일 저녁 자리가 잘 나는 곳
@@ -217,7 +217,18 @@ npm run film
 - 2차에서 뺀 후보: 예약을 안 받는 곳(Muqueca), 문 닫은 곳(S&S, Cloud & Spirits 행사장 전환, The Pearl 임시 휴업), 6명이 어려운 곳(Holdfast, Black Ruby), 확인 안 되는 곳(Ricen, Cafe of India, Gen Korean BBQ)
 - 2차에서 바로잡은 것 73곳: Catalyst는 월요일 영업, Rail Stop은 일, 월 오후 8시 마감, Moona는 월요일 영업, Ariana 온라인 8명까지, Fallow Kin 온라인 6명까지, Legal Sea Foods Kendall 10명까지, Atlantic Fish 10명까지, Area Four 6명 이상 팁 20% 자동, Margeaux 7명 이상 카드 보증, 늦은 변경 1인 $25, Urban Hearth 24시간 안 취소 1인 $50, India Quality와 LUCIE는 자체 예약 페이지, Loco Fenway는 전화 예약 등
 - 1차 Central 조사에서 페이지 리더로 읽혀 재확인 필요로 표시했던 정보는 2차에서 식당 자체 사이트와 기사로 다시 확인해 고침 (Althea의 온라인 8명, 단체 팁은 확인 안 돼 삭제)
-- 남은 한계: 근거가 얇은 칸 55곳(check에 thin evidence), 온라인 최대 인원은 26곳만 확인 (OpenTable과 Resy 페이지를 자동으로 읽을 수 없음, 우회하지 않음)
+- 3차 조사(10월 22일): 근거가 얇던 곳을 다시 조사, 예약 페이지를 보통 브라우저로 한 번씩 열어 6명 온라인 가능 여부와 인원 메뉴 확인
+  - 6명 온라인: 가능 91곳 중 83곳은 예약 페이지에서 직접 확인, 전화 26곳(전화 전용 21곳 포함), 모름 3곳(Standard Italian, Dalí, LUCIE)
+  - Daedalus, Gran Gusto는 OpenTable이 6명은 너무 많다고 해 전화로 바꿈
+  - 온라인 최대 인원 숫자: 26곳에서 38곳으로 (Resy 인원 메뉴의 "N+ Guests" 바로 앞 숫자, SevenRooms, Toast, Tock 인원 메뉴, 식당 안내 문구가 더 엄격하면 그쪽), Pagu 8, Sumiao 8, Gufo 12, Aatma 12, Bar Enza 7, Paperback 7, Zuma 9, Mad Monkfish 10, American Flatbread 11, Veggie Galaxy 8 등
+  - 평일 쉬움으로 바꾼 곳 9곳(Source, Gyu-Kaku, Qiao Lin, American Flatbread, Brighton Bodega, Alice, Mex, Sulmona, Atlantic Fish), 어려움으로 바꾼 곳 Urban Hearth, The Lexington은 보통으로
+  - 소음: Sumiao(밤 라이브 밴드), Naco Taco, Olé, Dumpling Palace는 lively로, Atlantic Fish는 moderate로, Oleana 대화 3, Painted Burro 대화 1
+  - 비용: Talulla 23% 관리비, Paperback 20% 서비스 요금, Sumiao 4명 이상 2시간, Zuma 2시간, Koreana 20% 자동 팁 등
+  - 2차에서 320자로 잘렸던 근거 12곳은 원문으로 복구 (잘린 탓에 thin evidence가 안 보이던 곳이 있어 실제 2차 얇은 곳은 59곳)
+- 남은 한계: 근거가 얇은 칸이 남은 곳 49곳 (대부분 한 칸), 종류별로 6인 테이블 수 19곳, 소음 28곳, 평일 10곳, 수요 12곳
+  - OpenTable 소음 태그는 거의 모든 식당이 Moderate라 근거로 쓰지 않음, 그것만 있는 7곳은 소음을 얇은 근거로 둠
+  - OpenTable 인원 메뉴는 어디나 1~20이라 최대 인원을 알 수 없음, 6명이 되는지만 확인 가능
+  - OpenTable이 10월 22일 오전 3시 20분쯤부터 빈자리 조회에 403으로 응답, 거기서 멈추고 우회하지 않음 (Puritan, Alden & Harlow 등 13곳 미확인)
 - 평일, 주말 난이도는 방 크기, 예약 빈도, 리뷰로 판단한 조사 결과일 뿐 실시간 빈자리가 아님, 앱도 "Usually easy on weeknights"처럼 말함
 - 관리자 Places 탭의 목록 버튼으로 추가와 갱신, 목록에서 빠진 식당은 삭제 대신 일시 중지 (이미 예약된 테이블은 유지)
 
@@ -261,6 +272,8 @@ npm run film
 - 식당마다 이동 시간(동네별), 대화, 6인 테이블, 프라이빗 룸, 그날 예약 난이도, 주의사항(추가 요금, 7시 테이블에 영향 주는 영업 시간), 일반 영업시간은 Why it’s here 안에, 날짜와 인원이 채워진 예약 버튼, 전화번호 복사, 예약 메모 복사, 길찾기, 근거와 출처
 - 필터: 조용한 곳, 프라이빗 룸, 6인 테이블 많은 곳, 그날 쉬운 곳, 온라인으로 그 인원 예약 가능, 지역 5곳, 음식, 가격, 정렬 4가지
 - 표 보기: 120곳 전체를 열 단위로 정렬, 예약 방식 링크
+- 온라인 인원 칸: 확인된 최대 인원 숫자, 6명은 되지만 최대를 모르면 6+, 온라인으로 안 되면 Call, 카드에는 Online up to 8, Takes six online, Call for six 태그
+- 빈자리 줄의 확인 날짜는 기록마다 실제로 본 날 (예: when we looked Oct 22)
 - 예약 방법 보기: 7단계, 그날로 채워진 전화 스크립트와 예약 메모 복사
 - 그날 영업 안 하거나 예약을 안 받는 곳은 아래로 접힘, 휴대폰 화면과 다크 모드 지원
 
@@ -278,6 +291,9 @@ npm run film
 - `server/spotchecks.js`: 식당 예약 페이지를 6명, 저녁 7시로 열어 7시 앞뒤로 보인 시간을 날짜별로 기록
 - 2026-10-19 오전 확인분: 10/23(금) 46곳, 10/21(수) 24곳 (OpenTable이 연속 조회를 막기 시작해 나머지 수요일은 비워둠, 추측으로 채우지 않음)
 - 10/23(금) 저녁 6~8시에 6명 자리 있던 곳 24곳, 없던 곳 22곳, La Fábrica는 6명 온라인 불가로 전화
+- 2026-10-22 오전 확인분: 10/27(화) OpenTable 47곳, 6~8시에 6명 자리 있던 곳 42곳, 없던 곳 3곳(Urban Hearth, Krasi, Row 34 Kenmore), 전화 2곳(Daedalus, Gran Gusto)
+- 화요일은 금요일보다 확실히 여유, 같은 요일 기록이 있으면 그 기록이 다른 화요일 예측에 쓰임
+- Resy 페이지는 이제 클릭 없이 시간을 보여주지 않아 10/27에는 Resy 식당이 없음
 - 6~8시 사이 시간이 있으면 빈자리, 없으면 만석, 6명 기준 만석인데 테이블이 4명이면 "tight"(4명은 될 수도 있음)
 - 확인한 적 없는 날짜는 다른 날 기록을 날짜와 함께 보여주고, 확인된 것처럼 말하지 않음 ("Nobody has checked Saturday yet, so nothing here is confirmed")
 - 더 새로운 기록이 이김, 4개월 지난 기록은 자동 삭제

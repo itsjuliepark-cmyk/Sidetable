@@ -2,7 +2,9 @@
 // Resy (Tock pages need a click per time, so those weren't read). Times are the ones offered around the asked-for 7:00 PM (the
 // pages show a few either side); an empty list means nothing for six that evening near 7, and 'call' means the page said the
 // party is too large to book online. Places missing from a night weren't read that night (OpenTable started refusing the
-// page after a few dozen reads, so the rest of Wednesday was left unread rather than guessed).
+// page after a few dozen reads, so the rest of Wednesday was left unread rather than guessed). Tuesday the 27th was read on
+// OpenTable only: Resy pages no longer list times without a click, and OpenTable began answering 403 after Moona, so the last
+// dozen OpenTable places that night were left unread too.
 // This is a snapshot, not live availability: tables come and go all day. The app shows when each was read, ranks places with
 // room first, and lets captains mark a place full for six when they find it so (server.js, seen).
 'use strict';
@@ -29,5 +31,31 @@ module.exports = [
     'Sulmona': ['18:45', '19:00', '19:15'], 'Sumiao Hunan Kitchen': ['17:15', '20:45'], 'Bambara Kitchen & Bar': ['12:45'], 'The Helmand': ['18:45', '19:00', '19:15'], 'Fallow Kin': ['21:15', '21:30'],
     'La Fábrica Central': 'call', 'Little Donkey': ['20:30'], 'Moona Central Square': ['17:15', '19:45'], 'Naco Taco': [], 'Pagu': ['17:00', '20:45', '21:00'], 'Saigon Babylon': ['20:45', '21:00'],
     'Vialé': ['17:30', '21:45'], 'Oak Bistro': ['17:30', '21:30'], 'Oleana': [], 'Olé': ['18:45', '19:00', '19:15'], 'Oyster Bar by Puritan & Co.': ['17:00', '20:00'], 'Puritan & Company': ['17:30'],
+  } },
+  { date: '2026-10-27', size: 6, time: '19:00', at: '2026-10-22T03:10:00-04:00', seen: {
+    'Daedalus': 'call', 'Gran Gusto': 'call', 'Forage': ['18:15', '18:45', '19:15', '19:30'], 'UNI': ['18:00', '18:15', '19:30', '19:45'],
+    'The Lexington': ['20:00', '20:15'], 'Willow & Ivy': ['18:15', '18:45', '19:00', '19:30', '19:45'],
+    "Abe & Louie's": ['18:15', '18:45', '19:15', '19:30'], "Henrietta's Table": ['18:30', '18:45', '19:15', '19:30'],
+    'Alice': ['17:15', '18:45', '19:00', '19:15', '19:30'], 'Qiao Lin Hotpot': ['18:00', '18:30', '19:00', '19:30', '20:00'],
+    'Source Restaurant': ['18:15', '18:45', '19:15', '19:30'], 'Harvest': ['18:00', '18:45', '19:00', '19:15', '19:30'],
+    'Toscano Harvard Square': ['17:45', '18:15', '19:30', '19:45'], 'Moona Central Square': ['18:30', '18:45', '19:00', '19:30', '19:45'],
+    'Urban Hearth': [], 'Krasi': ['17:00', '21:30'], 'Row 34 Kenmore Square': ['16:45'],
+    'Cafe Landwer (Cleveland Circle)': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Geppetto': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Gyu-Kaku Japanese BBQ': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Brighton Bodega': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Atlantic Fish': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Trident Booksellers & Cafe': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Cafe Landwer (Beacon Street)': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Rail Stop Restaurant & Bar': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Nubar': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Margeaux Supper Parlor': ['18:30', '18:45', '19:00', '19:15', '19:30'], "Devlin's": ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Scull & Keel': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Eastern Standard': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    "Joe's on Newbury": ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Monteverdi': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Batifol': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Althea': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Blue Ribbon Sushi': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Ama at The Atlas': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Olé': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Nine Tastes': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'The Hourly Oyster House': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'The Painted Burro Harvard Square': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Legal Sea Foods Kendall Square': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Sulmona': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'Fuji at Kendall': ['18:30', '18:45', '19:00', '19:15', '19:30'], 'Mex Taqueria & Bar': ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'The Maharaja': ['18:30', '18:45', '19:00', '19:15', '19:30'], "Sloane's": ['18:30', '18:45', '19:00', '19:15', '19:30'],
+    'The Helmand': ['18:30', '18:45', '19:00', '19:15', '19:30'],
   } },
 ];

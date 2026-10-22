@@ -16,7 +16,7 @@ const places = R.map((r) => {
   return { id, name: r.name, area: r.area, address: r.address, lat: r.lat, lng: r.lng, cuisine: r.cuisine, price: r.price || '', bookVia: r.bookVia, bookUrl: r.bookUrl || '', phone: r.phone || '',
     six: r.six, maxOnline: r.maxOnline || 0, closed: r.closed || [], hours: r.hours || '', open: r.open || '', fee: r.fee || '', vibe: r.vibe || '', noise: r.noise, talk: r.talk, seat: r.seat || '', sound: r.sound || '',
     sixTables: r.sixTables || 'some', privateRoom: !!r.privateRoom, privateNote: r.privateNote || '', weekday: r.weekday || 'some', weekend: r.weekend || 'some', fit: r.fit || 3,
-    check: String(r.check || '').slice(0, 320), sources: (r.sources && r.sources.length ? r.sources : [r.source]).filter(Boolean).slice(0, 4) };
+    check: String(r.check || '').slice(0, 600), sources: (r.sources && r.sources.length ? r.sources : [r.source]).filter(Boolean).slice(0, 4) };
 });
 const stop = (line, i) => { const L = TRIP.LINES.find((x) => x.id === line); return { lat: L.stops[i][0], lng: L.stops[i][1] }; };
 const stations = [['Porter', 'red', 0], ['Harvard', 'red', 1], ['Central', 'red', 2], ['Kendall/MIT', 'red', 3], ['Charles/MGH', 'red', 4], ['Park Street', 'red', 5], ['Arlington', 'green', 2], ['Copley', 'green', 3], ['Hynes', 'green', 4], ['Kenmore', 'green', 5],

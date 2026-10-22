@@ -432,7 +432,7 @@ function talkTag(p) { return p.noise === 'quiet' ? '<span class="tag calm">Quiet
 function sixTags(p) { return (p.privateRoom ? '<span class="tag six">Private room</span>' : '') + (p.sixTables === 'many' ? '<span class="tag six">Lots of tables for six</span>' : p.sixTables === 'few' ? '<span class="tag warn">Few tables for six</span>' : ''); }
 function easeTag(p) { const w = weekend() ? 'weekends' : 'weeknights'; return p.ease === 'easy' ? `<span class="tag good">Usually easy on ${w}</span>` : p.ease === 'hard' ? `<span class="tag warn">Usually hard on ${w}</span>` : ''; }
 function seenLine(p) {
-  const s = p.seen, n = size(), ago = 'when we looked Oct 19';
+  const s = p.seen, n = size(), on = s && s.at ? dateOf(s.at.slice(0, 10)) : null, ago = on ? `when we looked ${MONTHS[on.getMonth()].slice(0, 3)} ${on.getDate()}` : 'when we looked';
   if (s && s.state === 'free') return `<p class="seen ok">Open for ${nw(s.size)} at ${esc(andList(s.times.slice(0, 4).map((x) => lab(x).replace(' PM', ''))))} ${ago}</p>`;
   if (s && s.state === 'full') return `<p class="seen no">Nothing for ${nw(s.size)} from ${lab(hm(toMin(S.time) - 60))} to ${lab(hm(toMin(S.time) + 60))} ${ago}</p>`;
   if (s && s.state === 'tight') return `<p class="seen no">Full for ${nw(s.size)} ${ago}, so a table for ${nw(n)} might still fit</p>`;
@@ -468,7 +468,7 @@ function card(p, i, ranked) {
     <div class="rank" aria-hidden="true">${ranked ? i + 1 : ''}</div>
     <div style="min-width:0"><h3>${esc(p.name)}</h3><p class="where">${esc(whereOf(p))}${p.price ? ', ' + esc(p.price) : ''}</p>${p.vibe ? `<p class="vibe">${esc(p.vibe)}</p>` : ''}
     ${t.head ? `<p class="trip"><b>${esc(t.head)}</b><span>${esc(t.sub)}</span></p>` : ''}${seenLine(p)}
-    <div class="tags">${best ? '<span class="tag best">Best fit for your table</span>' : ''}${talkTag(p)}${sixTags(p)}${easeTag(p)}${p.maxOnline ? `<span class="tag">Online up to ${p.maxOnline}</span>` : p.six === 'call' ? '<span class="tag">Call for six</span>' : ''}</div>
+    <div class="tags">${best ? '<span class="tag best">Best fit for your table</span>' : ''}${talkTag(p)}${sixTags(p)}${easeTag(p)}${p.maxOnline ? `<span class="tag">Online up to ${p.maxOnline}</span>` : p.six === 'call' ? '<span class="tag">Call for six</span>' : p.six === 'online' ? '<span class="tag">Takes six online</span>' : ''}</div>
     ${heads}${actions(p)}
     <details class="why"><summary>Why it’s here</summary><div class="in">${why}</div></details></div></article>`;
 }
@@ -513,12 +513,12 @@ const COLS = [['rank', '#'], ['name', 'Place'], ['area', 'Area'], ['food', 'Food
 let TS = { k: 'rank', dir: 1 };
 function drawTable(all) {
   const ranked = all.filter((p) => p.open).concat(all.filter((p) => !p.open)), rank = {}; ranked.forEach((p, i) => { rank[p.id] = i + 1; });
-  const val = { rank: (p) => rank[p.id], name: (p) => p.name, area: (p) => p.area, food: (p) => (CUIS[p.cuisine] || {}).t || '', price: (p) => p.price.length, trip: (p) => (p.T ? p.T.max : 99), talk: (p) => -(p.talk || 2), noise: (p) => NOISE[p.noise] || 3, six: (p) => SIXT[p.sixTables] || 5, priv: (p) => (p.privateRoom ? 0 : 1), online: (p) => -(p.maxOnline || 0), wkd: (p) => EASE[p.weekday] || 5, wke: (p) => EASE[p.weekend] || 5, book: (p) => p.bookVia };
+  const val = { rank: (p) => rank[p.id], name: (p) => p.name, area: (p) => p.area, food: (p) => (CUIS[p.cuisine] || {}).t || '', price: (p) => p.price.length, trip: (p) => (p.T ? p.T.max : 99), talk: (p) => -(p.talk || 2), noise: (p) => NOISE[p.noise] || 3, six: (p) => SIXT[p.sixTables] || 5, priv: (p) => (p.privateRoom ? 0 : 1), online: (p) => -(p.maxOnline || (p.six === 'online' ? 6 : 0)), wkd: (p) => EASE[p.weekday] || 5, wke: (p) => EASE[p.weekend] || 5, book: (p) => p.bookVia };
   const rows = all.slice().sort((a, b) => { const x = val[TS.k](a), y = val[TS.k](b); return (x < y ? -1 : x > y ? 1 : 0) * TS.dir || (rank[a.id] - rank[b.id]); });
   const lvl = (n) => `<span class="lvl" aria-label="${n} of 3">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
   const pill = (v) => `<span class="pill ${v}">${v === 'easy' ? 'Usually easy' : v === 'hard' ? 'Usually hard' : 'Sometimes full'}</span>`;
   $('tbl').innerHTML = `<thead><tr>${COLS.map(([k, t]) => `<th scope="col"${TS.k === k ? ` aria-sort="${TS.dir > 0 ? 'ascending' : 'descending'}"` : ''}>${k === 'book' ? t : `<button type="button" data-sort="${k}">${t}</button>`}</th>`).join('')}</tr></thead><tbody>`
-    + rows.map((p) => { const link = bookLink(p); return `<tr class="${p.open ? '' : 'shut'}"><td class="mono">${rank[p.id]}</td><td class="nm"><button type="button" class="linkbtn" data-go="${p.id}">${esc(p.name)}</button><span>${esc(p.vibe)}</span></td><td>${esc(p.area)}</td><td>${esc(p.cuisine === 'other' ? 'More' : (CUIS[p.cuisine] || {}).t || '')}</td><td>${esc(p.price)}</td><td class="mono">${p.T ? p.T.max + ' min' : ''}</td><td>${lvl(p.talk || 2)}</td><td>${esc(cap(p.noise))}</td><td>${esc(cap(p.sixTables))}</td><td>${p.privateRoom ? 'Yes' : ''}</td><td class="mono">${p.maxOnline || ''}</td><td>${pill(p.weekday)}</td><td>${pill(p.weekend)}</td><td>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(VIA[p.bookVia] || 'Their site')}</a>` : `<span class="mono">${esc(p.phone)}</span>`}</td></tr>`; }).join('') + '</tbody>';
+    + rows.map((p) => { const link = bookLink(p); return `<tr class="${p.open ? '' : 'shut'}"><td class="mono">${rank[p.id]}</td><td class="nm"><button type="button" class="linkbtn" data-go="${p.id}">${esc(p.name)}</button><span>${esc(p.vibe)}</span></td><td>${esc(p.area)}</td><td>${esc(p.cuisine === 'other' ? 'More' : (CUIS[p.cuisine] || {}).t || '')}</td><td>${esc(p.price)}</td><td class="mono">${p.T ? p.T.max + ' min' : ''}</td><td>${lvl(p.talk || 2)}</td><td>${esc(cap(p.noise))}</td><td>${esc(cap(p.sixTables))}</td><td>${p.privateRoom ? 'Yes' : ''}</td><td class="mono">${p.maxOnline || (p.six === 'online' ? '6+' : p.six === 'call' ? 'Call' : '')}</td><td>${pill(p.weekday)}</td><td>${pill(p.weekend)}</td><td>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(VIA[p.bookVia] || 'Their site')}</a>` : `<span class="mono">${esc(p.phone)}</span>`}</td></tr>`; }).join('') + '</tbody>';
 }
 
 /* ---------- the map: drawn from OpenStreetMap shapes, no tiles ---------- */
