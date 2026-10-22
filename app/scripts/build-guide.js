@@ -14,7 +14,7 @@ const places = R.map((r) => {
   let id = slug(r.name); while (ids.has(id)) id += '-2'; ids.add(id);
   if (!isFinite(r.lat) || !isFinite(r.lng)) throw new Error('no map pin for ' + r.name);
   return { id, name: r.name, area: r.area, address: r.address, lat: r.lat, lng: r.lng, cuisine: r.cuisine, price: r.price || '', bookVia: r.bookVia, bookUrl: r.bookUrl || '', phone: r.phone || '',
-    six: r.six, maxOnline: r.maxOnline || 0, closed: r.closed || [], hours: r.hours || '', fee: r.fee || '', vibe: r.vibe || '', noise: r.noise, talk: r.talk, seat: r.seat || '', sound: r.sound || '',
+    six: r.six, maxOnline: r.maxOnline || 0, closed: r.closed || [], hours: r.hours || '', open: r.open || '', fee: r.fee || '', vibe: r.vibe || '', noise: r.noise, talk: r.talk, seat: r.seat || '', sound: r.sound || '',
     sixTables: r.sixTables || 'some', privateRoom: !!r.privateRoom, privateNote: r.privateNote || '', weekday: r.weekday || 'some', weekend: r.weekend || 'some', fit: r.fit || 3,
     check: String(r.check || '').slice(0, 320), sources: (r.sources && r.sources.length ? r.sources : [r.source]).filter(Boolean).slice(0, 4) };
 });
@@ -25,7 +25,7 @@ const stations = [['Porter', 'red', 0], ['Harvard', 'red', 1], ['Central', 'red'
 const labels = [
   ['Harvard Square', 42.3760, -71.1225, 'big'], ['Porter Square', 42.3905, -71.1225, 'big'], ['Central Square', 42.3675, -71.1000, 'big'], ['Kendall Square', 42.3648, -71.0835, 'big'], ['Inman Square', 42.3765, -71.0985, 'big'],
   ['Allston', 42.3555, -71.1300, 'big'], ['Brighton', 42.3470, -71.1545, 'big'], ['Back Bay', 42.3505, -71.0760, 'big'], ['Fenway', 42.3445, -71.1000, 'big'], ['East Cambridge', 42.3712, -71.0805, 'big'],
-  ['Cambridgeport', 42.3585, -71.1085, ''], ['Kenmore', 42.3505, -71.0975, ''], ['Longwood', 42.3375, -71.1065, ''], ['Huron Village', 42.3815, -71.1365, ''],
+  ['Cambridgeport', 42.3585, -71.1085, ''], ['Cambridge Crossing', 42.3735, -71.0745, ''], ['Kenmore', 42.3505, -71.0975, ''], ['Longwood', 42.3375, -71.1065, ''], ['Huron Village', 42.3815, -71.1365, ''],
   ['HBS', 42.3660, -71.1225, ''], ['Harvard Yard', 42.3745, -71.1170, ''], ['MIT', 42.3585, -71.0950, ''], ['Boston University', 42.3505, -71.1080, ''],
   ['Charles River', 42.3555, -71.1090, 'river'], ['Charles River', 42.3685, -71.1260, 'river']].map(([t, lat, lng, k]) => ({ t, lat, lng, k }));
 const data = {

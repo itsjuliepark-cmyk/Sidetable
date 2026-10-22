@@ -207,22 +207,26 @@ npm run film
 
 ### 하버드, MIT, HBS 사이 식당 목록
 
-- `server/restaurants.js`: 102곳 (2026년 10월 20일, 다섯 지역 조사를 다시 함)
-- 지역: Harvard Square 21, Porter 4, Huron Village 2, Allston 14, Brighton 10, Kendall 12, East Cambridge 5, Cambridgeport 1, Central 13, Inman 7, 그리고 강 건너 Back Bay 7, Fenway 4, Kenmore 2
+- `server/restaurants.js`: 120곳 (2026년 10월 20일 1차 조사, 22일 2차 조사)
+- 지역: Harvard Square, Porter, Huron Village 31, Allston, Brighton 24, Kendall, East Cambridge, Cambridgeport 22, Central, Inman, Riverside, Mid-Cambridge 24, 강 건너 Back Bay, Fenway, Kenmore 19
+- 예약 방법: OpenTable 67, Resy 15, 자체 사이트 15, 전화 21, Tock 2
 - 고른 기준: 6명 자리가 구조적으로 잘 나오는 곳 (6인 테이블, 원탁, 큰 부스, 프라이빗 룸, 큰 홀, 온라인 6명 이상 예약), 대화가 되는 곳, 평일 저녁 자리가 잘 나는 곳
-- 식당마다 추가된 항목: 지도 좌표(OpenStreetMap), 6인 테이블 수(many, some, few), 프라이빗 룸과 설명, 전체 좌석 수, 온라인 최대 인원, 평일과 주말 예약 난이도(easy, some, hard), 종합 적합도(fit 1~5), 제휴 후보 여부, 단체 추가 요금이나 시간 제한(fee), 근거와 출처
-- 빠진 곳 11곳: 6명을 못 받거나(Giulia, Pammy's), 문 닫았거나(Dear Annie, Cafe Sushi 매장 식사 중단, Passage to India 이전), 대화가 어려운 바(SOJUba, Audubon, The Citizen) 등
-- 기존 목록에서 바로잡은 것: Grafton Street는 2022년부터 59 JFK St(옛 Park 자리), Lou's는 SevenRooms 예약, La Royal은 Huron Village에 매일 영업, Row 34는 시끄러운 편, The Helmand 사이트 주소 변경, Lulu's는 월화 마지막 착석 6:30
-- 근거가 약한 칸은 check에 "thin evidence"로 표시하고 중간값 사용
+- 식당마다: 지도 좌표(OpenStreetMap), 6인 테이블 수(many, some, few), 프라이빗 룸과 크기, 전체 좌석 수, 온라인 최대 인원, 평일과 주말 예약 난이도(easy, some, hard), 종합 적합도(fit 1~5), 제휴 후보 여부, 7시 테이블에 영향 주는 주의사항(hours), 일반 영업시간(open), 단체 추가 요금이나 시간 제한(fee), 근거와 출처
+- 1차에서 빠진 곳 11곳: 6명을 못 받거나(Giulia, Pammy's), 문 닫았거나(Dear Annie 등), 대화가 어려운 바(SOJUba, Audubon, The Citizen) 등
+- 2차에서 더한 곳 18곳: Season to Taste, Moëca, Nirvana Taste of India, Forage (Harvard, Porter), Dumpling House, Dalí, Cafe Sushi Nisei, 5 Spices House (Central, Inman), Passage to India, Geppetto, The Lexington (Cambridge Crossing), Paperback Tavern, Shu DaXia Hotpot, Row 34 Kenmore Square, Willow & Ivy, UNI, Dumpling Palace, Zuma Boston (강 건너)
+- 2차에서 뺀 후보: 예약을 안 받는 곳(Muqueca), 문 닫은 곳(S&S, Cloud & Spirits 행사장 전환, The Pearl 임시 휴업), 6명이 어려운 곳(Holdfast, Black Ruby), 확인 안 되는 곳(Ricen, Cafe of India, Gen Korean BBQ)
+- 2차에서 바로잡은 것 73곳: Catalyst는 월요일 영업, Rail Stop은 일, 월 오후 8시 마감, Moona는 월요일 영업, Ariana 온라인 8명까지, Fallow Kin 온라인 6명까지, Legal Sea Foods Kendall 10명까지, Atlantic Fish 10명까지, Area Four 6명 이상 팁 20% 자동, Margeaux 7명 이상 카드 보증, 늦은 변경 1인 $25, Urban Hearth 24시간 안 취소 1인 $50, India Quality와 LUCIE는 자체 예약 페이지, Loco Fenway는 전화 예약 등
+- 1차 Central 조사에서 페이지 리더로 읽혀 재확인 필요로 표시했던 정보는 2차에서 식당 자체 사이트와 기사로 다시 확인해 고침 (Althea의 온라인 8명, 단체 팁은 확인 안 돼 삭제)
+- 남은 한계: 근거가 얇은 칸 55곳(check에 thin evidence), 온라인 최대 인원은 26곳만 확인 (OpenTable과 Resy 페이지를 자동으로 읽을 수 없음, 우회하지 않음)
 - 평일, 주말 난이도는 방 크기, 예약 빈도, 리뷰로 판단한 조사 결과일 뿐 실시간 빈자리가 아님, 앱도 "Usually easy on weeknights"처럼 말함
-- Central 조사 중 일부 OpenTable 정보는 페이지 리더를 거쳐 읽혀 check에 재확인 필요로 표시
 - 관리자 Places 탭의 목록 버튼으로 추가와 갱신, 목록에서 빠진 식당은 삭제 대신 일시 중지 (이미 예약된 테이블은 유지)
 
 ### 대화하기 좋은 곳
 
-- 소음(noise: quiet 9곳, moderate 68곳, lively 25곳), 대화 점수(talk: 3 편함 20곳, 2 자리만 잘 잡으면 78곳, 1 어려움 4곳)
-- 조용하고 대화 편한 곳: Harvest, The Maharaja, Hong Kong Restaurant(1층 식당), Changsho, Ariana, India Quality, TooHot, Talulla, Fallow Kin
-- 보통이지만 대화 편한 곳: Henrietta's Table, Nubar, Nine Tastes, Ama, The Stockyard, Devlin's, The Helmand, The Capital Grille, Oak Bistro, Urban Hearth, Judy's Bay
+- 소음(noise: quiet 11곳, moderate 81곳, lively 28곳), 대화 점수(talk: 3 편함 26곳, 2 자리만 잘 잡으면 90곳, 1 어려움 4곳)
+- 조용하고 대화 편한 곳: Harvest, The Maharaja, TooHot, Hong Kong Restaurant(1층 식당), Changsho, Talulla, Ariana, Fallow Kin, India Quality, Season to Taste, Nirvana Taste of India
+- 보통이지만 대화 편한 곳: Henrietta's Table, Nine Tastes, Nubar, Ama, The Stockyard, Devlin's, Catalyst, Judy's Bay, Moona, Oak Bistro, Urban Hearth, The Capital Grille, Forage, Willow & Ivy, Geppetto
+- 저녁엔 대화가 어려운 곳: Russell House, Mex, La Fábrica, Little Donkey
 - seat: 예약 메모에 적을 자리, sound: 방 분위기 한 줄, 관리자 화면에서 수정 가능
 
 ### 이동 거리로 고르기 (`server/trip.js`)
@@ -254,9 +258,9 @@ npm run film
 - `node scripts/build-guide.js`: `dist/spot-guide.html`과 `demo/spot-guide.html` 생성, 앱과 같은 데이터, 같은 이동 시간, 같은 점수
 - 위쪽에서 날짜, 시간, 동네별 인원(HBS 3, MIT 3 같은 식)을 고르면 목록과 지도가 그 테이블 기준으로 다시 정렬
 - 지도: OpenStreetMap에서 한 번 받아 단순화한 찰스강, 큰 도로, 지하철 노선, 공원, 캠퍼스를 직접 그림 (`scripts/guide/map.json`, 지도 타일 없음, 외부 요청 없음), 확대, 이동, 핀치 가능
-- 식당마다 이동 시간(동네별), 대화, 6인 테이블, 프라이빗 룸, 그날 예약 난이도, 주의사항(추가 요금, 영업 시간), 날짜와 인원이 채워진 예약 버튼, 전화번호 복사, 예약 메모 복사, 길찾기, 근거와 출처
+- 식당마다 이동 시간(동네별), 대화, 6인 테이블, 프라이빗 룸, 그날 예약 난이도, 주의사항(추가 요금, 7시 테이블에 영향 주는 영업 시간), 일반 영업시간은 Why it’s here 안에, 날짜와 인원이 채워진 예약 버튼, 전화번호 복사, 예약 메모 복사, 길찾기, 근거와 출처
 - 필터: 조용한 곳, 프라이빗 룸, 6인 테이블 많은 곳, 그날 쉬운 곳, 온라인으로 그 인원 예약 가능, 지역 5곳, 음식, 가격, 정렬 4가지
-- 표 보기: 102곳 전체를 열 단위로 정렬, 예약 방식 링크
+- 표 보기: 120곳 전체를 열 단위로 정렬, 예약 방식 링크
 - 예약 방법 보기: 7단계, 그날로 채워진 전화 스크립트와 예약 메모 복사
 - 그날 영업 안 하거나 예약을 안 받는 곳은 아래로 접힘, 휴대폰 화면과 다크 모드 지원
 

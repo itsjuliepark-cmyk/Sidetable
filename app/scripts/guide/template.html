@@ -340,7 +340,7 @@ function trip(from, to) {
 /* ---------- state ---------- */
 const FROM = D.from, FROMBY = {}; FROM.forEach((f) => { FROMBY[f.id] = f; });
 const MAIN = ['hbs', 'hsq', 'mit', 'central'];
-const GROUPS = [['harvard', 'Harvard and Porter', ['Harvard Square', 'Porter Square', 'Huron Village']], ['allston', 'Allston and Brighton', ['Allston', 'Brighton']], ['kendall', 'Kendall and East Cambridge', ['Kendall Square', 'East Cambridge', 'Cambridgeport']], ['central', 'Central and Inman', ['Central Square', 'Inman Square']], ['boston', 'Back Bay and Fenway', ['Back Bay', 'Fenway', 'Kenmore']]];
+const GROUPS = [['harvard', 'Harvard and Porter', ['Harvard Square', 'Porter Square', 'Huron Village']], ['allston', 'Allston and Brighton', ['Allston', 'Brighton']], ['kendall', 'Kendall and East Cambridge', ['Kendall Square', 'East Cambridge', 'Cambridgeport']], ['central', 'Central and Inman', ['Central Square', 'Inman Square', 'Riverside', 'Mid-Cambridge']], ['boston', 'Back Bay and Fenway', ['Back Bay', 'Fenway', 'Kenmore', 'BU']]];
 const groupOf = (area) => (GROUPS.find((g) => g[2].indexOf(area) >= 0) || ['other'])[0];
 const FOOD = D.food, CUIS = {}; D.cuisines.forEach((c) => { CUIS[c.id] = c; });
 const nextNight = () => { const d = new Date(); d.setDate(d.getDate() + 1); return ymd(d); };
@@ -462,7 +462,7 @@ function actions(p, small) {
 function card(p, i, ranked) {
   const t = tripWords(p.T), top = ranked && p.open && i < 10, best = ranked && p.open && i === 0 && p.tier <= 1;
   const heads = [p.hours, p.fee].filter(Boolean).map((x) => `<p class="heads">Heads up: ${esc(x.charAt(0).toLowerCase() + x.slice(1))}</p>`).join('') + (p.maxOnline && p.maxOnline < size() ? `<p class="heads">Heads up: online booking stops at ${nw(p.maxOnline)}, so call for ${nw(size())}</p>` : '') + (!p.open ? `<p class="heads">Closed for dinner on ${DAYS[night().getDay()]}s, or no bookings that night</p>` : '');
-  const why = [p.seat ? `<p><b>Ask for</b> ${esc(p.seat)}</p>` : '', p.privateNote ? `<p><b>Rooms</b> ${esc(cap(p.privateNote))}</p>` : '', p.sound ? `<p><b>The room</b> ${esc(p.sound)}</p>` : '', p.check ? `<p><b>What this rests on</b> ${esc(p.check)}</p>` : '',
+  const why = [p.seat ? `<p><b>Ask for</b> ${esc(p.seat)}</p>` : '', p.privateNote ? `<p><b>Rooms</b> ${esc(cap(p.privateNote))}</p>` : '', p.sound ? `<p><b>The room</b> ${esc(p.sound)}</p>` : '', p.open ? `<p><b>Hours</b> ${esc(p.open)}</p>` : '', p.check ? `<p><b>What this rests on</b> ${esc(p.check)}</p>` : '',
     p.sources.length ? `<div class="src">${p.sources.map((u, k) => { let h = ''; try { h = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { h = 'source ' + (k + 1); } return `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(h)}</a>`; }).join('')}</div>` : ''].join('');
   return `<article class="spot${top ? ' top' : ''}${p.open ? '' : ' shut'}${S.sel === p.id ? ' sel' : ''}" id="c-${p.id}" data-id="${p.id}">
     <div class="rank" aria-hidden="true">${ranked ? i + 1 : ''}</div>
