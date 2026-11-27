@@ -1,394 +1,394 @@
-# Hash Table 사업화 검토 (v0.3, 2026-10-06)
+# Hash Table Business Review (v0.3, 2026-10-06)
 
-- 제품 기획은 [CONCEPT.md](CONCEPT.md), 이 문서는 사업성과 성장 방법 정리
-- 출처가 있는 숫자는 공개 자료, 가격과 회원 수, 비용은 파일럿에서 검증 필요
+- Product planning is in [CONCEPT.md](CONCEPT.md); this document covers business viability and how to grow
+- Numbers with sources are from public data; prices, member counts, and costs need to be validated in the pilot
 
-## 결론
+## Conclusion
 
-- 사업성은 충분하지만 단계마다 사업의 성격이 다름
-- 수요는 이미 증명됨, 남은 과제는 "왜 Timeleft가 아니라 Hash Table인가"에 대한 답
+- The business is viable, but its nature changes at each stage
+- Demand is already proven; what remains is answering "why Hash Table and not Timeleft?"
 
-| 단계 | 성격 | 판단 |
+| Stage | Nature | Assessment |
 |---|---|---|
-| Harvard × MIT | 돈보다 증명이 목적인 단계 | 비용이 거의 없고 테크 클럽 협업으로 빠른 검증 가능 |
-| Greater Boston | 연 매출 $1~2M 규모의 작은 사업 (가정) | 수익은 나지만 벤처 규모는 아님 |
-| 여러 도시 | 같은 공식을 NYC, SF, 시카고, 런던으로 복제 | 벤처 규모가 가능한 진짜 승부처 |
+| Harvard × MIT | A stage whose purpose is proof, not money | Nearly zero cost; tech club partnerships allow fast validation |
+| Greater Boston | A small business of $1–2M in annual revenue (assumption) | Profitable but not venture scale |
+| Multiple cities | Replicate the same formula in NYC, SF, Chicago, London | The real battleground where venture scale is possible |
 
-## v0.3: Harvard와 MIT 200명에서 뉴욕까지
+## v0.3: from 200 people at Harvard and MIT to New York
 
-### 비슷한 서비스
+### Similar services
 
-| 유형 | 서비스 | 숫자 | 시사점 |
+| Type | Service | Numbers | Implication |
 |---|---|---|---|
-| 낯선 사람 디너 | Timeleft | 연 매출 약 €18M, 월 15만 명 | 수요는 확실하지만 대상이 누구나라 테크 사람에게는 약한 명분 |
-| 친구 만들기 이벤트 | Pie (SF, 시카고) | 누적 투자 $24M, 월 13만 명, 호스트에게 RSVP당 $5~10 지급 | 호스트 보상으로 이벤트 증가, Hang에 응용 가능 |
-| 큐레이션 이벤트 | 222 (LA, 보스턴 운영 중) | 시리즈 A $10.1M | 큐레이션 자체가 브랜드 |
-| AI 1:1 비즈니스 매칭 | Lunchclub | 투자 $24.2M, 기업가치 $100M 이상, 이후 2년간 직원 36% 감소 | 네트워킹만 하는 매칭은 오래가기 어려움 |
-| AI 소개 에이전트 | Boardy | 2025년 1월 시드 $8M | AI 소개에 몰리는 투자, Charlie와 같은 방향 |
-| 대학생 AI 소개 | Series (Yale 학생 창업) | 프리시드 $3M, .edu 인증 | 학교 인증과 AI 소개는 투자자에게 익숙한 그림 |
-| 유료 동료 그룹 | Hampton (창업자) | 가입비 $2,500, 연 $9,500, 매달 8명 고정 그룹 | 작은 고정 그룹에는 전문직도 큰돈 지불 |
-| 유료 동료 그룹 | Chief (여성 임원) | 연 $5,800~7,900, 대부분 회사 부담, 2022년 기업가치 $1.1B | 회사 교육 예산으로 내는 회비 |
-| 빌더 커뮤니티 | South Park Commons (SF, NYC) | 회원 약 450명, 펠로우십에 최대 $1M 투자 | 커뮤니티 기반 딜소싱으로 수익 |
-| 테크 디너 시리즈 | Tech2Table, Founders Dinner, Founder Dinners 등 | Tech2Table 누적 1,000명 이상 | 수요는 있지만 모두 일회성 이벤트, 전용 플랫폼과 반복 매칭은 없음 |
-| 보스턴 현장 | Venture Café, a16z Boston Tech Week | 매주 500명 이상, 2026년 5월 이벤트 572개 | 큰 행사는 많지만 작고 반복되는 자리는 부족 |
+| Dinners with strangers | Timeleft | ~€18M annual revenue, 150K monthly users | Demand is certain, but the audience is everyone, a weak reason for tech people |
+| Friend-making events | Pie (SF, Chicago) | $24M raised in total, 130K monthly users, pays hosts $5–10 per RSVP | Host rewards grow the number of events; applicable to Hang |
+| Curated events | 222 (operating in LA and Boston) | $10.1M Series A | Curation itself is the brand |
+| AI 1:1 business matching | Lunchclub | $24.2M raised, valued at $100M+, headcount down 36% over the following 2 years | Networking-only matching struggles to last |
+| AI introduction agent | Boardy | $8M seed in January 2025 | Investment is flowing into AI introductions, the same direction as Charlie |
+| AI introductions for college students | Series (founded by Yale students) | $3M pre-seed, .edu verification | School verification plus AI introductions is a picture investors know |
+| Paid peer groups | Hampton (founders) | $2,500 joining fee, $9,500 per year, fixed group of 8 meeting monthly | Professionals pay a lot for small fixed groups |
+| Paid peer groups | Chief (women executives) | $5,800–7,900 per year, mostly paid by employers, valued at $1.1B in 2022 | Dues paid from company training budgets |
+| Builder community | South Park Commons (SF, NYC) | ~450 members, invests up to $1M in its fellowship | Revenue from community-based deal sourcing |
+| Tech dinner series | Tech2Table, Founders Dinner, Founder Dinners, etc. | Tech2Table 1,000+ attendees in total | Demand exists, but all are one-off events; no dedicated platform or repeat matching |
+| Boston scene | Venture Café, a16z Boston Tech Week | 500+ every week, 572 events in May 2026 | Plenty of big events, but few small recurring gatherings |
 
-- 테크 사람, 소그룹, 반복 만남, 친구, 전용 플랫폼을 모두 갖춘 서비스는 아직 없음
-- 가장 가까운 곳은 Timeleft(대상이 누구나)와 테크 디너 시리즈(일회성 이벤트), 그 사이가 Hash Table의 자리
-- 이름은 Tech Table(SF의 Tech2Table과 겹침), Sidetable을 거쳐 Hash Table로 변경(2026-10-17), 테크 느낌이 나는 이름이 필요해서
-- 퍼블릭 전 상표와 도메인 확인 필요
+- No service yet combines tech people, small groups, repeat meetings, friendship, and a dedicated platform
+- The closest are Timeleft (audience is everyone) and tech dinner series (one-off events); the space between them is Hash Table's
+- The name went from Tech Table (overlaps with Tech2Table in SF) through Sidetable to Hash Table (2026-10-17), because a name with a tech feel was needed
+- Check trademark and domain before going public
 
-### 포지션: 네트워킹 서비스가 아닌 테크 사람들의 친구 클럽
+### Position: a friends club for tech people, not a networking service
 
-- 일 얘기만 하는 매칭은 목적을 이루면 떠나는 서비스 (Lunchclub)
-- 같은 사람과 계속 만나는 작은 그룹에는 전문직이 연 수천 달러 지불 (Hampton, Chief)
-- 그래서 수익도 단순 구독보다 클럽 회비, 식당, 스폰서, 회사 예산 중심
+- Work-only matching is a service people leave once they reach their goal (Lunchclub)
+- Professionals pay thousands of dollars a year for small groups that keep meeting the same people (Hampton, Chief)
+- So revenue centers on club dues, restaurants, sponsors, and company budgets rather than a simple subscription
 
-### 형태: 앱스토어 앱이 아닌 웹앱
+### Format: a web app, not an App Store app
 
-- 링크 하나로 바로 가입, 설치 과정이 없어 단톡방과 클럽 채널에서 퍼지기 쉬움
-- 앱스토어 심사 없이 바로 수정과 배포 가능
-- 앱스토어 결제 수수료(15~30%) 없이 웹 결제
-- 홈 화면에 추가하면 앱처럼 사용, 푸시 알림도 지원 (아이폰은 iOS 16.4 이상)
-- 네이티브 앱은 회원 규모가 커진 뒤 검토
+- Sign up instantly from a single link; with no install step, it spreads easily through group chats and club channels
+- Changes ship immediately without App Store review
+- Web payments, without App Store payment fees (15–30%)
+- Add to the home screen to use it like an app, with push notification support (iPhone requires iOS 16.4 or later)
+- Consider a native app once the membership grows
 
-### 성장 단계 (제안)
+### Growth stages (proposal)
 
-| 단계 | 대상 | 가입 방법 | 가격 | 다음 단계 조건 (가정) |
+| Stage | Who | How to join | Price | Condition for the next stage (assumption) |
 |---|---|---|---|---|
-| 0. 창립 200명 (지금~12월) | Harvard 100, MIT 100 | 테크, AI, 바이오 클럽 8~10곳 초대, 창립 멤버당 초대권 2장 | 무료 | 참석률 90%, 4주 뒤 재신청 50%, 세 번째 만남 20쌍 |
-| 1. 동문 (2027 봄) | 보스턴의 Harvard, MIT 테크 동문 (졸업 10년 이내) | 동문 인증과 회원 추천 | 월 $25~40 | 유료 전환 25%, 학생과 동문이 섞인 테이블 만족도 |
-| 2. 보스턴 테크 (2027 가을) | VC, 스타트업과 빅테크 직원, 연구자 | 신청과 회원 2명 추천, 회사 메일 | 회원비, 회사 결제, 호스트 테이블 | 월 유지율 50%, 식당 재계약 |
-| 3. 방문자 패스 (2단계와 함께) | 보스턴에 잠깐 온 NYC 테크 사람 | 회원 추천 1주 패스 | $15~25 | 패스 이용자 중 NYC 대기자 수 |
-| 4. 뉴욕 (2028) | 보스턴 출신 NYC 동문, Columbia, NYU Stern, Cornell Tech, 패스 대기자 | 2단계와 같은 방식 | 같은 모델 | |
+| 0. 200 founding members (now to December) | 100 Harvard, 100 MIT | Invite 8–10 tech, AI, and bio clubs; 2 invites per founding member | Free | 90% attendance, 50% re-signup after 4 weeks, 20 third-meeting pairs |
+| 1. Alumni (spring 2027) | Harvard and MIT tech alumni in Boston (within 10 years of graduating) | Alumni verification and member referral | $25–40 per month | 25% paid conversion, satisfaction at tables mixing students and alumni |
+| 2. Boston tech (fall 2027) | VCs, startup and Big Tech employees, researchers | Application + 2 member referrals, company email | Membership, company billing, hosted tables | 50% monthly retention, restaurant contract renewals |
+| 3. Visitor pass (alongside stage 2) | NYC tech people briefly in Boston | 1-week pass via member referral | $15–25 | Number of pass users on the NYC waitlist |
+| 4. New York (2028) | NYC alumni from Boston, Columbia, NYU Stern, Cornell Tech, pass waitlist | Same as stage 2 | Same model | |
 
-단계별로 주의할 점
+What to watch at each stage
 
-- 0단계: 200명이면 주 60~80석이라 동네는 Harvard Square에서 Kendall까지, 요일은 주 2~3일로 좁혀 테이블을 꽉 채우기
-- 1단계: 학생은 동문을, 동문은 채용과 새로운 자극을 원하지만 멘토링 자리가 되면 친구는 안 생김
-  - 테이블은 비슷한 단계끼리, 경력 차가 큰 만남은 Hang과 호스트 테이블로 분리
-- 2단계: VC는 가장 열심히 올 사람들이지만 딜소싱이 목적이 되면 신뢰가 깨짐
-  - 테이블당 투자자 2명 이하, 피칭 금지, VC 예산은 "Hosted by" 스폰서로 유도
-- 3단계: 보스턴과 뉴욕을 오가는 사람이 많아 패스 이용자가 뉴욕 첫 멤버로 연결
-- 4단계: a16z Tech Week에 맞춰 출시, 공식 이벤트로 열면 획득 비용은 거의 0
-  - 2026년 뉴욕은 6월 1~7일 이벤트 1,035개 이상, 보스턴은 5월 26~31일 572개
+- Stage 0: 200 people means 60–80 seats a week, so narrow the area to Harvard Square through Kendall and the days to 2–3 per week to keep tables full
+- Stage 1: students want alumni, and alumni want hiring and fresh stimulus, but if it becomes a mentoring session, friendships don't form
+  - Seat people at similar stages together; separate meetings with large career gaps into Hang and hosted tables
+- Stage 2: VCs will be the most eager attendees, but if deal sourcing becomes the goal, trust breaks
+  - At most 2 investors per table, no pitching, and channel VC budgets into "Hosted by" sponsorship
+- Stage 3: many people travel between Boston and New York, so pass users become the first New York members
+- Stage 4: launch alongside a16z Tech Week; running it as an official event brings acquisition cost to nearly zero
+  - In 2026, New York had 1,035+ events on June 1–7, and Boston had 572 on May 26–31
 
-### 수익원과 가격 (가정)
+### Revenue streams and pricing (assumption)
 
-| 수익원 | 내는 쪽 | 가격 | 근거 |
+| Revenue stream | Who pays | Price | Rationale |
 |---|---|---|---|
-| 학생 | 학생 또는 클럽 | 파일럿 무료, 이후 학기 $15~29 | 학생에게는 돈보다 밀도가 중요 |
-| 회원 | 동문, 테크 직장인 | 월 $29~39, 식사비 별도 | Timeleft($20)보다 높고 Hampton, Chief보다 훨씬 낮은 가격 |
-| 회사 결제 | 보스턴 테크, 바이오 회사 | 1인 연 $300~500 | 신입, 이주자, 원격 근무자의 적응 예산 |
-| 호스트 테이블 | VC, 테크 회사 | 테이블당 $800~1,500, 식사 포함 | 10테이블 중 1개 이하, "Hosted by" 표시 |
-| 식당 | 제휴 식당 | 손님 1명당 $3~5 | 평일 저녁 확정 단체석 |
-| 채용 (나중에) | 회사 | 소개 수락 또는 채용 성사 수수료 | 회원이 충분히 쌓인 뒤 |
+| Students | Students or clubs | Free during the pilot, then $15–29 per term | For students, density matters more than money |
+| Members | Alumni, tech workers | $29–39 per month, meals extra | Higher than Timeleft ($20), far lower than Hampton or Chief |
+| Company billing | Boston tech and bio companies | $300–500 per person per year | Onboarding budgets for new hires, relocators, and remote workers |
+| Hosted tables | VCs, tech companies | $800–1,500 per table, meal included | At most 1 in 10 tables, marked "Hosted by" |
+| Restaurants | Partner restaurants | $3–5 per guest | Confirmed group seating on weekday evenings |
+| Hiring (later) | Companies | Fee for an accepted introduction or a completed hire | Once membership is large enough |
 
-보스턴 2,000명 기준 예시 (가정)
+Example for 2,000 people in Boston (assumption)
 
-- 유료 회원: 1,200명 × 월 $32 × 12 ≈ $0.46M
-- 회사 결제: 400명 × $400 ≈ $0.16M
-- 호스트 테이블: 주 4회 × $1,000 × 48주 ≈ $0.19M
-- 식당: 2,000명 × 주 1회 × 48주 × $4 ≈ $0.38M
-- 합계 약 $1.2M, 보스턴 하나로는 괜찮은 작은 사업, 벤처 규모는 뉴욕부터
+- Paid members: 1,200 × $32 per month × 12 ≈ $0.46M
+- Company billing: 400 × $400 ≈ $0.16M
+- Hosted tables: 4 per week × $1,000 × 48 weeks ≈ $0.19M
+- Restaurants: 2,000 people × once a week × 48 weeks × $4 ≈ $0.38M
+- Total about $1.2M; a decent small business for Boston alone, with venture scale starting from New York
 
-### 투자자에게 보여줄 이야기
+### The story for investors
 
-1. 비어 있는 틈새: 테크 디너는 많지만 모두 일회성, 반복해서 친구를 만들어 주는 제품은 없음
-2. 확장 공식: 명문 캠퍼스 두 곳 → 동문 → 도시 테크 → 방문자 패스로 다음 도시
-3. 다양한 매출원: 개인 회비, 회사, VC, 식당
-4. 제품 안의 재방문 장치: round two(같은 테이블 다시 모이기, 빈자리는 새 사람), 매주 바뀌는 Tonight’s question
+1. An empty niche: lots of tech dinners, but all one-off; no product helps people make friends through repeat meetings
+2. An expansion formula: two top campuses → alumni → city tech → visitor pass into the next city
+3. Diverse revenue: individual dues, companies, VCs, restaurants
+4. Built-in return mechanics: round two (the same table meets again, with new people in empty seats), Tonight's question that changes every week
 
-### 앞으로 90일
+### Next 90 days
 
-| 시기 | 할 일 |
+| When | To do |
 |---|---|
-| 10월 | 클럽 8~10곳 접촉, 창립 200명 명단, 제휴 식당 3곳, 상표와 도메인 확인 |
-| 11월 | 4주 파일럿, 주 2~3일, Cambridge 안에서만 진행, 4주차에 봄 학기 멤버십 사전 판매 |
-| 12월 | 결과 정리, 동문 대기자 모집, 호스트 테이블 1~2곳 계약 시도, 학교 창업 대회 지원 준비 |
+| October | Contact 8–10 clubs, list of 200 founding members, 3 partner restaurants, check trademark and domain |
+| November | 4-week pilot, 2–3 days a week, within Cambridge only; presell spring term memberships in week 4 |
+| December | Summarize results, recruit an alumni waitlist, try to sign 1–2 hosted tables, prepare applications to school startup competitions |
 
-## v0.2: 초대장과 Hang 구조의 수익 모델
+## v0.2: revenue model for the invitation and Hang structure
 
-| 층 | 내용 | 사업에서의 역할 |
+| Layer | Contents | Role in the business |
 |---|---|---|
-| Charlie의 초대장 | 주 1~5회 테크, 소셜 테이블 비공개 초대, 4~6명 저녁 | 돈을 내는 핵심 경험, 큐레이션이라 따라 하기 어려움 |
-| Hang | 누구나 여는 번개 모임 | 무료, 매일 들어오는 이유이자 바이럴 입구 |
+| Charlie's invitations | Private invitations to tech and social tables 1–5 times a week, dinners of 4–6 | The core paid experience; curation makes it hard to copy |
+| Hang | Pop-up meetups anyone can host | Free; the reason to come back daily and the viral entry point |
 
-### 1. 회원: 멤버십
+### 1. Members: membership
 
-| | 무료 | Hash Table 멤버 |
+| | Free | Hash Table member |
 |---|---|---|
-| Hang 열기와 참여 | 무제한 | 무제한 |
-| Charlie 초대장 | 한 달에 1번 | 주 1~5회 |
-| round two, 단골 테이블 | | 우선 배정 |
-| 친구 초대 | | 한 달에 1번 |
-| 가격 (가정) | $0 | 학생 학기 $39 또는 월 $9, 졸업 후 월 $19~25 |
+| Host and join Hangs | Unlimited | Unlimited |
+| Charlie invitations | Once a month | 1–5 times a week |
+| Round two, regular tables | | Priority seating |
+| Invite a friend | | Once a month |
+| Price (assumption) | $0 | Students $39 per term or $9 per month; after graduation $19–25 per month |
 
-- 횟수제가 아닌 정액제로 운영
-- 주 3~5회 오는 사람은 다른 사람의 테이블을 채워주는 존재라 더 받으면 역효과
-- 방문이 늘수록 커지는 매출은 식당 쪽에서 확보
+- Run as a flat fee, not per use
+- People who come 3–5 times a week fill other people's tables, so charging them more would backfire
+- Revenue that grows with visits comes from the restaurant side
 
-### 2. 식당: 좌석 수수료
+### 2. Restaurants: seat fees
 
-- 월~목 저녁 4~6인 테이블을 며칠 전에 확정해 전달, 식당에는 비는 시간의 확정 매출
-- 손님 1명당 $3~5 또는 Hash Table 세트 메뉴 마진 10~15%
-- 활성 회원이 주 1.5회 오면 회원 1명당 월 $24, 멤버십만큼 큰 매출
-- 좋은 식당 네트워크 자체가 진입장벽
+- Confirm 4–6 person tables for Monday–Thursday evenings a few days ahead; for restaurants, confirmed revenue in otherwise empty hours
+- $3–5 per guest, or a 10–15% margin on a Hash Table set menu
+- If an active member comes 1.5 times a week, that's $24 per member per month, as large as the membership
+- A strong restaurant network is itself a barrier to entry
 
-### 3. 기관: 후원과 프로그램
+### 3. Institutions: sponsorships and programs
 
-- 호스트 테이블: VC나 테크 회사가 일부 테이블의 식사비 부담
-  - 초대장에 "Hosted by ○○" 표시, 10테이블 중 1개 이하, 피칭 금지 유지
-  - 이 원칙이 깨지면 브랜드 신뢰도 함께 무너짐
-- 프로그램: 학교, 클럽, 동문회, 기업 신입 기수 대상 (아래 B2B 표)
-- 채용: 소개 수락이나 채용 성사 수수료, 신뢰 문제가 있어 회원이 충분히 쌓인 뒤
+- Hosted tables: a VC or tech company pays for the meals at some tables
+  - Invitations show "Hosted by ○○"; at most 1 in 10 tables; no-pitching rule stays
+  - If this principle breaks, trust in the brand collapses with it
+- Programs: for schools, clubs, alumni associations, and corporate new-hire cohorts (see the B2B table below)
+- Hiring: fees for accepted introductions or completed hires; because of trust concerns, only once membership is large enough
 
-### 장소 예약: 제휴 식당 방식
+### Venue booking: partner restaurant model
 
-현실 점검 (2026년 10월 조사)
+Reality check (research from October 2026)
 
-- OpenTable, Resy, SevenRooms, Tock 모두 공개 예약 API가 없어 Hash Table에서 직접 예약 불가
-- 비공식 경로로 잡은 예약은 취소와 계정 차단 대상
-- Timeleft: 제휴 식당이 행사용 테이블을 확보하고 손님은 12~24시간 전에 장소 확인
-  - 수수료는 양쪽 모두 없고, 식당은 손님 주문으로 수익
-  - 무료 취소는 이틀 전 밤까지, 24시간 이내 취소와 노쇼는 수수료, 두 달에 세 번 늦게 취소하면 이용 정지
-- 222: OpenTable, Resy 공식 연동으로 6인 테이블 예약, 식당이 체크인 1명당 $3~5 지불
-- 보스턴 식당: 5~6인 이상은 카드 보증, 노쇼나 늦은 취소는 1인 $15~25, 6인 이상은 팁 18~20% 자동 추가가 많음
+- OpenTable, Resy, SevenRooms, and Tock all lack public booking APIs, so Hash Table can't book directly
+- Bookings made through unofficial routes are subject to cancellation and account bans
+- Timeleft: partner restaurants hold tables for events, and guests learn the venue 12–24 hours ahead
+  - No fees on either side; restaurants earn from guests' orders
+  - Free cancellation until the night two days before; cancellations within 24 hours and no-shows carry a fee; three late cancellations in two months means suspension
+- 222: books 6-person tables through official OpenTable and Resy integrations; restaurants pay $3–5 per checked-in guest
+- Boston restaurants: parties of 5–6+ often require a card guarantee, charge $15–25 per person for no-shows or late cancellations, and add an automatic 18–20% tip for 6+
 
-Hash Table 방식 (웹앱에 반영)
+Hash Table's approach (reflected in the web app)
 
-- 제휴 식당이 정해진 평일 저녁에 테이블 1~3개를 확보, Hash Table이 그 자리를 채움
-- 식당은 못 받을 때만 연락, 매번 확인을 원하는 식당은 확인 전까지 주소 비공개
-- 식당이 받는 연락: 일요일 밤 주간 계획, 전날 정오 최종 인원, 이후 변경 사항
-- 회원 이름 없이 인원, 시간, 식단 메모, 캡틴 이름만 전달
-- 식당 전용 페이지에서 로그인 없이 확인 또는 거절
-- 식당이 취소하면 다른 제휴 식당으로 자동 이동, 옮길 곳이 없으면 당번이 처리
-- 회원 취소는 전날 정오까지 무료, 그 뒤 취소는 1점, 노쇼는 2점, 60일에 3점이면 2주 중단
-- 세 명 아래로 줄면 다른 테이블과 합치거나 종료, 둘만 남는 저녁은 만들지 않음
-- 계산은 각자, 계약서에 "separate checks"와 팁 정책 명시
-- 파일럿 조건: 수수료 없이 화, 수, 목 1~2테이블 확보, 늦은 취소로 생긴 식당 비용은 Hash Table이 부담
-- 규모: 식당 4곳이 화, 수, 목 2테이블씩이면 주 24테이블, 약 120명으로 200명 파일럿에 충분
+- Partner restaurants hold 1–3 tables on set weekday evenings, and Hash Table fills those seats
+- Restaurants get in touch only when they can't take the table; for restaurants that want to confirm every time, the address stays hidden until confirmed
+- What restaurants receive: the weekly plan on Sunday night, the final headcount at noon the day before, and any changes after that
+- Only headcount, time, dietary notes, and the captain's name are shared, with no member names
+- Restaurants confirm or decline on a dedicated page without signing in
+- If a restaurant cancels, the table moves automatically to another partner restaurant; if there is nowhere to move it, the person on duty handles it
+- Member cancellations are free until noon the day before; after that a cancellation is 1 point and a no-show is 2 points; 3 points in 60 days means a 2-week pause
+- If a table drops below three people, merge it with another table or end it; never create an evening with only two people left
+- Everyone pays separately; contracts state "separate checks" and the tip policy
+- Pilot terms: hold 1–2 tables on Tuesday, Wednesday, and Thursday with no fees; Hash Table covers restaurant costs from late cancellations
+- Scale: 4 restaurants with 2 tables each on Tuesday, Wednesday, and Thursday is 24 tables a week, about 120 people, enough for a 200-person pilot
 
-### 운영
+### Operations
 
-| 역할 | 누가 | 하는 일 |
+| Role | Who | What they do |
 |---|---|---|
-| Ops lead | 창업자 | 제휴 식당 섭외와 계약, 일요일 테이블 공개, 월 정산 |
-| 당번 | ops lead와 캠퍼스 리드 1~2명이 하루씩 교대 | 운영 알림을 메일로 받아 처리, 평소 하루 10~20분 |
-| 캡틴 | 테이블마다 회원 한 명이 돌아가며 | 장소를 골라 직접 예약(OpenTable, Resy, 전화), 토론 주제 투표 독려, 각자 계산 리드 |
+| Ops lead | Founder | Recruit and contract partner restaurants, publish tables on Sunday, monthly settlement |
+| Person on duty | The ops lead and 1–2 campus leads, rotating daily | Receive and handle operational alerts by email, usually 10–20 minutes a day |
+| Captain | One member per table, rotating | Picks the venue and books it directly (OpenTable, Resy, phone), encourages voting on discussion topics, leads splitting the bill |
 
-- 캡틴이 자기 이름으로 직접 예약, Hash Table은 식당에 연락하지 않아 운영 인력이 거의 필요 없는 구조
-- 미루다 무산되는 일은 자동 장치로 방지: 48시간 전 알림, 36시간 전 다른 회원에게 캡틴 이전, 당일 오후 2시까지 장소가 없으면 취소
-- 6명 예약에는 카드 보증과 1인 $25~50 취소 수수료가 흔해서, 늦은 취소로 캡틴이 수수료를 물 때 누가 낼지 정책 필요
-- 제휴 식당(테이블을 잡아두는 곳)은 규모가 커진 뒤 선택 기능으로 유지
-- 세 미션을 모두 하면 스트라이프, 다음 날 아침 테이블 사람들의 감사 표시
-- 스트라이프 보상: 업계 게스트와 만나는 Industry table에 48시간 먼저 신청, 배정도 우선
-- Industry table은 호스트 테이블(VC, 테크 회사 후원)과 연결 가능한 상품, 캡틴을 맡을 동기이자 후원사에는 검증된 참석자
-- 캡틴은 원하는 사람 우선, 최근에 맡은 사람은 뒤로, 두 시간 전까지 넘기기 가능
-- 캠퍼스 리드 보상은 무료 멤버십과 소정의 사례비 (가정)
-- 회원 1,000명이 넘으면 첫 정규직은 도시 매니저
-- 운영 부담은 주 24테이블 기준 당번 하루 15분, 일요일 공개 30분, 식당 관리 주 1~2시간 (가정)
+- The captain books under their own name, and Hash Table doesn't contact restaurants, so the structure needs almost no operations staff
+- Automated safeguards prevent plans from falling through due to procrastination: a reminder 48 hours ahead, the captain role passes to another member 36 hours ahead, and the table is canceled if there is no venue by 2pm on the day
+- Card guarantees and $25–50 per person cancellation fees are common for 6-person bookings, so a policy is needed on who pays when a captain is charged for a late cancellation
+- Partner restaurants (that hold tables) remain an optional feature once scale grows
+- Completing all three missions earns a stripe, plus thanks from the table the next morning
+- Stripe reward: sign up 48 hours early for Industry tables that meet industry guests, with priority seating
+- Industry tables are a product that can connect to hosted tables (sponsored by VCs and tech companies): a motivation to be captain, and verified attendees for sponsors
+- Volunteers get captain first, people who were captain recently go to the back, and the role can be handed off up to two hours before
+- Campus lead rewards: free membership and a small stipend (assumption)
+- Once membership passes 1,000, the first full-time hire is a city manager
+- Operating load at 24 tables a week: 15 minutes a day for the person on duty, 30 minutes on Sunday to publish, 1–2 hours a week for restaurant management (assumption)
 
-출처: Timeleft 도움말과 약관(help.timeleft.com, timeleft.com/terms-conditions), Timeleft 파트너 센터(timeleft-partners.zendesk.com), 222 파트너(partners.222.place), OpenTable 파트너 정책(restaurantdive.com 2026-03), Resy(blog.resy.com), 보스턴 식당 예약 정책(Comfort Kitchen, Black Lamb, Yvonne’s, Estella, Nubar, Althea), 매사추세츠 수수료 규정(Boston Globe 2025-09)
+Sources: Timeleft help and terms (help.timeleft.com, timeleft.com/terms-conditions), Timeleft partner center (timeleft-partners.zendesk.com), 222 partners (partners.222.place), OpenTable partner policy (restaurantdive.com 2026-03), Resy (blog.resy.com), Boston restaurant booking policies (Comfort Kitchen, Black Lamb, Yvonne's, Estella, Nubar, Althea), Massachusetts fee rules (Boston Globe 2025-09)
 
-### Hang을 무료로 두는 이유
+### Why Hang stays free
 
-- 열기 쉬워야 퍼지는 기능, Hang 링크를 공유하면 비회원도 학교 메일로 가입
-- 가장 저렴한 회원 획득 경로, Hang에서 만난 사람이 초대장을 받고 싶어 멤버로 전환
-- 나중에는 카페, 클라이밍장 같은 Hang 파트너가 혜택을 걸고 체크인당 $1~2 지불
-- 술보다 커피, 산책, 게임, 운동 중심, 안전을 위해 공공장소와 신고 기능 유지
+- It only spreads if it's easy to host; when a Hang link is shared, non-members can sign up with their school email
+- The cheapest member acquisition channel; people met at a Hang convert to members because they want invitations
+- Later, Hang partners such as cafes and climbing gyms can offer perks and pay $1–2 per check-in
+- Centered on coffee, walks, games, and exercise rather than drinking; public places and reporting stay in place for safety
 
-### 단계별 정리
+### Summary by stage
 
-| 단계 | 수익 | 증명할 숫자 |
+| Stage | Revenue | Numbers to prove |
 |---|---|---|
-| 파일럿 (지금~11월) | 무료, 늦은 변경 점수제만 | 초대장 수락률, 참석률, 주당 디너 수, Hang에서 초대장으로 넘어오는 비율 |
-| 캠퍼스 (2027 봄) | 학생 멤버십, 식당 2~3곳 수수료, 호스트 테이블 1~2곳 | 유료 전환 25%, 식당 재계약 |
-| 보스턴 (졸업생부터) | 정식 멤버십, 식당 네트워크, B2B | 월 유지율 50%, 회원당 식당 매출 |
-| 다른 도시 | 같은 공식 (아래 6장) | |
+| Pilot (now to November) | Free, late-change points only | Invitation acceptance rate, attendance, dinners per week, share converting from Hang to invitations |
+| Campus (spring 2027) | Student membership, fees from 2–3 restaurants, 1–2 hosted tables | 25% paid conversion, restaurant contract renewals |
+| Boston (starting with graduates) | Full membership, restaurant network, B2B | 50% monthly retention, restaurant revenue per member |
+| Other cities | Same formula (section 6 below) | |
 
-### 숫자로 보면 (가정, 보스턴 활성 회원 4,000명)
+### By the numbers (assumption, 4,000 active members in Boston)
 
-| 수익원 | 계산 | 연 매출 |
+| Revenue stream | Calculation | Annual revenue |
 |---|---|---|
-| 멤버십 | 4,000명 × 월 $20 × 12 | 약 $0.96M |
-| 식당 수수료 | 4,000명 × 주 1.2회 × 52주 × $4 | 약 $1.0M |
-| 호스트 테이블과 B2B | 기관 15~30곳 | 약 $0.3~0.6M |
-| 합계 | | 약 $2.3~2.6M |
+| Membership | 4,000 × $20 per month × 12 | ~$0.96M |
+| Restaurant fees | 4,000 × 1.2 times a week × 52 weeks × $4 | ~$1.0M |
+| Hosted tables and B2B | 15–30 institutions | ~$0.3–0.6M |
+| Total | | ~$2.3–2.6M |
 
-- 아래 5장의 보스턴 시나리오($1.4~1.6M)보다 큰 이유는 식당 매출
-- 자주 오는 회원이 많을수록 식당 매출도 함께 증가
+- Restaurant revenue is why this is larger than the Boston scenario in section 5 below ($1.4–1.6M)
+- The more frequent members there are, the more restaurant revenue grows too
 
-### 추가로 정할 것
+### Still to decide
 
-1. 무료 초대장 횟수: 한 달 1번(추천), 주 1번, 파일럿 동안 무제한 중 선택
-2. 호스트 테이블: 표시와 비율 제한을 두고 허용(추천) 또는 금지
-3. 첫 식당 계약: 손님당 수수료 또는 세트 메뉴 마진
+1. Number of free invitations: choose between once a month (recommended), once a week, or unlimited during the pilot
+2. Hosted tables: allow with labeling and a share limit (recommended), or ban
+3. First restaurant contract: per-guest fee or set menu margin
 
-## 1. 시장
+## 1. Market
 
-| 근거 | 내용 |
+| Evidence | Details |
 |---|---|
-| Timeleft (낯선 사람 6명 디너) | 2026년 4월 기준 연 매출 약 €18M, 월 이용자 15만 명, 직원 90명 이상, 출시 약 2년 만의 성과, 미국 가격 월 약 $20 |
-| 미국 친구 앱 시장 | 2025년 미국 친구 앱 10여 개의 소비자 지출 약 $16M, 다운로드 약 430만 건 (Appfigures) |
-| 최근 투자 | 222 시리즈 A $10.1M, Yope(비공개 친구 그룹 SNS) 시드 $12.3M |
-| 보스턴 | 시 인구의 3분의 1 이상이 20~34세, 미국 대도시 중 최상위 비율 |
+| Timeleft (dinners for 6 strangers) | As of April 2026, ~€18M annual revenue, 150K monthly users, 90+ employees, achieved about 2 years after launch, US price ~$20 per month |
+| US friend app market | In 2025, ~$16M in consumer spending across about 10 US friend apps, ~4.3M downloads (Appfigures) |
+| Recent funding | 222 Series A $10.1M, Yope (private friend-group social network) seed $12.3M |
+| Boston | Over a third of the city's population is 20–34, among the highest shares of any large US city |
 
-- 소규모 오프라인 모임 시장은 이제 막 커지는 단계, 확실한 1위는 아직 Timeleft 하나
-- 친구 앱 전체 지출은 데이팅 앱보다 훨씬 작은 규모
-- 사람들은 친구 사귀는 데 돈을 덜 쓰는 편이라 B2B(학교, 회사, 동문회) 병행 필요
+- The market for small in-person gatherings is just starting to grow; the only clear leader so far is Timeleft
+- Total spending on friend apps is far smaller than on dating apps
+- People tend to spend less on making friends, so B2B (schools, companies, alumni associations) needs to run in parallel
 
-## 2. 경쟁: 보스턴의 Timeleft
+## 2. Competition: Timeleft in Boston
 
-- Timeleft는 보스턴에서도 매주 수요일 디너 운영 중
-- 정면 승부 대신 Timeleft가 하지 않는 영역에 집중
+- Timeleft runs dinners every Wednesday in Boston too
+- Focus on what Timeleft doesn't do rather than competing head-on
 
 | | Timeleft | Hash Table |
 |---|---|---|
-| 형식 | 디너, 드링크, 커피, 러닝 | 디너 중심, 다시 만나는 테이블과 디너 밖 약속 |
-| 누구와 | 그 도시의 누구나 (성격 테스트) | 검증된 커뮤니티 (Harvard와 MIT에서 시작) |
-| 묶는 기준 | 성격 | 좋아하는 주제와 사람끼리의 궁합 |
-| 첫 만남 이후 | 서로 고른 사람끼리 채팅 | round two, 단골 테이블까지 설계 |
-| 분위기 | 가벼운 저녁, 새 사람 | 깊은 대화, 같은 사람을 여러 번 |
-| 테이블에서 하는 것 | 아이스브레이커 질문 | Tonight’s question: 그 주 가장 뜨거운 테크 질문으로 투표하고 편을 나누는 게임 |
-| 가격 | 월 약 $20 | 비슷한 수준, 단골 테이블 플랜은 프리미엄 |
+| Format | Dinners, drinks, coffee, runs | Dinner-centered, with tables that meet again and plans beyond dinner |
+| With whom | Anyone in the city (personality test) | A verified community (starting at Harvard and MIT) |
+| Grouping criterion | Personality | Favorite topics and personal fit |
+| After the first meeting | Chat between people who picked each other | Designed through round two and regular tables |
+| Atmosphere | Light evenings, new people | Deep conversation, the same people many times |
+| At the table | Icebreaker questions | Tonight's question: a game of voting and picking sides on the hottest tech question of the week |
+| Price | ~$20 per month | Similar, with a premium plan for regular tables |
 
-차별점 네 가지
+Four differentiators
 
-1. 누구와 앉는지: 처음엔 학교 인증, 퍼블릭 후엔 신청과 추천제, 큐레이션 자체가 브랜드
-2. 왜 모이는지: "Healthcare AI 디너"는 성격 매칭보다 신청 명분이 분명
-3. 이어지는 관계: 친구가 되려면 약 50시간 필요, 다시 만나는 구조를 제품에 넣은 곳은 아직 없음, 이것이 곧 유지율
-4. 재미: 단톡방에서 미리 투표하고 편을 고르며 디너 전부터 대화 시작, 매주 그 주 뉴스로 만든 질문이라 새로운 참석 명분
+1. Who you sit with: school verification at first, application and referral after going public; curation itself is the brand
+2. Why people gather: a "Healthcare AI dinner" gives a clearer reason to sign up than personality matching
+3. Continuing relationships: becoming friends takes about 50 hours, and no one has yet built a meet-again structure into the product; that is retention
+4. Fun: voting and picking sides in the group chat starts the conversation before dinner, and a question built on each week's news gives a fresh reason to attend
 
-- 아직 없는 성장 장치: 디너 뒤 "우리 테이블은 4–2로 갈렸다" 결과 카드 공유
-- 요일: Timeleft가 수요일이라 테크 테이블은 화요일이나 목요일 중심으로 검토
+- A growth mechanic not built yet: sharing a result card after dinner, "our table split 4–2"
+- Days: since Timeleft is on Wednesdays, consider centering tech tables on Tuesday or Thursday
 
-## 3. 수익원
+## 3. Revenue streams
 
-| 수익원 | 시작 시점 | 가격 (가정) | 메모 |
+| Revenue stream | Starts | Price (assumption) | Notes |
 |---|---|---|---|
-| 늦은 변경 수수료 | 결제 기능 도입 후 | 1인 약 $15 | 수익보다 노쇼 방지 목적, 지금은 점수제 |
-| 학생 멤버십 | 캠퍼스 단계 | 학기당 $29 또는 좌석당 $6 | 지불 의향 확인 목적 |
-| 도시 멤버십 | 퍼블릭 | 월 $20~25, 테이블 무제한 | Timeleft와 비슷한 가격대 |
-| 단골 테이블 플랜 | 퍼블릭 | 월 +$10 | 같은 멤버 테이블 우선 배정, 전용 단톡방, 유지율의 핵심 |
-| B2B 패키지 | 캠퍼스 단계부터 | 참가자당 학기 $40~80 또는 기관당 연 $10~30k | 아래 참고 |
-| 식당 제휴 | 퍼블릭 | 손님당 소액 수수료 또는 할인 | 평일 저녁 단체석을 채워주는 대가 |
+| Late-change fee | After payments launch | ~$15 per person | More for preventing no-shows than for revenue; points for now |
+| Student membership | Campus stage | $29 per term or $6 per seat | To test willingness to pay |
+| City membership | Public | $20–25 per month, unlimited tables | Similar price range to Timeleft |
+| Regular table plan | Public | +$10 per month | Priority seating with the same members, a dedicated group chat; key to retention |
+| B2B package | From the campus stage | $40–80 per participant per term, or $10–30k per institution per year | See below |
+| Restaurant partnerships | Public | Small per-guest fee or discount | In return for filling group seating on weekday evenings |
 
-### B2B가 중요한 이유
+### Why B2B matters
 
-- 친구 사귀는 데 돈을 쓰는 개인은 적지만, 구성원끼리 친해지길 바라는 기관은 기꺼이 지불
+- Few individuals spend money on making friends, but institutions that want their members to bond will gladly pay
 
-| 고객 | 원하는 것 | Hash Table이 주는 것 |
+| Customer | What they want | What Hash Table provides |
 |---|---|---|
-| 대학원, 학생처 | 신입생 적응, 학교 간 교류 | 학기 첫 8주 테크와 소셜 테이블 운영 |
-| 동문회 (보스턴 거주 동문) | 동문 참여 | 동문 전용 테이블 |
-| Kendall과 보스턴 기업 (바이오, 테크) | 신입 사원 적응, 원격 근무 이후의 유대감 | 신입 기수 디너 프로그램 |
-| 병원 (레지던트), 연구소 (포닥) | 보스턴에 새로 온 사람들의 정착 | 소셜 테이블 |
+| Graduate schools, student affairs | New student onboarding, cross-school exchange | Run tech and social tables for the first 8 weeks of the term |
+| Alumni associations (alumni in Boston) | Alumni engagement | Alumni-only tables |
+| Kendall and Boston companies (bio, tech) | New hire onboarding, connection after remote work | New-hire cohort dinner program |
+| Hospitals (residents), research institutes (postdocs) | Helping newcomers settle in Boston | Social tables |
 
-- B2B로 들어온 사람이 나중에 개인 멤버로 전환
-- 학교 커뮤니티에서 시작하는 Hash Table과도 잘 맞는 방향
+- People who come in through B2B later convert to individual members
+- A direction that also fits Hash Table starting from school communities
 
-## 4. 단위 경제 (가정, 퍼블릭 단계)
+## 4. Unit economics (assumption, public stage)
 
-| 항목 | 회원 1명, 월 기준 | 메모 |
+| Item | Per member, per month | Notes |
 |---|---|---|
-| 매출 | $22 | 월, 분기 플랜 평균 |
-| 결제 수수료 | -$1 | 웹 결제 기준, 앱스토어 수수료 없음 |
-| 운영 (식당 관리, 고객 지원, 매칭 검토) | -$3 | 테이블이 늘수록 감소 |
-| 공헌이익 | 약 $18 | 식사비는 회원이 직접 내서 원가가 거의 없음 |
-| 획득 비용 (CAC) | 캠퍼스 $5~10, 도시 유료 광고 $30~50 | 클럽, 추천, 공유 카드면 훨씬 저렴 |
-| 평균 유지 기간 | 목표 6개월 이상 | 사업 성패를 가르는 숫자 |
-| 생애가치 (LTV) | 약 $108 (6개월 기준) | LTV/CAC 3 이상이려면 CAC $35 이하 |
+| Revenue | $22 | Average of monthly and quarterly plans |
+| Payment fees | -$1 | Web payments; no App Store fees |
+| Operations (restaurant management, customer support, matching review) | -$3 | Decreases as tables grow |
+| Contribution margin | ~$18 | Members pay for their own meals, so there is almost no cost of goods |
+| Acquisition cost (CAC) | $5–10 on campus, $30–50 with paid ads in a city | Much cheaper through clubs, referrals, and share cards |
+| Average retention | Target 6+ months | The number that decides whether the business works |
+| Lifetime value (LTV) | ~$108 (at 6 months) | CAC must be $35 or less for LTV/CAC of 3+ |
 
-- 데이팅 앱은 짝을 찾으면 떠나지만, 단골 테이블은 계속 모이려면 계속 구독해야 해서 성공이 곧 유지
-- 단골 테이블 플랜이 중요한 이유
+- People leave dating apps once they find a match, but a regular table requires an ongoing subscription to keep meeting, so success means retention
+- This is why the regular table plan matters
 
-## 5. 규모 시나리오 (가정)
+## 5. Scale scenarios (assumption)
 
-| 시나리오 | 시점 (예시) | 유료 회원 | 연 매출 |
+| Scenario | Timing (example) | Paid members | Annual revenue |
 |---|---|---|---|
-| 보스턴만 | 2029 | 4,000명 × $22 × 12, B2B 15곳 | 약 $1.4~1.6M |
-| 5개 도시 | 2030 | 25,000명, B2B | 약 $8M |
-| 비교: Timeleft | 2026 | 월 15만 명, 200개 넘는 도시 | €18M |
+| Boston only | 2029 | 4,000 × $22 × 12, 15 B2B customers | ~$1.4–1.6M |
+| 5 cities | 2030 | 25,000, B2B | ~$8M |
+| Comparison: Timeleft | 2026 | 150K monthly, 200+ cities | €18M |
 
-- 보스턴 4,000명은 광역권 20~34세의 1%도 안 되는 숫자라 달성 가능
-- 다만 보스턴 하나로는 투자자가 원하는 규모가 나오지 않음
-- 그래서 처음부터 다음 도시로 복제되는 공식을 증명하는 것이 목표
+- 4,000 in Boston is less than 1% of 20–34 year olds in the metro area, so it is achievable
+- But Boston alone doesn't produce the scale investors want
+- So the goal from the start is to prove a formula that replicates to the next city
 
-## 6. 성장 루프
+## 6. Growth loops
 
-| 루프 | 작동 방식 | 유리한 이유 |
+| Loop | How it works | Why it has an edge |
 |---|---|---|
-| 1. 클럽 | 클럽 협업 → 멤버 참여 → 다른 클럽도 참여 | HBS와 MIT 클럽은 수십 개, 서로 보고 따라 하는 문화 |
-| 2. 페르소나 공유 | Friend test를 웹 테스트로 공개, 결과 카드 공유 → 대기자 유입 | Amie의 공유 카드 그대로 활용, 가입 전 입구 |
-| 3. 추천 | 회원마다 초대권 2장, 초대한 친구는 다른 테이블에 배정 | 퍼블릭의 신청과 추천제로 그대로 연결 |
-| 4. 졸업생 | 졸업 후 보스턴에 남으면 퍼블릭 회원, 떠나면 다음 도시의 첫 멤버 | HBS와 Sloan 졸업생이 몰리는 NYC, SF, 런던 |
-| 5. B2B | 학교와 회사가 기수 단위로 구매 → 참가자가 개인 멤버로 전환 | 획득 비용이 거의 0 |
+| 1. Clubs | Club partnership → members join → other clubs join too | HBS and MIT have dozens of clubs, with a culture of watching and copying each other |
+| 2. Persona sharing | Publish the Friend test as a web test; share result cards → waitlist signups | Reuses Amie's share cards; an entry point before signing up |
+| 3. Referrals | 2 invites per member; invited friends are seated at different tables | Connects directly to the application and referral model at the public stage |
+| 4. Graduates | Graduates who stay in Boston become public members; those who leave become the first members in the next city | NYC, SF, and London, where HBS and Sloan graduates cluster |
+| 5. B2B | Schools and companies buy by cohort → participants convert to individual members | Acquisition cost of nearly zero |
 
-### 도시 확장 공식
+### City expansion formula
 
-1. 그 도시의 명문 캠퍼스 두 곳을 짝지어 시작 (예: NYC의 Columbia × NYU Stern, SF의 Stanford × Berkeley)
-2. 그 학교 클럽과 협업, 보스턴 출신 졸업생이 첫 캡틴
-3. 한 학기 뒤 동문과 젊은 직장인에게 개방
-4. 1년 뒤 그 도시 퍼블릭 런칭
+1. Start by pairing two top campuses in the city (e.g. Columbia × NYU Stern in NYC, Stanford × Berkeley in SF)
+2. Partner with those schools' clubs; graduates from Boston serve as the first captains
+3. Open to alumni and young professionals after one term
+4. Public launch in that city after one year
 
-## 7. 증명해야 할 것
+## 7. What needs to be proven
 
-| 질문 | 측정 | 합격선 (가정) |
+| Question | Measure | Pass line (assumption) |
 |---|---|---|
-| 사람들이 오는가 | 신청 대비 참석률 | 90% |
-| 다시 오는가 | 3주 안 재신청, 월간 유지 | 60%, 50% |
-| 친구가 되는가 | 세 번째 만남 쌍의 수 | 파일럿 20쌍, 캠퍼스 200쌍 |
-| 돈을 내는가 | 학기 멤버십 사전 판매 전환율 | 참석자의 25% |
-| 기관이 원하는가 | 유료 B2B 파일럿 | 1~2곳 (학생처, 동문회, Kendall 기업 중) |
+| Do people come? | Attendance vs. sign-ups | 90% |
+| Do they come back? | Re-signup within 3 weeks, monthly retention | 60%, 50% |
+| Do they become friends? | Number of third-meeting pairs | 20 pairs in the pilot, 200 pairs on campus |
+| Do they pay? | Conversion on spring term membership presales | 25% of attendees |
+| Do institutions want it? | Paid B2B pilot | 1–2 (among student affairs, alumni associations, Kendall companies) |
 
-- 파일럿 3~4주차에 봄 학기 멤버십 $29 사전 판매로 지불 의향 바로 확인
+- Presell $29 spring term memberships in weeks 3–4 of the pilot to test willingness to pay right away
 
-## 8. 6개월 로드맵
+## 8. Six-month roadmap
 
-| 시기 | 할 일 |
+| When | To do |
 |---|---|
-| 10월 | 클럽 4쌍 피치, Central Square 식당 2~3곳 확보, 실제 서버 배포와 알파 테스트 |
-| 10월 말~11월 | 4주 파일럿, 테크와 소셜 테이블, round two, 4주차에 봄 학기 멤버십 사전 판매 |
-| 12월 | 결과 정리, Friend test 웹 테스트 공개, B2B 논의 시작 |
-| 2027년 1~2월 | 학교 창업 프로그램 지원 (HBS New Venture Competition, MIT $100K, MIT delta v 등) |
-| 2027년 봄 | 캠퍼스 단계, Harvard와 MIT 대학원 전체, 유료 전환, 첫 B2B 계약 |
+| October | Pitch 4 club pairs, secure 2–3 restaurants in Central Square, deploy to a real server and alpha test |
+| Late October to November | 4-week pilot with tech and social tables and round two; presell spring term memberships in week 4 |
+| December | Summarize results, publish the Friend test as a web test, start B2B discussions |
+| January to February 2027 | Apply to school startup programs (HBS New Venture Competition, MIT $100K, MIT delta v, etc.) |
+| Spring 2027 | Campus stage: all Harvard and MIT graduate students, paid conversion, first B2B contract |
 
-## 9. 리스크
+## 9. Risks
 
-| 리스크 | 위험한 이유 | 대응 |
+| Risk | Why it's dangerous | Response |
 |---|---|---|
-| Timeleft의 반격 | 압도적인 자금과 운영력 | 큐레이션, 주제, 다시 만나는 테이블이라는 틈새에 집중, 검증된 커뮤니티는 따라 하기 어려움 |
-| 유지율 | 몇 번 오고 끊기면 단위 경제 붕괴 | 단골 테이블 플랜, round two |
-| 학사 일정 | 여름과 겨울에 학생 이탈 | 캠퍼스는 증명 단계, 매출은 퍼블릭에서 |
-| 무거운 운영 | 식당, 노쇼, 고객 지원 | 동네 단위 오픈, 늦은 변경 규칙, 식당 자동 배치와 당번제 |
-| 학교 이름과 브랜드 | 학교가 보증하는 것처럼 보일 위험 | "Harvard와 MIT 학생이 만든"까지만 사용, 로고와 공식 표현 미사용 |
-| 상표 | Hash Table 등록 여부 미확인 | 퍼블릭 전 USPTO 상표 검색과 도메인 확보 |
-| 개인정보 | 생활 단계 같은 민감 정보 | Amie의 동의 화면과 데이터 정책 적용 |
-| 집중력 | Amie와 동시에 하면 둘 다 느려짐 | 엔진과 서버는 공유, 시장 검증은 하나씩 |
+| Timeleft strikes back | Overwhelming funding and operating power | Focus on the niche of curation, topics, and tables that meet again; a verified community is hard to copy |
+| Retention | If people come a few times and stop, unit economics collapse | Regular table plan, round two |
+| Academic calendar | Students leave in summer and winter | Campus is the proof stage; revenue comes from the public stage |
+| Heavy operations | Restaurants, no-shows, customer support | Neighborhood-by-neighborhood launch, late-change rules, automatic restaurant assignment and duty rotation |
+| School names and brand | Risk of appearing school-endorsed | Use only "built by Harvard and MIT students"; no logos or official wording |
+| Trademark | Whether Hash Table is registered is unconfirmed | USPTO trademark search and domain before going public |
+| Privacy | Sensitive information such as life stage | Apply Amie's consent screens and data policy |
+| Focus | Doing it alongside Amie slows both down | Share the engine and server; validate markets one at a time |
 
-## 10. 지금 정할 것
+## 10. Decide now
 
-1. 파일럿 목표: 재미가 아닌 숫자 다섯 개로 잡기(추천)
-2. B2B 시작 시점: 파일럿 직후(추천) 또는 퍼블릭 이후
-3. 테크 테이블 요일: Timeleft와 겹치는 수요일 포함 또는 화, 목 중심
-4. Amie와의 우선순위: Hash Table 먼저, Amie 먼저, 동시 진행 중 선택
+1. Pilot goals: set five numbers rather than "fun" (recommended)
+2. When to start B2B: right after the pilot (recommended) or after going public
+3. Tech table days: include Wednesday, which overlaps with Timeleft, or center on Tuesday and Thursday
+4. Priority versus Amie: choose Hash Table first, Amie first, or both at once
 
-## 출처
+## Sources
 
-- Timeleft ARR, 이용자, 인원: [ARR Club, 2026-04](https://www.arr.club/timeleft/timeleft-reaches-18m-arr-with-150k-monthly-users), [Tim Frin 인터뷰](https://timfrin.substack.com/p/inside-timelefts-journey-to-connecting)
-- Timeleft 미국 가격과 보스턴 운영: [Timeleft 리뷰](https://www.travelherstory.com/timeleft-review/), [BOStoday](https://bostoday.6amcity.com/food/go-to-dinner-with-strangers-in-boston-with-timeleft), [Timeleft 구독 안내](https://help.timeleft.com/hc/en-150/articles/16452428787100-How-do-Timeleft-Subscriptions-Work)
-- 친구 앱 시장(Appfigures), 222, 경쟁 앱 목록: [TechCrunch, 2026-04-05](https://techcrunch.com/2026/04/05/as-people-look-for-ways-to-make-new-friends-here-are-the-apps-promising-to-help/)
-- Yope 투자: [TechCrunch, 2026-07-22](https://techcrunch.com/2026/07/22/yope-raises-12-3m-to-build-a-private-social-network-without-algorithms-or-ads/)
-- 보스턴 20~34세 비율: [City of Boston, Boston’s People and Economy](https://www.boston.gov/sites/default/files/file/2025/11/Boston%27s%20People%20and%20Economy.pdf)
+- Timeleft ARR, users, headcount: [ARR Club, 2026-04](https://www.arr.club/timeleft/timeleft-reaches-18m-arr-with-150k-monthly-users), [Tim Frin interview](https://timfrin.substack.com/p/inside-timelefts-journey-to-connecting)
+- Timeleft US pricing and Boston operations: [Timeleft review](https://www.travelherstory.com/timeleft-review/), [BOStoday](https://bostoday.6amcity.com/food/go-to-dinner-with-strangers-in-boston-with-timeleft), [Timeleft subscription info](https://help.timeleft.com/hc/en-150/articles/16452428787100-How-do-Timeleft-Subscriptions-Work)
+- Friend app market (Appfigures), 222, list of competing apps: [TechCrunch, 2026-04-05](https://techcrunch.com/2026/04/05/as-people-look-for-ways-to-make-new-friends-here-are-the-apps-promising-to-help/)
+- Yope funding: [TechCrunch, 2026-07-22](https://techcrunch.com/2026/07/22/yope-raises-12-3m-to-build-a-private-social-network-without-algorithms-or-ads/)
+- Boston share of 20–34 year olds: [City of Boston, Boston's People and Economy](https://www.boston.gov/sites/default/files/file/2025/11/Boston%27s%20People%20and%20Economy.pdf)
 - Pie: [TechCrunch, 2025-03-04](https://techcrunch.com/2025/03/04/andy-dunns-new-app-pie-uses-ai-to-help-you-make-friends), [Pulse 2.0](https://pulse2.com/pie-social-app-company-raises-11-5-million-series-a/)
 - Lunchclub: [YourStory](https://ts.yourstory.com/weekender/ai-enabled-networking-startup-lunchclub-connections), [Welcome to the Jungle](https://app.welcometothejungle.com/companies/Lunchclub)
 - Boardy: [The Logic](https://thelogic.co/briefing/boardy-ai-raises-us8m-seed-round-for-ai-networking-tool/)
 - Series: [Hartford Business Journal](https://hartfordbusiness.com/article/yale-students-raise-31m-in-14-days-for-ai-powered-social-platform/)
 - Hampton: [Hampton FAQ](https://joinhampton.com/faq), [Long Angle](https://www.longangle.com/blog/eo-vs-hampton)
 - Chief: [Fortune, 2023-03-16](https://fortune.com/2023/03/16/chief-womens-network-startup-price-valuation-waitlist-members/)
-- South Park Commons: [SPC NYC 발표](https://blog.southparkcommons.com/p/announcing-spc-nyc), [SPC community](https://southparkcommons.com/community)
-- 테크 디너 시리즈: [Tech2Table](https://tech2table.beehiiv.com/p/hello-world), [Founders Dinner](https://www.foundersdinner.org/), [Founder Dinners](https://www.founderdinners.com/), [SignalFire 디너 플레이북](https://www.signalfire.com/blog/curated-dinner-playbook-for-startups)
-- 보스턴: [Venture Café 목요 모임](https://www.thebostoncalendar.com/events/venture-cafe-cambridge-thursday-gathering--106), [Boston Tech Week (Hoodline)](https://hoodline.com/2026/05/tech-bros-storm-beantown-as-a16z-turns-boston-into-weeklong-startup-circus/), [MIT Professional Education](https://professional.mit.edu/events/boston-tech-week)
-- NYC Tech Week: [Tech Week 캘린더](https://www.tech-week.com/calendar/nyc), [Carly 일정](https://www.usecarly.com/nyc-tech-week-schedule/)
-- 매사추세츠 테크 인력 약 27만 명: [Jobstrack (CompTIA 인용)](https://jobstrack.io/blog/locations/boston-tech-job-scene-2026)
-- 친구가 되는 데 걸리는 시간: Hall, J. A. (2019). How many hours does it take to make a friend? Journal of Social and Personal Relationships
+- South Park Commons: [SPC NYC announcement](https://blog.southparkcommons.com/p/announcing-spc-nyc), [SPC community](https://southparkcommons.com/community)
+- Tech dinner series: [Tech2Table](https://tech2table.beehiiv.com/p/hello-world), [Founders Dinner](https://www.foundersdinner.org/), [Founder Dinners](https://www.founderdinners.com/), [SignalFire dinner playbook](https://www.signalfire.com/blog/curated-dinner-playbook-for-startups)
+- Boston: [Venture Café Thursday Gathering](https://www.thebostoncalendar.com/events/venture-cafe-cambridge-thursday-gathering--106), [Boston Tech Week (Hoodline)](https://hoodline.com/2026/05/tech-bros-storm-beantown-as-a16z-turns-boston-into-weeklong-startup-circus/), [MIT Professional Education](https://professional.mit.edu/events/boston-tech-week)
+- NYC Tech Week: [Tech Week calendar](https://www.tech-week.com/calendar/nyc), [Carly schedule](https://www.usecarly.com/nyc-tech-week-schedule/)
+- About 270K tech workers in Massachusetts: [Jobstrack (citing CompTIA)](https://jobstrack.io/blog/locations/boston-tech-job-scene-2026)
+- Time it takes to become friends: Hall, J. A. (2019). How many hours does it take to make a friend? Journal of Social and Personal Relationships
