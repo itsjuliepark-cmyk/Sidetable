@@ -1,14 +1,14 @@
-# Hash Table 웹앱
+# Hash Table Web App
 
-- Harvard, MIT 파일럿에서 실제로 쓰는 웹앱
-- 앱스토어 설치 없이 브라우저 링크로 접속, 홈 화면에 추가하면 앱처럼 사용 가능
-- 외부 패키지 없는 Node 서버 파일 하나와 JSON 데이터 파일 하나로 동작 (Amie 베타와 같은 구조)
-- 화면 이름은 Hash Table, 코드 폴더(sixtop/)와 환경 변수(SIXTOP_*), GitHub 저장소 이름(Sidetable)은 예전 이름 그대로
-- Harvard는 HBS뿐 아니라 College, Kennedy School, Law, Medical, SEAS 등 모든 학교 가입 가능
-- 학교 밖 사람을 받을 때는 `public/shared.js`의 `SCHOOLS`에 학교와 이메일 도메인만 추가
-- 기획은 [CONCEPT.md](../CONCEPT.md), 사업 검토는 [BUSINESS.md](../BUSINESS.md), 초기 프로토타입은 [sixtop.html](../sixtop.html)
+- The web app actually used in the Harvard and MIT pilot
+- Opened from a browser link with no App Store install; add it to the home screen to use it like an app
+- Runs on a single Node server file with no external packages and a single JSON data file (same structure as the Amie beta)
+- The screens say Hash Table, but the code folder (sixtop/), environment variables (SIXTOP_*), and GitHub repository name (Sidetable) keep the old names
+- At Harvard, every school can sign up, not just HBS: the College, Kennedy School, Law, Medical, SEAS, and more
+- To accept people from outside these schools, just add the school and email domain to `SCHOOLS` in `public/shared.js`
+- Planning is in [CONCEPT.md](../CONCEPT.md), business review in [BUSINESS.md](../BUSINESS.md), and the early prototype in [sixtop.html](../sixtop.html)
 
-## 로컬에서 실행
+## Running locally
 
 ```bash
 npm run seed
@@ -18,547 +18,547 @@ npm run seed
 npm run dev
 ```
 
-- `seed`: 샘플 회원 40명(Harvard 20, MIT 20)과 데모 데이터 생성, Jordan으로 들어가는 링크 출력
-  - 지난주 테크 디너: 다음 날 픽과 1:1 채팅까지 끝난 상태, 3명이 yes 해서 round two 예약, 빈자리는 새 사람
-  - 이번 주: Jordan에게 온 초대장 두 장(테크, 소셜), 소셜 테이블 캡틴은 Jordan
-  - 다음 주: 34명이 가능한 저녁을 이미 고른 상태라 관리자 화면에서 바로 테이블 구성 가능
-  - 지난주 테이블에서 Jordan이 캡틴 미션 셋을 모두 해서 스트라이프 1개, 다음 주 Industry table 하나
-  - 그 밖에 Hang 6개, Board 글, 가상의 캡틴 예약 식당 4곳
-- `dev`: 관리자 키는 `local-admin`, 인증 코드는 메일 대신 화면에 표시, 실제 파일럿에는 사용 금지
-- 웹앱 주소 <http://localhost:8800>, 관리자 페이지 <http://localhost:8800/admin>
-- 폰 데모(`npm run demo`)는 일요일 밤을 기다리지 않고 저녁을 고르는 즉시 초대장 생성
-- `npm run demo`를 실행하면 저장소의 `demo/hash-table-demo.html`도 새로 생성, 코드를 바꾼 뒤 함께 커밋
-  - 첫 화면 Join에서 세 가지로 시작: 처음부터 가입, 가입 끝난 새 회원, Jordan
+- `seed`: creates 40 sample members (20 Harvard, 20 MIT) and demo data, and prints a link that signs you in as Jordan
+  - Last week's tech dinner: next-day picks and 1:1 chats are done; 3 people said yes, so round two is booked, with new people in the empty seats
+  - This week: Jordan has two invitations (tech and social), and Jordan is captain of the social table
+  - Next week: 34 people have already picked their available evenings, so tables can be built right away from the admin screen
+  - At last week's table, Jordan completed all three captain missions, earning 1 stripe and one Industry table next week
+  - Also 6 Hangs, Board posts, and 4 fictional restaurants booked by captains
+- `dev`: the admin key is `local-admin`, and verification codes are shown on screen instead of emailed; never use it for the real pilot
+- Web app at <http://localhost:8800>, admin page at <http://localhost:8800/admin>
+- The phone demo (`npm run demo`) creates invitations as soon as you pick an evening, without waiting for Sunday night
+- Running `npm run demo` also regenerates `demo/hash-table-demo.html` in the repository; commit it together with any code changes
+  - The first screen's Join offers three starting points: sign up from scratch, a new member who has finished signing up, or Jordan
 
-## 실제 파일럿 실행
+## Running the real pilot
 
 ```bash
 SIXTOP_ADMIN_KEY=choose-a-long-secret SIXTOP_PUBLIC_URL=https://your-domain npm start
 ```
 
-| 환경 변수 | 기본값 | 설명 |
+| Environment variable | Default | Description |
 |---|---|---|
-| `SIXTOP_ADMIN_KEY` | 실행마다 랜덤, 로그에 출력 | 관리자 페이지 키, https 주소에서는 16자 이상 필수 |
-| `PORT` | 8800 | Railway 등에서는 자동 지정 |
-| `SIXTOP_DATA_DIR` | Railway 볼륨 경로, 없으면 `./data` | 회원, 테이블, 채팅, 사진, 백업 저장 위치, Railway에서 볼륨이 없으면 시작 거부 |
-| `SIXTOP_PUBLIC_URL` | 없음 | 초대 링크, 클럽 링크, 식당 링크의 기본 주소 |
-| `SIXTOP_TZ` | `America/New_York` | 마감, 장소 공개 등 시각 계산 기준 |
-| `SIXTOP_AREA` | `Central Square` | 새로 여는 밤의 기본 동네 |
-| `RESEND_API_KEY`, `SIXTOP_MAIL_FROM` | 없음 | 인증 코드와 식당 메일을 보내는 [Resend](https://resend.com) 키와 보내는 주소, 없으면 가입 불가 |
-| `SIXTOP_MAIL` | 없음 | `show`면 인증 코드를 화면에 표시, 로컬 개발과 데모 전용, https 주소에서는 시작 거부 |
-| `SIXTOP_AUTO_WEEK` | 없음 | `1`이면 일요일 20시에 다음 주 테이블 자동 구성과 공개 |
-| `SIXTOP_PUSH_DAY` | 4 | 한 사람이 하루에 받는 알림 최대 개수 |
-| `SIXTOP_VAPID_PUBLIC`, `SIXTOP_VAPID_PRIVATE` | 처음 실행 때 생성해 데이터 폴더에 저장 | 푸시 알림 키, 바꾸면 회원 전원 알림 재설정 필요, 잘못된 키면 시작 거부 |
-| `SIXTOP_VAPID_SUBJECT` | `SIXTOP_PUBLIC_URL`이 https면 그 주소 | 푸시 서비스에 알릴 연락처(예: `mailto:hello@your-domain`), 가짜 주소면 애플이 알림 거부 |
+| `SIXTOP_ADMIN_KEY` | Random on each run, printed to the log | Admin page key; must be 16+ characters on an https address |
+| `PORT` | 8800 | Assigned automatically on Railway and similar |
+| `SIXTOP_DATA_DIR` | Railway volume path, otherwise `./data` | Where members, tables, chats, photos, and backups are stored; refuses to start on Railway without a volume |
+| `SIXTOP_PUBLIC_URL` | None | Base address for invitation links, club links, and restaurant links |
+| `SIXTOP_TZ` | `America/New_York` | Time zone for deadlines, venue reveals, and other time calculations |
+| `SIXTOP_AREA` | `Central Square` | Default neighborhood for newly opened nights |
+| `RESEND_API_KEY`, `SIXTOP_MAIL_FROM` | None | [Resend](https://resend.com) key and sender address for verification codes and restaurant email; sign-up is impossible without them |
+| `SIXTOP_MAIL` | None | `show` displays verification codes on screen; for local development and demos only; refuses to start on an https address |
+| `SIXTOP_AUTO_WEEK` | None | `1` builds and publishes next week's tables automatically at 20:00 on Sunday |
+| `SIXTOP_PUSH_DAY` | 4 | Maximum number of notifications one person receives per day |
+| `SIXTOP_VAPID_PUBLIC`, `SIXTOP_VAPID_PRIVATE` | Generated on first run and saved in the data folder | Push notification keys; changing them requires every member to re-enable notifications; refuses to start with invalid keys |
+| `SIXTOP_VAPID_SUBJECT` | `SIXTOP_PUBLIC_URL` if it is https | Contact given to push services (e.g. `mailto:hello@your-domain`); Apple rejects notifications with a fake address |
 
-## 한 주 운영
+## Running a week
 
-관리자 탭: Tables, Places, Ops, Pop-ups, People, Roles, Links, Reports
+Admin tabs: Tables, Places, Ops, Pop-ups, People, Roles, Links, Reports
 
-| 언제 | 내용 |
+| When | What happens |
 |---|---|
-| 처음 한 번 | Links 탭에서 클럽별 가입 링크 생성 후 클럽 채널에 공유, 제휴 식당은 Places, 운영팀은 Ops 탭에 등록 |
-| 일요일 18:00까지 | 회원이 다음 주 디너 횟수(1~5)와 가능한 저녁(월~금) 선택 |
-| 일요일 저녁 | Tables 탭에서 Build the tables로 테이블 구성, 확인 후 Publish the week, 식당과 캡틴은 자동 배정 |
-| 일요일 22:00 | 제휴 식당마다 그 주 계획 메일 발송 |
-| 공개 직후 | 회원에게 초대장과 단톡방 오픈, Charlie가 테이블 소개와 그 주 질문 게시 |
-| 전날 09:00 | 정오까지는 무료로 바꿀 수 있다는 알림 |
-| 전날 정오 | 무료 변경 마감, 식당에 최종 인원 발송 (월요일 테이블은 일요일 저녁에 나가서 월요일 오전 10시) |
-| 당일 정오 | 식당 주소 공개, 단톡방에 캡틴 이름 게시 |
-| 당일 저녁 | 테이블에서 Table deck 3라운드 진행 |
-| 다음 날 10:00 | 피드백 알림: 참석 여부, 평점, 다시 보고 싶은 사람, round two 여부 |
-| 그 뒤 | 서로 고른 사람끼리 1:1 채팅 오픈, 관리자는 출석 표시 |
+| Once, at the start | Create a sign-up link per club in the Links tab and share it in club channels; register partner restaurants in Places and the ops team in Ops |
+| By 18:00 Sunday | Members choose next week's number of dinners (1 to 5) and available evenings (Mon to Fri) |
+| Sunday evening | Build tables with Build the tables in the Tables tab, review, then Publish the week; restaurants and captains are assigned automatically |
+| 22:00 Sunday | The week's plan is emailed to each partner restaurant |
+| Right after publishing | Invitations and group chats open for members; Charlie posts a table introduction and the week's question |
+| 09:00 the day before | Reminder that changes are free until noon |
+| Noon the day before | Free changes close and the final headcount goes to the restaurant (Monday tables go out Sunday evening, with the deadline at 10am Monday) |
+| Noon on the day | Restaurant address revealed and the captain's name posted in the group chat |
+| That evening | The table plays the three rounds of the Table deck |
+| 10:00 the next day | Feedback prompt: attended or not, rating, who to see again, round two or not |
+| After that | 1:1 chats open between people who picked each other; the admin marks attendance |
 
-- `SIXTOP_AUTO_WEEK=1`이면 일요일 20시에 구성과 공개까지 자동 진행
-- 특별한 밤은 Tables 탭의 A special night에서 날짜와 동네를 정해 따로 모집, 3일 전 마감
-- 관리자 화면 맨 위 숫자는 BUSINESS.md의 합격선 지표와 동일
+- With `SIXTOP_AUTO_WEEK=1`, building and publishing run automatically at 20:00 on Sunday
+- Special nights are set up separately under A special night in the Tables tab with a date and neighborhood; sign-ups close 3 days before
+- The numbers at the top of the admin screen are the same pass-line metrics as in BUSINESS.md
 
-## 화면
+## Screens
 
-### 첫 화면
+### First screen
 
-- 22초짜리 세로 영상이 화면 가득 재생, 위에 # 표시와 Hash Table 로고, 아래쪽에 Charlie의 문장, 맨 아래 Sign in과 Join
-- 늦은 오후 햇살 같은 따뜻한 색감, 학생들이 직접 뭔가를 만드는 테크 장면이 중심
-- 영상은 다섯 장면으로 구성
-  1. 가을 캠퍼스, 잔디밭의 커피와 노트북, 수업 가는 길, "A small group of builders, one table, deeper connection"
-  2. 코드 화면, 3D 프린터와 CAD, 드론 조립, 아두이노 납땜, 로봇 팔, 의수, 현미경, 회로 기판이 빠르게 바뀌는 장면, "Late nights, big ideas, new friends"가 한 단어씩
-  3. 노트북 하나에 모인 다섯 명, 시제품을 함께 보는 메이커들, 유리 보드 스케치, 도서관 하이파이브, "Talk AI, bio and robots until they stack the chairs"
-  4. 친구들로 꽉 찬 부엌, 무너지는 젠가, 공원의 기타
-  5. 함께 차리는 식탁과 여럿이 둘러앉은 저녁, "Come for the tech talk, stay for the friends"
-- 자동 재생이 막히면 첫 프레임을 보여주고 터치하면 재생, 움직임 줄이기 설정이면 재생 생략
-- 문장은 사람 얼굴을 가리지 않게 화면 아래쪽 그림자 위에, 타이핑 끝에 터미널 커서가 잠깐 남았다 사라짐
-- 테크 테이블 화면 뒤 사진 6장도 영상의 사물 컷(3D 프린터, 코드, 의수, 회로, 드론)에서 추출, 얼굴 없음
-- 영상 원본은 Mixkit Free License 클립과 Pexels 클립만 사용, 둘 다 상업적 사용 가능하고 출처 표기 불필요
-- Mixkit의 Restricted License 클립(개인 용도만 가능)은 사용 금지, 2026-10-17 이전 영상에 19개가 섞여 있어 전부 교체
-- Pexels 조건: 화면 속 사람이 우리 서비스를 보증하는 것처럼 보이게 쓰지 않기
+- A 22-second vertical video plays full screen, with the # mark and Hash Table logo on top, Charlie's line near the bottom, and Sign in and Join at the very bottom
+- Warm colors like late-afternoon sunlight, centered on tech scenes of students building things themselves
+- The video has five scenes
+  1. Campus in fall, coffee and a laptop on the lawn, the walk to class: "A small group of builders, one table, deeper connection"
+  2. Rapid cuts of code on screen, a 3D printer and CAD, drone assembly, Arduino soldering, a robot arm, a prosthetic hand, a microscope, and a circuit board, with "Late nights, big ideas, new friends" appearing word by word
+  3. Five people around one laptop, makers looking at a prototype together, sketches on a glass board, a high five in the library: "Talk AI, bio and robots until they stack the chairs"
+  4. A kitchen packed with friends, a collapsing Jenga tower, a guitar in the park
+  5. Setting the table together and a dinner with many people around it: "Come for the tech talk, stay for the friends"
+- If autoplay is blocked, the first frame is shown and tapping plays it; with reduced motion enabled, playback is skipped
+- The text sits over a shadow near the bottom so it doesn't cover faces; a terminal cursor lingers briefly at the end of the typing and then disappears
+- The 6 photos behind the tech table screen are also extracted from the video's object shots (3D printer, code, prosthetic hand, circuit, drone), with no faces
+- The source footage uses only Mixkit Free License clips and Pexels clips; both allow commercial use with no attribution required
+- Mixkit Restricted License clips (personal use only) are not allowed; 19 of them were mixed into the video before 2026-10-17, and all were replaced
+- Pexels condition: don't use footage so that people on screen appear to endorse our service
 
 ```bash
 npm run film
 ```
 
-- 첫 화면 영상을 다시 만드는 명령, ffmpeg 필요 (`winget install Gyan.FFmpeg`)
-- 원본 클립 번호(Pexels는 P+번호)와 색 보정은 `art/make-film.js`, 결과물은 `public/video/film.mp4`
-- 새 클립을 넣기 전에 Mixkit 페이지에서 "Free License" 표기 확인
-- 컷을 바꾸면 `index.html`의 `FILM_T`도 `film.json`에 맞춰 수정
+- Rebuilds the first-screen video; requires ffmpeg (`winget install Gyan.FFmpeg`)
+- Source clip numbers (Pexels clips are P + number) and color grading are in `art/make-film.js`; output goes to `public/video/film.mp4`
+- Before adding a new clip, check the "Free License" label on its Mixkit page
+- If you change the cuts, also update `FILM_T` in `index.html` to match `film.json`
 
-### 회원 화면
+### Member screens
 
-- Amie와 같은 부드러운 라이트 톤, Harvard는 로즈, MIT는 미스트 블루
-- 배경은 색 안개가 천천히 흐르는 Amie의 "방", 탭마다 다른 색
+- The same soft light tone as Amie, with rose for Harvard and mist blue for MIT
+- The background is Amie's "room" with slowly drifting colored fog, a different color for each tab
 
-| 탭 | 내용 |
+| Tab | Contents |
 |---|---|
-| Tables | Charlie의 초대장, 내 Hang, 이번 달 카드, 다음 주 계획 |
-| Hangs | 누구나 여는 번개 모임, 소셜 또는 테크 주제 |
-| Board | 읽을거리, 질문, 핫테이크, 출시 소식, 행사, 채용 |
-| People | 같이 앉았던 사람 목록과 1:1 메시지 |
-| Me | 프로필, Friend Persona, 테이블 크기, 캡틴 설정, 알림, 쉬기 |
+| Tables | Charlie's invitations, my Hangs, this month's card, next week's plan |
+| Hangs | Pop-up meetups anyone can host, on social or tech topics |
+| Board | Reading, questions, hot takes, launches, events, jobs |
+| People | People you've sat with and 1:1 messages |
+| Me | Profile, Friend Persona, table size, captain settings, notifications, taking a break |
 
-- 테이블 화면의 Who’s coming: 함께 앉는 사람 얼굴, 이름, 학교를 한눈에, 공통 관심사를 누르면 그 사람들만 금색 테두리로 강조
-- 기호 대신 글자로 표시: 주간 계획의 이미 잡힌 날은 "Tech" "Social", 질문 카드는 Mild, Spicy, Heated, 캡틴 스트라이프는 개수까지
-- 1:1 채팅은 디너 뒤 서로 고른 경우, 서로 Wave 한 경우, 소개 요청을 수락한 경우에만 오픈
-- 서로 고른 사이는 같은 저녁을 고르면 같은 테이블로 배정
+- Who's coming on the table screen: faces, names, and schools of the people at the table at a glance; tapping a shared interest highlights only those people with a gold border
+- Words instead of symbols: days already booked in the weekly plan say "Tech" or "Social", question cards say Mild, Spicy, or Heated, and captain stripes show the count
+- 1:1 chats open only when both people picked each other after dinner, both Waved, or an introduction request was accepted
+- People who picked each other are seated at the same table when they pick the same evening
 
-### 가입
+### Sign-up
 
-- 학교 이메일 인증 후 이름, 학교와 과정, 졸업 연도만 입력
-- 디너 종류는 Tech + social(기본), Tech tables only, Mostly social 중 선택
-- 성향 질문은 네 축: Listen↔Spark, Playful↔Deep, Easygoing↔Planner, Ritual↔Adventure
-- 테이블은 Harvard와 MIT 반반, 한 학교가 절반을 넘지 않게 구성
-- 고른 답에 대한 Charlie의 반응은 화면 안에 박히지 않고, Continue를 누르면 다음 화면 위에 잠깐 떴다가 사라짐 (반투명 검은 카드, 탭하면 바로 닫힘)
-- 대상: 테이블 종류, 앵글, 핫테이크, 연결 방식 질문(답하자마자), 생활 단계, 앞으로의 방향
-- 트랙은 원하는 만큼 선택, 첫 선택이 주로 앉는 트랙
-- 세부 관심사도 개수 제한 없이 최소 하나, 첫 선택이 앵커
-- Charlie’s note는 버튼 바로 위에 떠서, 점 세 개로 잠깐 입력 중 표시 후 단어가 하나씩 나타남, 말투는 사람처럼 (Ooh, Wow, Ha)
-- 테이블 화면의 Why I put you together는 이유 하나당 카드 한 장, 좌우로 넘기거나 화살표로 이동
-  - 카드마다 이유의 종류(What you share, Where you split, Who’s at the table, Across the river 등)와 관련된 사람 얼굴, 찬반은 막대로 표시
-- Tonight’s question도 투표 중에는 세 질문을 카드로 나란히, 넘기면서 바로 Vote
+- After school email verification, enter only name, school and program, and graduation year
+- Choose a dinner type: Tech + social (default), Tech tables only, or Mostly social
+- Personality questions cover four axes: Listen↔Spark, Playful↔Deep, Easygoing↔Planner, Ritual↔Adventure
+- Tables are half Harvard and half MIT, with no school over half
+- Charlie's reactions to answers aren't embedded in the screen; after Continue, they pop up briefly over the next screen and disappear (a translucent black card that closes immediately when tapped)
+- Applies to: table type, angle, hot takes, connection-style questions (right after answering), life stage, future direction
+- Pick as many tracks as you like; the first one is the track you're mainly seated in
+- Specific interests also have no limit, with at least one; the first is the anchor
+- Charlie's note floats just above the button, shows a brief three-dot typing indicator, then appears word by word, in a human voice (Ooh, Wow, Ha)
+- Why I put you together on the table screen shows one card per reason, swiped left and right or moved with arrows
+  - Each card shows the kind of reason (What you share, Where you split, Who's at the table, Across the river, etc.) with the faces of the people involved, and agree/disagree shown as bars
+- Tonight's question also shows the three questions side by side as cards during voting, with Vote right as you swipe
 
-## Tonight’s question
+## Tonight's question
 
-- 테이블마다 그 주 가장 뜨거운 질문 하나로 편을 갈라 이야기하는 게임
-- 단톡방 상단의 한 줄짜리 바에서 진행, 카드는 누르면 열리는 시트에서 확인
+- A game where each table splits into sides over the hottest question of the week
+- Runs in a one-line bar at the top of the group chat; cards open in a sheet when tapped
 
-| 언제 | 내용 |
+| When | What happens |
 |---|---|
-| 테이블 공개 | Charlie가 질문 카드 3장 게시, 카드마다 지금 뜨거운 이유와 기사 링크 |
-| 투표 | 탭 한 번으로 투표, 전원이 투표하거나 전날 정오가 되면 마감 |
-| 편 고르기 | A 또는 B를 비밀로 선택, 다른 사람에게는 고른 인원만 표시 |
-| 디너 시작 | 결과 공개, Table deck 2라운드를 이 질문으로 진행 |
-| 다음 날 아침 | 입장 다시 선택, 마음을 바꾼 사람이 있으면 Charlie가 언급 |
+| Table published | Charlie posts 3 question cards, each with why it's hot right now and an article link |
+| Voting | One tap to vote; closes when everyone has voted or at noon the day before |
+| Picking a side | Pick A or B secretly; others only see how many picked each |
+| Dinner starts | Results revealed; round 2 of the Table deck uses this question |
+| Next morning | Pick your position again; Charlie mentions anyone who changed their mind |
 
-- 카드 형식: Balance game, Hot take, Place your bet, Would you rather, Be honest
-- 소셜 테이블은 테크 질문 대신 친해지는 질문
-- Hang도 같은 게임, 투표는 시작 1시간 전 마감
-- 카드는 `public/shared.js`의 `CARDS`에 65장, 테크 카드는 1~2주마다 교체 권장
-- 카드 선택은 코드로 처리해 추가 비용 없음
-- Claude로 매주 새 카드 초안을 만들면 한 달 약 $10, 사람 검수는 주 15~20분
+- Card formats: Balance game, Hot take, Place your bet, Would you rather, Be honest
+- Social tables get get-to-know-you questions instead of tech questions
+- Hangs use the same game, with voting closing 1 hour before the start
+- There are 65 cards in `CARDS` in `public/shared.js`; replacing tech cards every 1 to 2 weeks is recommended
+- Card selection is done in code, so there is no extra cost
+- Drafting new cards weekly with Claude costs about $10 a month, plus 15 to 20 minutes of human review per week
 
-## 못 가게 됐을 때
+## When you can't make it
 
-- 초대장의 I can’t make it에서 두 가지 중 선택
-- Find me another evening: 앞으로 7일 중 가능한 저녁을 고르면 같은 종류 테이블의 빈자리로 새 초대장 발송
-  - 차단한 사람 제외, 학교 비율 유지, 테크는 같은 트랙 우선
-  - 빈자리가 없으면 대기, 자리가 나면 자동 배정
-- Just skip this one: 이번만 빠지기, 전날 정오 이후면 늦은 변경 1점
-- 변경이 무료인 동안 테이블이 세 명까지 줄면, 그 저녁을 고른 사람 중 한 명을 바로 채움 (한 명만 더 빠져도 테이블이 무너지지 않게), 6명 중 3명이 빠지면 4명으로 복구
-- 테이블이 세 명 아래로 줄면 다른 테이블과 합치거나 종료
-- 서버 코드: `reinvite`, `chairFits`, `openChair`, `fillChair`, `pruneStandby`
+- I can't make it on the invitation offers two choices
+- Find me another evening: pick an available evening in the next 7 days, and a new invitation is sent for an empty seat at a table of the same kind
+  - Excludes people you've blocked, keeps the school ratio, and prioritizes the same track for tech tables
+  - If there are no empty seats, you wait, and you're seated automatically when a seat opens
+- Just skip this one: skip just this time; after noon the day before, it's 1 late-change point
+- While changes are free, if a table drops to three people, one person who picked that evening is added right away (so the table doesn't collapse if one more person drops); if 3 of 6 drop, it's restored to 4
+- If a table drops below three people, it's merged with another table or ended
+- Server code: `reinvite`, `chairFits`, `openChair`, `fillChair`, `pruneStandby`
 
-## 한 번으로 끝나지 않게
+## Making it more than one time
 
-- 친해지려면 같은 사람을 여러 번 만나야 해서 테이블과 테이블을 잇는 장치 마련
-- 가벼운 친구가 되기까지 약 50시간, 디너 한 번은 3시간
+- Becoming close requires meeting the same people many times, so there are mechanisms linking one table to the next
+- About 50 hours to become a casual friend; one dinner is 3 hours
 
 ### Round two
 
-- 다음 날 아침 2주 뒤에 같은 테이블로 다시 모일지 직접 선택, 기본값 없음
-- 3명이 yes면 같은 요일 2주 뒤로 예약 (3명 테이블은 3명 모두)
-- yes 한 사람은 모두 자리 확보, 남은 자리는 그날 저녁을 고른 새 사람으로 채움
-- 새 사람은 첫 테이블 인원까지만, 다시 오는 사람보다 많지 않게 (6명 중 3명이 yes면 새 사람 3명)
-- 새 사람 고르는 기준: 원하는 테이블 종류, 테크 테이블은 같은 트랙 우선, 아직 같이 앉아 본 적 없는 사람 우선, 학교 비율, 차단한 사이 제외
-- 지난 라운드에서 no 한 사람은 새 사람으로도 다시 넣지 않음
-- 새 사람은 그 주 일요일 배정 때 정하고, 다른 초대장과 함께 일요일에 알림
-- 저녁 고른 사람이 많은 날은 정규 배정 전에, 적은 날은 정규 배정 뒤 남은 사람으로 채움 (다른 사람이 테이블을 못 받는 일 방지)
-- 새 사람 초대장에는 다시 모이는 테이블이라는 것과 돌아오는 인원, 기존 멤버 초대장에는 새 얼굴 수 표시
-- 장소는 지난번 식당 우선, 자리가 없으면 다른 식당
-- 한 표가 모자라면 단톡방에 One more yes 게시
-- round two 뒤에도 같은 방식으로 round three
-- 서로 차단한 사이는 제외, 두 명만 남으면 취소
+- The next morning, each person chooses directly whether to meet again as the same table in 2 weeks; there is no default
+- If 3 people say yes, it's booked for the same weekday 2 weeks later (for a 3-person table, all 3)
+- Everyone who said yes keeps a seat; remaining seats are filled with new people who picked that evening
+- New people only up to the size of the first table, and never more than returning people (if 3 of 6 say yes, 3 new people)
+- How new people are chosen: preferred table type, same track first for tech tables, people who haven't sat together before first, school ratio, excluding blocked pairs
+- People who said no last round aren't added back as new people either
+- New people are chosen during Sunday's assignment and notified on Sunday along with other invitations
+- On days when many people picked the evening, seats are filled before regular assignment; on days with few, they're filled after regular assignment with the people left over (so nobody else misses out on a table)
+- New people's invitations say it's a returning table and how many are coming back; existing members' invitations show the number of new faces
+- Last time's restaurant is preferred for the venue; if it has no room, another restaurant
+- If one vote short, One more yes is posted in the group chat
+- After round two, round three works the same way
+- Pairs who blocked each other are excluded; if only two remain, it's canceled
 
-### 그 밖의 연결 장치
+### Other connection mechanisms
 
-- 같은 얼굴 다시: 서로 고른 사이는 같은 저녁을 고르면 같은 테이블, 저녁 고르기 화면에 그 사람들 얼굴 표시
-- Since last time: 다음 테이블 전까지 해 볼 일을 한 줄로 적으면 다음 테이블에서 Charlie가 언급
-- Your October: 이번 달을 달력으로 보여주는 Tables 탭 카드, 테크 테이블은 파란색 "Tech", 소셜은 분홍색 "Social", round two는 "Round 2", 지난 저녁은 채워진 칸, 다가오는 저녁은 점선 칸, 오늘은 테두리
-- 달력은 이번 달 1일부터 말일까지, 아래에 다가오는 round two(같은 테이블 다시 모이기, 빈자리는 새 사람)와 얼굴
-- 서버 코드: `roundTwo`, `roundOpen`, `againNudge`, `matchWeek` 안의 `fillRounds`, `setLoose`, `looseFor`, `monthView`
+- Same faces again: people who picked each other are seated together when they pick the same evening, and their faces appear on the evening-picking screen
+- Since last time: write one line about something to try before the next table, and Charlie mentions it at the next table
+- Your October: a Tables tab card showing this month as a calendar; tech tables in blue "Tech", social in pink "Social", round two as "Round 2", past evenings as filled cells, upcoming evenings as dashed cells, today with a border
+- The calendar runs from the 1st to the last day of this month, with upcoming round twos (the same table meeting again, with new people in empty seats) and faces below
+- Server code: `roundTwo`, `roundOpen`, `againNudge`, `fillRounds` inside `matchWeek`, `setLoose`, `looseFor`, `monthView`
 
-## 장소와 운영
+## Venues and operations
 
-### 식당 예약 방식
+### How restaurants are booked
 
-- 기본은 캡틴이 직접 예약: 목록에서 고른 식당을 OpenTable, Resy, Tock, 식당 사이트, 전화로 자기 이름으로 예약
-- 예약 링크는 날짜, 시간, 인원이 채워진 채로 열림 (OpenTable는 `covers`와 `dateTime`, Resy는 `date`와 `seats`, Tock은 `date`, `size`, `time`, 2026-10 실제 브라우저로 확인)
-- 예약 후 캡틴이 시간, 예약자 이름, 확인 번호(선택)를 입력, Hash Table은 식당에 연락하지 않음
-- OpenTable, Resy는 공개 예약 API가 없어 자동 예약 불가, OpenTable Directory API는 제휴 심사와 계약 필요
-- 6명은 온라인 예약 한도 경계라 전화 안내 함께 표시, 6명이면 카드 보증과 1인 $25~50 취소 수수료가 흔해 예약 전 확인 안내
-- 제휴 식당(상시 확보, 매번 확인)은 선택 기능으로 유지, 테이블을 잡아둔 곳이라 예약 없이 캡틴이 고르기만
+- The default is the captain booking directly: the captain books a restaurant picked from the list under their own name via OpenTable, Resy, Tock, the restaurant's site, or phone
+- Booking links open with the date, time, and party size filled in (OpenTable uses `covers` and `dateTime`, Resy uses `date` and `seats`, Tock uses `date`, `size`, and `time`; verified in a real browser in 2026-10)
+- After booking, the captain enters the time, the name on the reservation, and a confirmation number (optional); Hash Table doesn't contact the restaurant
+- OpenTable and Resy have no public booking API, so automated booking is impossible; the OpenTable Directory API requires a partnership review and contract
+- Six is at the edge of online booking limits, so phone instructions are shown too; card guarantees and $25 to 50 per person cancellation fees are common for six, so there's a reminder to check before booking
+- Partner restaurants (always held, or confirmed each time) remain an optional feature; since the table is already held, the captain just picks it with no booking
 
-### 하버드, MIT, HBS 사이 식당 목록
+### Restaurant list between Harvard, MIT, and HBS
 
-- `server/restaurants.js`: 120곳 (2026년 10월 20일 1차 조사, 22일 2차, 3차 조사)
-- 지역: Harvard Square, Porter, Huron Village 31, Allston, Brighton 24, Kendall, East Cambridge, Cambridgeport 22, Central, Inman, Riverside, Mid-Cambridge 24, 강 건너 Back Bay, Fenway, Kenmore 19
-- 예약 방법: OpenTable 67, Resy 15, 자체 사이트 15, 전화 21, Tock 2
-- 고른 기준: 6명 자리가 구조적으로 잘 나오는 곳 (6인 테이블, 원탁, 큰 부스, 프라이빗 룸, 큰 홀, 온라인 6명 이상 예약), 대화가 되는 곳, 평일 저녁 자리가 잘 나는 곳
-- 식당마다: 지도 좌표(OpenStreetMap), 6인 테이블 수(many, some, few), 프라이빗 룸과 크기, 전체 좌석 수, 온라인 최대 인원, 평일과 주말 예약 난이도(easy, some, hard), 종합 적합도(fit 1~5), 제휴 후보 여부, 7시 테이블에 영향 주는 주의사항(hours), 일반 영업시간(open), 단체 추가 요금이나 시간 제한(fee), 근거와 출처
-- 1차에서 빠진 곳 11곳: 6명을 못 받거나(Giulia, Pammy's), 문 닫았거나(Dear Annie 등), 대화가 어려운 바(SOJUba, Audubon, The Citizen) 등
-- 2차에서 더한 곳 18곳: Season to Taste, Moëca, Nirvana Taste of India, Forage (Harvard, Porter), Dumpling House, Dalí, Cafe Sushi Nisei, 5 Spices House (Central, Inman), Passage to India, Geppetto, The Lexington (Cambridge Crossing), Paperback Tavern, Shu DaXia Hotpot, Row 34 Kenmore Square, Willow & Ivy, UNI, Dumpling Palace, Zuma Boston (강 건너)
-- 2차에서 뺀 후보: 예약을 안 받는 곳(Muqueca), 문 닫은 곳(S&S, Cloud & Spirits 행사장 전환, The Pearl 임시 휴업), 6명이 어려운 곳(Holdfast, Black Ruby), 확인 안 되는 곳(Ricen, Cafe of India, Gen Korean BBQ)
-- 2차에서 바로잡은 것 73곳: Catalyst는 월요일 영업, Rail Stop은 일, 월 오후 8시 마감, Moona는 월요일 영업, Ariana 온라인 8명까지, Fallow Kin 온라인 6명까지, Legal Sea Foods Kendall 10명까지, Atlantic Fish 10명까지, Area Four 6명 이상 팁 20% 자동, Margeaux 7명 이상 카드 보증, 늦은 변경 1인 $25, Urban Hearth 24시간 안 취소 1인 $50, India Quality와 LUCIE는 자체 예약 페이지, Loco Fenway는 전화 예약 등
-- 1차 Central 조사에서 페이지 리더로 읽혀 재확인 필요로 표시했던 정보는 2차에서 식당 자체 사이트와 기사로 다시 확인해 고침 (Althea의 온라인 8명, 단체 팁은 확인 안 돼 삭제)
-- 3차 조사(10월 22일): 근거가 얇던 곳을 다시 조사, 예약 페이지를 보통 브라우저로 한 번씩 열어 6명 온라인 가능 여부와 인원 메뉴 확인
-  - 6명 온라인: 가능 91곳 중 83곳은 예약 페이지에서 직접 확인, 전화 26곳(전화 전용 21곳 포함), 모름 3곳(Standard Italian, Dalí, LUCIE)
-  - Daedalus, Gran Gusto는 OpenTable이 6명은 너무 많다고 해 전화로 바꿈
-  - 온라인 최대 인원 숫자: 26곳에서 38곳으로 (Resy 인원 메뉴의 "N+ Guests" 바로 앞 숫자, SevenRooms, Toast, Tock 인원 메뉴, 식당 안내 문구가 더 엄격하면 그쪽), Pagu 8, Sumiao 8, Gufo 12, Aatma 12, Bar Enza 7, Paperback 7, Zuma 9, Mad Monkfish 10, American Flatbread 11, Veggie Galaxy 8 등
-  - 평일 쉬움으로 바꾼 곳 9곳(Source, Gyu-Kaku, Qiao Lin, American Flatbread, Brighton Bodega, Alice, Mex, Sulmona, Atlantic Fish), 어려움으로 바꾼 곳 Urban Hearth, The Lexington은 보통으로
-  - 소음: Sumiao(밤 라이브 밴드), Naco Taco, Olé, Dumpling Palace는 lively로, Atlantic Fish는 moderate로, Oleana 대화 3, Painted Burro 대화 1
-  - 비용: Talulla 23% 관리비, Paperback 20% 서비스 요금, Sumiao 4명 이상 2시간, Zuma 2시간, Koreana 20% 자동 팁 등
-  - 2차에서 320자로 잘렸던 근거 12곳은 원문으로 복구 (잘린 탓에 thin evidence가 안 보이던 곳이 있어 실제 2차 얇은 곳은 59곳)
-- 남은 한계: 근거가 얇은 칸이 남은 곳 49곳 (대부분 한 칸), 종류별로 6인 테이블 수 19곳, 소음 28곳, 평일 10곳, 수요 12곳
-  - OpenTable 소음 태그는 거의 모든 식당이 Moderate라 근거로 쓰지 않음, 그것만 있는 7곳은 소음을 얇은 근거로 둠
-  - OpenTable 인원 메뉴는 어디나 1~20이라 최대 인원을 알 수 없음, 6명이 되는지만 확인 가능
-  - OpenTable이 10월 22일 오전 3시 20분쯤부터 빈자리 조회에 403으로 응답, 거기서 멈추고 우회하지 않음 (Puritan, Alden & Harlow 등 13곳 미확인)
-- 평일, 주말 난이도는 방 크기, 예약 빈도, 리뷰로 판단한 조사 결과일 뿐 실시간 빈자리가 아님, 앱도 "Usually easy on weeknights"처럼 말함
-- 관리자 Places 탭의 목록 버튼으로 추가와 갱신, 목록에서 빠진 식당은 삭제 대신 일시 중지 (이미 예약된 테이블은 유지)
+- `server/restaurants.js`: 120 places (first survey on October 20, 2026; second and third surveys on the 22nd)
+- Areas: Harvard Square, Porter, Huron Village 31; Allston, Brighton 24; Kendall, East Cambridge, Cambridgeport 22; Central, Inman, Riverside, Mid-Cambridge 24; across the river, Back Bay, Fenway, Kenmore 19
+- Booking method: OpenTable 67, Resy 15, own site 15, phone 21, Tock 2
+- Selection criteria: places where seating six works structurally (six-tops, round tables, large booths, private rooms, large halls, online booking for 6+), places where you can talk, places with good weekday evening availability
+- For each restaurant: map coordinates (OpenStreetMap), number of six-tops (many, some, few), private room and size, total seats, online maximum party size, weekday and weekend booking difficulty (easy, some, hard), overall fit (1 to 5), whether it's a partner candidate, caveats affecting a 7pm table (hours), regular opening hours (open), group surcharges or time limits (fee), rationale and sources
+- 11 dropped in the first survey: places that can't seat six (Giulia, Pammy's), closed (Dear Annie and others), or bars where conversation is hard (SOJUba, Audubon, The Citizen), etc.
+- 18 added in the second survey: Season to Taste, Moëca, Nirvana Taste of India, Forage (Harvard, Porter), Dumpling House, Dalí, Cafe Sushi Nisei, 5 Spices House (Central, Inman), Passage to India, Geppetto, The Lexington (Cambridge Crossing), Paperback Tavern, Shu DaXia Hotpot, Row 34 Kenmore Square, Willow & Ivy, UNI, Dumpling Palace, Zuma Boston (across the river)
+- Candidates removed in the second survey: places that don't take reservations (Muqueca), closed (S&S; Cloud & Spirits converted to an event space; The Pearl temporarily closed), places where six is hard (Holdfast, Black Ruby), unverifiable (Ricen, Cafe of India, Gen Korean BBQ)
+- 73 corrected in the second survey: Catalyst is open Mondays, Rail Stop closes at 8pm Sunday and Monday, Moona is open Mondays, Ariana online up to 8, Fallow Kin online up to 6, Legal Sea Foods Kendall up to 10, Atlantic Fish up to 10, Area Four adds an automatic 20% tip for 6+, Margeaux requires a card guarantee for 7+ and charges $25 per person for late changes, Urban Hearth charges $50 per person for cancellations within 24 hours, India Quality and LUCIE use their own booking pages, Loco Fenway takes phone bookings, etc.
+- Information from the first Central survey that was flagged for rechecking because it was read with a page reader was rechecked and corrected in the second survey using the restaurants' own sites and articles (Althea's online limit of 8 and group tip couldn't be verified and were removed)
+- Third survey (October 22): re-researched places with thin evidence, opening each booking page once in an ordinary browser to check whether six can book online and what the party size menu offers
+  - Six online: 83 of the 91 that allow it were verified directly on the booking page; phone 26 (including 21 phone-only); unknown 3 (Standard Italian, Dalí, LUCIE)
+  - Daedalus and Gran Gusto were switched to phone because OpenTable said six is too many
+  - Online maximum party size numbers: from 26 places to 38 (the number just before "N+ Guests" in Resy's party size menu; SevenRooms, Toast, and Tock party size menus; the restaurant's own notice if stricter): Pagu 8, Sumiao 8, Gufo 12, Aatma 12, Bar Enza 7, Paperback 7, Zuma 9, Mad Monkfish 10, American Flatbread 11, Veggie Galaxy 8, etc.
+  - 9 changed to easy on weekdays (Source, Gyu-Kaku, Qiao Lin, American Flatbread, Brighton Bodega, Alice, Mex, Sulmona, Atlantic Fish); Urban Hearth changed to hard; The Lexington to some
+  - Noise: Sumiao (live band at night), Naco Taco, Olé, and Dumpling Palace changed to lively; Atlantic Fish to moderate; Oleana talk 3; Painted Burro talk 1
+  - Costs: Talulla 23% admin fee, Paperback 20% service charge, Sumiao 2 hours for 4+, Zuma 2 hours, Koreana 20% automatic tip, etc.
+  - Rationale for 12 places that had been cut at 320 characters in the second survey was restored to the full text (the cut hid thin evidence at some places, so the actual number of thin places after the second survey was 59)
+- Remaining limitations: 49 places still have a field with thin evidence (mostly one field); by type, six-top count 19, noise 28, weekday 10, demand 12
+  - OpenTable's noise tag is Moderate for nearly every restaurant, so it isn't used as evidence; the 7 places with only that tag have noise marked as thin evidence
+  - OpenTable's party size menu is 1 to 20 everywhere, so the maximum is unknown; only whether six works can be checked
+  - From around 3:20am on October 22, OpenTable started returning 403 for availability lookups; we stopped there and did not work around it (13 places unverified, including Puritan and Alden & Harlow)
+- Weekday and weekend difficulty is a research judgment based on room size, booking frequency, and reviews, not live availability; the app phrases it as "Usually easy on weeknights"
+- Add and update via the list button in the admin Places tab; restaurants removed from the list are paused rather than deleted (tables already booked stay)
 
-### 대화하기 좋은 곳
+### Good places to talk
 
-- 소음(noise: quiet 11곳, moderate 81곳, lively 28곳), 대화 점수(talk: 3 편함 26곳, 2 자리만 잘 잡으면 90곳, 1 어려움 4곳)
-- 조용하고 대화 편한 곳: Harvest, The Maharaja, TooHot, Hong Kong Restaurant(1층 식당), Changsho, Talulla, Ariana, Fallow Kin, India Quality, Season to Taste, Nirvana Taste of India
-- 보통이지만 대화 편한 곳: Henrietta's Table, Nine Tastes, Nubar, Ama, The Stockyard, Devlin's, Catalyst, Judy's Bay, Moona, Oak Bistro, Urban Hearth, The Capital Grille, Forage, Willow & Ivy, Geppetto
-- 저녁엔 대화가 어려운 곳: Russell House, Mex, La Fábrica, Little Donkey
-- seat: 예약 메모에 적을 자리, sound: 방 분위기 한 줄, 관리자 화면에서 수정 가능
+- Noise (quiet 11, moderate 81, lively 28), talk score (3 easy 26, 2 fine if you get the right seat 90, 1 hard 4)
+- Quiet and easy to talk: Harvest, The Maharaja, TooHot, Hong Kong Restaurant (first-floor restaurant), Changsho, Talulla, Ariana, Fallow Kin, India Quality, Season to Taste, Nirvana Taste of India
+- Moderate but easy to talk: Henrietta's Table, Nine Tastes, Nubar, Ama, The Stockyard, Devlin's, Catalyst, Judy's Bay, Moona, Oak Bistro, Urban Hearth, The Capital Grille, Forage, Willow & Ivy, Geppetto
+- Hard to talk in the evening: Russell House, Mex, La Fábrica, Little Donkey
+- seat: the seat to request in the booking note; sound: a one-line description of the room; both editable in the admin screen
 
-### 이동 거리로 고르기 (`server/trip.js`)
+### Choosing by travel time (`server/trip.js`)
 
-- 지도 API 없이 비용 0: 걷기, 그리고 레드라인, 그린라인(본선, B, D, E, Lechmere 구간), 1, 47, 66, 69, 70번 버스의 실제 정류장 지도로 분 단위 소요 시간 계산
-- 걷기는 직선거리 1.25배를 분당 80m로, 타는 시간은 노선 속도와 정류장마다 30초, 타기 전 대기(지하철 4~6분, 버스 7~8분), 환승 때 다시 대기, 정류장까지 걷는 건 1.3km까지
-- 결과 예: HBS에서 Harvest 걸어서 16분, MIT에서 Harvard Square 레드라인 22분, Harvard Square에서 Kendall 18분
-- 회원이 오는 곳: 카드에서 고르는 동네 11곳 (Harvard Square, HBS와 Allston 캠퍼스, MIT와 Kendall, Central, Inman, Porter, East Cambridge, Lower Allston과 Brighton, Back Bay, Fenway와 BU, Longwood), 주소는 받지 않음
-- 고르지 않으면 프로그램 기준: Business School과 SEAS는 Allston 캠퍼스, Medical School과 Public Health는 Longwood, MIT는 Kendall, 나머지 하버드는 Harvard Square
-- 테이블마다 식당별로 가장 먼 사람의 시간과 평균을 계산, 아무도 혼자 멀리 오지 않게 가장 먼 사람을 더 무겁게 봄
-- 제휴 식당 자동 배정도 같은 기준 (좌표가 없으면 예전처럼 같은 동네 우선)
+- No map API, zero cost: travel times in minutes calculated from walking plus real stop maps for the Red Line, Green Line (trunk, B, D, E, Lechmere branch), and the 1, 47, 66, 69, and 70 buses
+- Walking is 1.25× the straight-line distance at 80m per minute; riding time uses line speed plus 30 seconds per stop, a wait before boarding (subway 4 to 6 minutes, bus 7 to 8 minutes), another wait at each transfer, and walking to a stop up to 1.3km
+- Example results: HBS to Harvest 16 minutes on foot, MIT to Harvard Square 22 minutes on the Red Line, Harvard Square to Kendall 18 minutes
+- Where members come from: 11 neighborhoods picked on the card (Harvard Square, HBS and Allston campus, MIT and Kendall, Central, Inman, Porter, East Cambridge, Lower Allston and Brighton, Back Bay, Fenway and BU, Longwood); no addresses collected
+- If not picked, defaults by program: Business School and SEAS map to the Allston campus, Medical School and Public Health to Longwood, MIT to Kendall, and the rest of Harvard to Harvard Square
+- For each table and restaurant, the travel time of the farthest person and the average are calculated; the farthest person is weighted more so nobody travels far alone
+- Automatic partner restaurant assignment uses the same criteria (without coordinates, same neighborhood first as before)
 
-### 캡틴 목록의 순서
+### Order of the captain's list
 
-- 먼저 확인 기록으로 묶음: 6~8시 빈자리가 확인된 곳, 확인 안 한 곳, 6명 만석이던 곳(테이블이 더 작을 때), 만석이던 곳
-- 묶음 안에서는 테이블에 맞는 정도 점수 (낮을수록 좋음, 대략 분 단위)
-  - 이동: 가장 먼 사람 시간 + 평균의 절반
-  - 대화: talk 한 단계에 10, 소음 quiet 0, moderate 3, lively 9 (조용하고 대화 편한 곳이 시끄러운 곳보다 20분 거리만큼 유리)
-  - 6명 자리: 6인 테이블 many 0, some 4, few 10, 프라이빗 룸 -2
-  - 그날 요일의 예약 난이도: easy 0, some 5, hard 12 (금, 토는 주말 기준)
-  - 다른 날 기록: 같은 요일이면 ±8, 다른 요일이면 ±6, 확인한 날이 모두 만석이면 "usually easy" 표시와 점수도 내림
-  - 온라인 예약 인원 부족, 전화 예약, 그날 우리 테이블 수, 조사 적합도
-- 확인 안 됐어도 가능성 있는 첫 식당에 "Best fit for your table" 표시
-- 카드에 "Everyone’s there within 22 minutes", "Lots of tables for six", "Private room", "Usually easy on weeknights" 같은 줄과 태그
-- 식당을 누르면 "Getting there"에 동네별 인원과 시간 ("From MIT and Kendall, two of you: 23 minutes on the Red Line"), 단체 추가 요금이나 시간 제한 안내
+- First grouped by check records: places with availability confirmed between 6 and 8, unchecked places, places full for six (when the table is smaller), full places
+- Within each group, a fit score for the table (lower is better, roughly in minutes)
+  - Travel: farthest person's time + half the average
+  - Conversation: 10 per talk level; noise quiet 0, moderate 3, lively 9 (a quiet, easy-to-talk place beats a noisy one by the equivalent of 20 minutes of travel)
+  - Seating six: six-tops many 0, some 4, few 10; private room -2
+  - Booking difficulty for that weekday: easy 0, some 5, hard 12 (Friday and Saturday use the weekend rating)
+  - Records from other days: ±8 for the same weekday, ±6 for a different weekday; if every checked day was full, the "usually easy" label and score are lowered too
+  - Insufficient online party size, phone booking, number of our tables that day, research fit
+- The first plausible restaurant gets "Best fit for your table" even if unconfirmed
+- Cards show lines and tags like "Everyone's there within 22 minutes", "Lots of tables for six", "Private room", "Usually easy on weeknights"
+- Tapping a restaurant shows "Getting there" with headcount and time by neighborhood ("From MIT and Kendall, two of you: 23 minutes on the Red Line"), plus any group surcharge or time limit
 
-### 캡틴용 스팟 가이드 (웹페이지)
+### Spot guide for captains (web page)
 
-- `node scripts/build-guide.js`: `dist/spot-guide.html`과 `demo/spot-guide.html` 생성, 앱과 같은 데이터, 같은 이동 시간, 같은 점수
-- 위쪽에서 날짜, 시간, 동네별 인원(HBS 3, MIT 3 같은 식)을 고르면 목록과 지도가 그 테이블 기준으로 다시 정렬
-- 지도: OpenStreetMap에서 한 번 받아 단순화한 찰스강, 큰 도로, 지하철 노선, 공원, 캠퍼스를 직접 그림 (`scripts/guide/map.json`, 지도 타일 없음, 외부 요청 없음), 확대, 이동, 핀치 가능
-- 식당마다 이동 시간(동네별), 대화, 6인 테이블, 프라이빗 룸, 그날 예약 난이도, 주의사항(추가 요금, 7시 테이블에 영향 주는 영업 시간), 일반 영업시간은 Why it’s here 안에, 날짜와 인원이 채워진 예약 버튼, 전화번호 복사, 예약 메모 복사, 길찾기, 근거와 출처
-- 필터: 조용한 곳, 프라이빗 룸, 6인 테이블 많은 곳, 그날 쉬운 곳, 온라인으로 그 인원 예약 가능, 지역 5곳, 음식, 가격, 정렬 4가지
-- 표 보기: 120곳 전체를 열 단위로 정렬, 예약 방식 링크
-- 온라인 인원 칸: 확인된 최대 인원 숫자, 6명은 되지만 최대를 모르면 6+, 온라인으로 안 되면 Call, 카드에는 Online up to 8, Takes six online, Call for six 태그
-- 빈자리 줄의 확인 날짜는 기록마다 실제로 본 날 (예: when we looked Oct 22)
-- 예약 방법 보기: 7단계, 그날로 채워진 전화 스크립트와 예약 메모 복사
-- 그날 영업 안 하거나 예약을 안 받는 곳은 아래로 접힘, 휴대폰 화면과 다크 모드 지원
+- `node scripts/build-guide.js`: generates `dist/spot-guide.html` and `demo/spot-guide.html`, using the same data, travel times, and scores as the app
+- Pick the date, time, and headcount by neighborhood at the top (e.g. HBS 3, MIT 3), and the list and map re-sort for that table
+- Map: the Charles River, major roads, subway lines, parks, and campuses are drawn directly from a simplified one-time OpenStreetMap download (`scripts/guide/map.json`; no map tiles, no external requests); zoom, pan, and pinch supported
+- For each restaurant: travel time (by neighborhood), conversation, six-tops, private room, booking difficulty that day, caveats (surcharges, hours affecting a 7pm table), regular hours under Why it's here, a booking button with date and party size filled in, copy phone number, copy booking note, directions, rationale and sources
+- Filters: quiet places, private rooms, many six-tops, easy that day, can book that party size online, 5 areas, cuisine, price, 4 sort orders
+- Table view: all 120 places sortable by column, with booking method links
+- Online party size column: the confirmed maximum number; 6+ if six works but the maximum is unknown; Call if online booking isn't possible; cards show Online up to 8, Takes six online, or Call for six tags
+- The check date in availability lines is the day each record was actually seen (e.g. when we looked Oct 22)
+- How to book view: 7 steps, with a phone script filled in for that day and a copyable booking note
+- Places closed or not taking bookings that day collapse to the bottom; supports phone screens and dark mode
 
-### 제휴 후보 (평일에 6인 테이블을 잡아달라고 부탁할 곳)
+### Partner candidates (places to ask to hold a six-top on weekdays)
 
-- 조용하고 방이 있는 곳: Harvest(Fireplace Room 28, 앞쪽 알코브 24), Ariana(프라이빗 룸 22), Henrietta's Table(프라이빗 룸 45), Nubar(Berkeley Room 8~20, 비면 일반 손님도 앉힘), The Maharaja, Changsho
-- 크고 평일이 한가한 곳: Rail Stop(Brighton Hall 30), Pagu(프라이빗 룸 20, 메자닌 20), The Stockyard(Wine Room 15~40), Catalyst(Crick Room 14), Bambara(메자닌 50), Olé(뒷방 75)
-- 강 건너: The Capital Grille(작은 방 10~16), LUCIE(10~30), Joe's on Newbury(Wine Room 24)
-- 이 목록은 조사 결과의 partner 표시와 적합도 4 이상, 평일 easy 기준
+- Quiet places with rooms: Harvest (Fireplace Room 28, front alcove 24), Ariana (private room 22), Henrietta's Table (private room 45), Nubar (Berkeley Room 8 to 20; seats regular guests when free), The Maharaja, Changsho
+- Large places that are quiet on weekdays: Rail Stop (Brighton Hall 30), Pagu (private room 20, mezzanine 20), The Stockyard (Wine Room 15 to 40), Catalyst (Crick Room 14), Bambara (mezzanine 50), Olé (back room 75)
+- Across the river: The Capital Grille (small rooms 10 to 16), LUCIE (10 to 30), Joe's on Newbury (Wine Room 24)
+- This list is based on the research's partner flag, fit of 4 or higher, and weekday easy
 
-### 실제 빈자리 확인 (스팟 체크)
+### Checking real availability (spot checks)
 
-- OpenTable, Resy, Tock은 빈자리 API를 공개하지 않고, 기계로 페이지를 읽는 건 약관 위반(OpenTable은 차단까지), 그래서 사람이 본 기록을 사용, 비용 없음
-- 기록이 들어오는 세 경로: 캡틴이 예약 페이지에서 돌아올 때 답한 것, 운영진 Spot checks 탭, `server/spotchecks.js`와 붙여넣기
-- `server/spotchecks.js`: 식당 예약 페이지를 6명, 저녁 7시로 열어 7시 앞뒤로 보인 시간을 날짜별로 기록
-- 2026-10-19 오전 확인분: 10/23(금) 46곳, 10/21(수) 24곳 (OpenTable이 연속 조회를 막기 시작해 나머지 수요일은 비워둠, 추측으로 채우지 않음)
-- 10/23(금) 저녁 6~8시에 6명 자리 있던 곳 24곳, 없던 곳 22곳, La Fábrica는 6명 온라인 불가로 전화
-- 2026-10-22 오전 확인분: 10/27(화) OpenTable 47곳, 6~8시에 6명 자리 있던 곳 42곳, 없던 곳 3곳(Urban Hearth, Krasi, Row 34 Kenmore), 전화 2곳(Daedalus, Gran Gusto)
-- 화요일은 금요일보다 확실히 여유, 같은 요일 기록이 있으면 그 기록이 다른 화요일 예측에 쓰임
-- Resy 페이지는 이제 클릭 없이 시간을 보여주지 않아 10/27에는 Resy 식당이 없음
-- 6~8시 사이 시간이 있으면 빈자리, 없으면 만석, 6명 기준 만석인데 테이블이 4명이면 "tight"(4명은 될 수도 있음)
-- 확인한 적 없는 날짜는 다른 날 기록을 날짜와 함께 보여주고, 확인된 것처럼 말하지 않음 ("Nobody has checked Saturday yet, so nothing here is confirmed")
-- 더 새로운 기록이 이김, 4개월 지난 기록은 자동 삭제
-- 실시간이 아니라 기록이라 목록에 누가(we, you, another captain) 언제 봤는지 함께 표시, 확실한 자리는 제휴 식당 홀드뿐
+- OpenTable, Resy, and Tock don't publish availability APIs, and machine-reading the pages violates their terms (OpenTable even blocks it), so we use records of what people saw; no cost
+- Three ways records come in: what captains answer when they return from a booking page, the ops team's Spot checks tab, and `server/spotchecks.js` with pasting
+- `server/spotchecks.js`: opens each restaurant's booking page for six at 7pm and records the times shown around 7 by date
+- Checked the morning of 2026-10-19: 46 places for Fri 10/23 and 24 places for Wed 10/21 (OpenTable started blocking consecutive lookups, so the rest of Wednesday was left blank rather than filled with guesses)
+- For Fri 10/23 between 6 and 8pm: 24 places had room for six, 22 didn't, and La Fábrica can't take six online, so phone
+- Checked the morning of 2026-10-22: 47 OpenTable places for Tue 10/27; 42 had room for six between 6 and 8, 3 didn't (Urban Hearth, Krasi, Row 34 Kenmore), 2 phone (Daedalus, Gran Gusto)
+- Tuesday clearly has more room than Friday; when there's a record for the same weekday, it's used to predict other Tuesdays
+- Resy pages no longer show times without clicking, so there are no Resy restaurants for 10/27
+- A time between 6 and 8 means available; none means full; if full for six but the table is four, it's "tight" (four might work)
+- For dates nobody has checked, records from other days are shown with their dates and never presented as confirmed ("Nobody has checked Saturday yet, so nothing here is confirmed")
+- Newer records win; records older than 4 months are deleted automatically
+- These are records, not live data, so the list shows who (we, you, another captain) looked and when; the only guaranteed seats are partner restaurant holds
 
-### 캡틴이 예약 페이지에서 돌아오면
+### When a captain returns from a booking page
 
-- 예약 버튼(또는 전화)을 누르고 앱으로 돌아오면 "Oh hey, you’re back!" 시트가 뜸 (2.5초 미만 다녀온 건 무시)
-- 답 네 가지: 예약했음(예약 시간, 이름 입력으로), 시간은 있었지만 아직 안 함(본 시간을 15분 단위로 탭), 6~8시 사이 없음, 이 인원은 전화하라고 함
-- 답은 바로 서버에 저장 (`/api/captain-seen`), 그날 다른 캡틴 목록에 즉시 반영, 빈자리 있는 곳은 위로, 없는 곳은 맨 아래로
-- 캡틴이 예약한 시간은 우리 자리라 다른 캡틴이 보는 빈 시간에서 빠짐
-- 앱이 그 사이 닫혔으면 캡틴 카드에 "How did The Maharaja look?" 한 줄, 누르면 같은 시트 (12시간 안, 한 식당에 한 번)
-- 데모에서는 예약 버튼을 누르면 1초 뒤 같은 시트가 뜸
-- 예약 화면의 "Mark it full" 링크는 바로가기로 유지
+- After tapping a booking button (or phone) and returning to the app, an "Oh hey, you're back!" sheet appears (trips under 2.5 seconds are ignored)
+- Four answers: booked it (enter the booking time and name), there were times but not booked yet (tap the times seen in 15-minute steps), nothing between 6 and 8, they said to call for this party size
+- Answers are saved to the server immediately (`/api/captain-seen`) and reflected right away in other captains' lists for that day: places with room move up, places without move to the bottom
+- Times booked by a captain are our seats, so they're removed from the free times other captains see
+- If the app was closed in the meantime, the captain card shows one line, "How did The Maharaja look?", which opens the same sheet (within 12 hours, once per restaurant)
+- In the demo, the same sheet appears 1 second after tapping a booking button
+- The "Mark it full" link on the booking screen stays as a shortcut
 
-### 확인 안 한 날짜 예측
+### Predicting unchecked dates
 
-- 다른 날 기록(스팟 체크, 캡틴 답)과 캡틴들이 실제로 예약한 테이블을 함께 사용
-- 같은 요일 기록이 있으면 그것만, 없으면 전체, 6명 만석은 4명 테이블에도 불리하게 반영, 데모의 가짜 예약은 제외
-- 인원 기준: 6명 자리 있음은 4명에게도 자리 있음, 4명 만석은 6명에게도 만석
+- Uses records from other days (spot checks, captain answers) together with tables captains actually booked
+- If there are records for the same weekday, only those; otherwise all; full for six also counts against four-person tables; fake bookings in the demo are excluded
+- Party size rules: room for six means room for four too; full for four means full for six too
 
-### 운영진 Spot checks 탭
+### Ops Spot checks tab
 
-- 관리자 페이지의 새 탭, 앞으로 8일의 저녁마다 테이블 수, 장소 없는 테이블 수, 확인한 곳 수, 빈자리 있는 곳 수
-- 저녁을 고르면 그날 열리는 식당 목록, 24시간 안에 아무도 안 본 곳이 위, 그 안에서 조용한 곳 먼저 (캡틴 목록 상단과 같은 순서)
-- 식당마다 마지막 기록, 6명으로 채워진 예약 링크(전화 식당은 전화번호), 6:00~8:00 15분 단위 시간 버튼, "Nothing near 7", "Says call"
-- 한 곳에 10초, 한 저녁에 10곳이면 충분, 일요일 밤 주간 테이블 공개 뒤 하는 걸 권장
-- 일요일 오후 8시 30분에 캡틴 테이블이 있는데 확인한 곳이 5곳 미만인 저녁이 있으면 당번에게 알림 한 번
-- JSON 붙여넣기 상자도 이 탭으로 이동 (`/api/admin/spot-check`, 식당 이름이나 id로)
+- A new tab in the admin page showing, for each evening in the next 8 days, the number of tables, tables without a venue, places checked, and places with room
+- Picking an evening lists the restaurants open that day, with places nobody has looked at in 24 hours on top and quiet places first within that (the same order as the top of the captain's list)
+- For each restaurant: the latest record, a booking link filled in for six (phone number for phone restaurants), time buttons from 6:00 to 8:00 in 15-minute steps, "Nothing near 7", "Says call"
+- 10 seconds per place and 10 places per evening is enough; recommended after the weekly tables are published on Sunday night
+- At 8:30pm Sunday, if any evening with captain tables has fewer than 5 places checked, the person on duty gets one alert
+- The JSON paste box also moved to this tab (`/api/admin/spot-check`, by restaurant name or id)
 
-### 캡틴이 보는 장소 목록
+### The venue list captains see
 
-- 그 날짜에 여는 곳만 표시: 요일 휴무, 관리자가 넣은 휴무일, 그날 우리 테이블이 이미 찬 곳은 제외
-- 순서: 제휴 식당 먼저, 그다음은 위의 "캡틴 목록의 순서" (확인 기록 묶음, 그 안에서 테이블에 맞는 정도 점수)
-- 만석으로 확인된 곳은 맨 아래 "Show them anyway" 버튼 뒤로
-- 위쪽 음식 칩으로 거르기: All, Tacos, Asian(중식, 일식, 한식, 태국과 베트남), Pizza & Italian, Indian, American, Mediterranean, Seafood, Vegetarian
-- 카드마다 음식 종류와 동네, 분위기, 이동 시간, 빈자리 시간과 확인 시각("At 6:45, 7:00 and 7:15, when we looked today at 6:30 AM"), 확인 안 한 날은 다른 날 기록을 날짜와 함께("Other nights: room on Wed Oct 21"), "Free for six" 또는 "Full around 7", 대화, 6인 테이블, 예약 난이도 태그, 가격대
-- 식당을 누르면 확인 기록, 방 분위기, 예약 메모에 적을 자리, 빈자리 시간 버튼
-- 10곳씩 보여주고 Show more로 나머지
-- 예약 버튼은 그 날짜, 인원, 확인된 빈자리 시간이 채워진 채로 열림
+- Only places open on that date: excludes weekly closures, closure dates entered by the admin, and places already full with our tables that day
+- Order: partner restaurants first, then the "Order of the captain's list" above (check record groups, and fit score within each)
+- Places confirmed full go to the bottom behind a "Show them anyway" button
+- Filter with cuisine chips at the top: All, Tacos, Asian (Chinese, Japanese, Korean, Thai and Vietnamese), Pizza & Italian, Indian, American, Mediterranean, Seafood, Vegetarian
+- Each card shows cuisine and neighborhood, atmosphere, travel time, available times and when they were checked ("At 6:45, 7:00 and 7:15, when we looked today at 6:30 AM"), other days' records with dates for unchecked days ("Other nights: room on Wed Oct 21"), "Free for six" or "Full around 7", conversation, six-tops, and booking difficulty tags, and price range
+- Tapping a restaurant shows check records, the room's atmosphere, the seat to request in the booking note, and available time buttons
+- Shows 10 at a time, with Show more for the rest
+- Booking buttons open with that date, party size, and confirmed available time filled in
 
-### 캡틴 예약의 안전장치
+### Safeguards for captain bookings
 
-- 저녁 48시간 전까지 예약이 없으면 캡틴에게 알림, 캡틴을 맡은 지 6시간이 지난 뒤에만
-- 36시간 전까지도 없으면 캡틴 역할이 다른 회원에게 넘어가고 단톡방과 알림으로 안내, 알림 후 최소 6시간 뒤에만, 이전 캡틴에게도 알림
-- 모두 캡틴을 원하지 않아도 한 명은 캡틴, 캡틴이 없는 테이블엔 "I’ll be captain" 버튼
-- 정오 공개 때 아직 예약 전이면 단톡방에 "캡틴이 예약 중" 안내, 예약되면 장소와 시간, 예약자 이름을 바로 공지
-- 무료 변경 마감(전날 정오)까지 없으면 당번에게 알림, 그 뒤에도 당일 오후 2시까지는 예약 가능
-- 테이블이 전날 정오 이후에 나왔으면 마감은 공개 2시간 뒤와 당일 오전 10시 중 늦은 쪽
-- 당일 오후 2시(아주 늦게 나온 테이블은 무료 변경 마감 1시간 뒤)까지 장소가 없으면 테이블 취소, 아무도 헛걸음하지 않게 하고 다음 주 우선 배정
-- 당일 예약이 깨지면 1시간 안에 다른 곳 예약 가능, 당번에게도 알림
-- 정오 공개 뒤 예약이 깨지거나 장소, 시간이 바뀌면 테이블 전원에게 단톡방 안내와 알림
-- 제휴 식당이 당일에 못 받거나 예약한 사람이 탈퇴하면 캡틴에게 2시간의 재예약 시간과 알림
-- 예약한 사람이 무료 변경 마감 뒤에 탈퇴하면 예약은 그대로 두고 당번에게 식당 확인 요청
-- 예약 알림과 캡틴 이전은 오전 8시~오후 9시에만 발송
-- 예약 뒤 인원이 바뀌면 예약한 사람에게 수정 알림, 브리핑 카드에 "Update it" 링크
-- 예약은 예약한 사람 몫: 테이블 취소, 합치기, 다른 곳 예약, 저녁 취소 때 그 사람에게 식당 예약 취소 알림
-- 예약한 사람이 캡틴을 넘기거나 빠지면 예약 유지 요청, 새 캡틴 화면에 누구 이름으로 예약됐는지 표시
-- round two는 지난번 예약을 이어받지 않고 새 캡틴이 예약, 지난번 장소가 목록 맨 위
-- "I booked it"은 예약 페이지를 열었거나 확인 번호를 입력해야 활성화
-- 미션 기록과 스트라이프는 직접 예약한 사람, 실제로 참석한 캡틴에게만
-- 50명, 100명 4~6주 시뮬레이션에서 장소 없이 저녁을 맞은 테이블 0개, 예약 유령(아무도 예약하지 않은 장소 표시) 0개
+- If there's no booking 48 hours before dinner, the captain gets a reminder, but only once they've been captain for 6 hours
+- If there's still none 36 hours before, the captain role passes to another member and it's announced in the group chat and by notification, only at least 6 hours after the reminder; the previous captain is notified too
+- Even if nobody wants to be captain, one person is captain; tables without a captain show an "I'll be captain" button
+- If not yet booked at the noon reveal, the group chat says "the captain is booking"; once booked, the venue, time, and name on the reservation are announced right away
+- If none by the free-change deadline (noon the day before), the person on duty is alerted; booking is still possible until 2pm on the day
+- If the table was created after noon the day before, the deadline is the later of 2 hours after publishing and 10am on the day
+- If there's no venue by 2pm on the day (1 hour after the free-change deadline for tables created very late), the table is canceled so nobody makes a wasted trip, with priority seating next week
+- If a booking falls through on the day, another place can be booked within 1 hour, and the person on duty is alerted too
+- If a booking falls through or the venue or time changes after the noon reveal, everyone at the table gets a group chat message and notification
+- If a partner restaurant can't take the table on the day or the person who booked leaves, the captain gets a notification and 2 hours to rebook
+- If the person who booked leaves after the free-change deadline, the booking stays and the person on duty is asked to check with the restaurant
+- Booking reminders and captain handoffs are sent only between 8am and 9pm
+- If the headcount changes after booking, the person who booked gets a notification to update it, with an "Update it" link on the briefing card
+- The booking belongs to whoever made it: when a table is canceled, merged, rebooked elsewhere, or an evening is canceled, that person is reminded to cancel the restaurant booking
+- If the person who booked hands off captain or drops out, they're asked to keep the booking, and the new captain's screen shows whose name it's under
+- Round two doesn't inherit the previous booking; the new captain books, with the previous venue at the top of the list
+- "I booked it" activates only after opening the booking page or entering a confirmation number
+- Mission records and stripes go only to the person who booked directly and to captains who actually attended
+- In 4 to 6 week simulations with 50 and 100 people: 0 tables reached the evening without a venue and 0 phantom bookings (a venue shown that nobody booked)
 
-### 제휴 식당 (선택)
+### Partner restaurants (optional)
 
-- 관리자 Places 탭에서 등록, 방식은 "Captains book it themselves"(기본), 상시 확보, 매번 확인 중 선택
-- 캡틴 예약 장소는 예약 경로(OpenTable, Resy, Tock, 사이트, 전화), 예약 링크나 전화번호, 가격대, 카드 보증 여부, 분위기 한 줄 입력
-- 제휴 식당은 이름, 주소, 요일, 테이블 수, 연락처, 휴무일, 계약 조건 등록
-- 기본은 상시 확보, 식당이 못 받는다고 알려올 때만 제외
-- 저녁마다 확인을 원하는 식당은 매번 확인 모드, 확인 전에는 회원에게 주소 비공개
-- 초대장이 나갈 때 자리가 남은 제휴 식당으로 자동 배치, 같은 동네와 덜 붐비는 곳 우선
-- 식당이 받는 메일: 일요일 밤 주간 계획, 전날 정오 최종 인원, 이후 저녁 시작 전까지 변경 사항
-- 메일이 실패하면 몇 분 뒤 다시 발송하고 당번에게 알림, 이메일이 없는 식당은 최종 인원 때 당번에게 전화 요청
-- 회원 이름과 프로필 없이 인원, 시간, 식단 메모, 캡틴 이름만 전달
-- 식당 전용 페이지(`/place?k=…`)에서 로그인 없이 확인 또는 거절
-- 식당이 거절하면 다른 제휴 식당으로 이동, 옮길 곳이 없으면 당번이 처리
-- 매번 확인 식당에 테이블이 하나 늘면 이미 확인한 테이블은 그대로, 새 테이블만 다시 확인
+- Registered in the admin Places tab, choosing between "Captains book it themselves" (default), always held, or confirmed each time
+- For captain-booked venues, enter the booking route (OpenTable, Resy, Tock, site, phone), booking link or phone number, price range, whether a card guarantee is required, and a one-line atmosphere
+- For partner restaurants, register the name, address, days, number of tables, contact, closure dates, and contract terms
+- The default is always held, excluded only when the restaurant says it can't take the table
+- Restaurants that want to confirm every evening use confirm-each-time mode, and the address stays hidden from members until confirmed
+- When invitations go out, tables are placed automatically at partner restaurants with room, preferring the same neighborhood and less crowded places
+- Email restaurants receive: the weekly plan on Sunday night, the final headcount at noon the day before, and any changes after that until dinner starts
+- If an email fails, it's resent a few minutes later and the person on duty is alerted; for restaurants without email, the person on duty is asked to call at final headcount time
+- Only headcount, time, dietary notes, and the captain's name are shared, with no member names or profiles
+- Restaurants confirm or decline on a dedicated page (`/place?k=…`) without signing in
+- If a restaurant declines, the table moves to another partner restaurant; if there's nowhere to move it, the person on duty handles it
+- If a confirm-each-time restaurant gets one more table, already confirmed tables stay as is and only the new table is confirmed again
 
-### 회원
+### Members
 
-- 전날 정오까지 무료 변경 (월요일 테이블은 월요일 오전 10시까지)
-- 그 뒤 취소는 1점, 노쇼는 2점, 60일 안에 3점이면 2주 동안 초대 중단
-- 차단하거나 신고한 사람과 같은 테이블이면 늦게 빠져도 점수 없음, 신고는 당번에게 바로 알림
-- 세 명 아래로 줄면 다른 테이블과 합치거나 종료, 둘만 남는 저녁은 데이트처럼 보일 수 있어 만들지 않음
-- 닫힌 테이블 사람은 다음 주 우선 배정
-- 캡틴: 테이블마다 한 명, 세 가지 미션은 아래 "캡틴: 세 가지 미션" 참고
-  - 최근에 맡지 않은 사람 순서, Me에서 제외 가능, 두 시간 전까지 넘기기 가능
+- Free changes until noon the day before (until 10am Monday for Monday tables)
+- After that, a cancellation is 1 point and a no-show is 2 points; 3 points within 60 days pauses invitations for 2 weeks
+- No points for dropping late if seated with someone you've blocked or reported; reports alert the person on duty immediately
+- If a table drops below three, it's merged with another table or ended; evenings with only two people are never created because they could look like a date
+- People from closed tables get priority seating next week
+- Captain: one per table; see "Captain: three missions" below for the three missions
+  - Ordered by who hasn't been captain recently; can opt out in Me; can hand off up to two hours before
 
-### 운영팀
+### Ops team
 
-- 처음에는 창업자와 캠퍼스 리드 1~2명이 하루씩 돌아가며 당번
-- 당번은 자리 없는 테이블, 답 없는 식당, 당일 변동 알림을 메일로 받아 Ops 탭에서 처리
-- RSVP가 마감되면 인원을 당번에게 알림, 날짜는 Places 탭에서 변경 가능 (추수감사절, 연말)
-- 서버 코드: `placeTable`, `savePlace`, `syncBooking`, `placeAnswer`, `placeMail`, `shrink`, `closeTable`, `lateChanges`, `pickCaptain`, `alertOps`, 식당 페이지는 `public/place.html`
+- At first, the founder and 1 to 2 campus leads take turns being on duty for a day each
+- The person on duty receives email alerts about tables without seats, restaurants that haven't replied, and same-day changes, and handles them in the Ops tab
+- When RSVPs close, the headcount is sent to the person on duty; dates can be changed in the Places tab (Thanksgiving, year end)
+- Server code: `placeTable`, `savePlace`, `syncBooking`, `placeAnswer`, `placeMail`, `shrink`, `closeTable`, `lateChanges`, `pickCaptain`, `alertOps`; the restaurant page is `public/place.html`
 
-## 캡틴: 세 가지 미션
+## Captain: three missions
 
-- 테이블마다 회원 한 명이 돌아가며 캡틴, 디너에 와 본 사람을 첫 디너인 사람보다 우선 (첫 초대장부터 일을 맡기지 않도록)
-- 처음 공개될 때는 별도 캡틴 알림 없이 초대장 알림에 "There’s a small job inside for you" 한 줄 추가
-- 봉인된 초대장에는 금색 "Open this one first"(초대장이 하나면 "Open soon")만 표시, 캡틴이라는 말은 열기 전에 꺼내지 않음
-- 초대장 안에서 캡틴 역할을 쉬운 말로 설명: 남은 미션과 예약 마감, 원하면 넘길 수 있다는 것
-- 초대장을 연 뒤에만 홈의 그 초대장 바로 아래에 "You’re the captain" 줄과 다음 미션 표시 (예: Next: book the spot by Sunday at noon)
-- 캡틴이면 애니메이션으로 분명하게
-  - 봉인된 봉투: 금색 테두리가 돌고, 크게 빛나고, 2~3초마다 흔들림, 봉인 위 금색 깃발이 통통 튐, "Open this one first" 금색 태그가 커졌다 작아짐
-  - 처음 열 때: 화면 가운데 "You’re the captain!" 금색 카드가 회전하는 빛살과 금색 꽃가루와 함께 3초간 표시, 그 뒤 편지 모서리에 금색 Captain 도장
-  - 홈: 캡틴 줄 전체가 흐르는 금색, 깃발이 펄럭임
-  - 테이블 화면: 브리핑 카드에 굵은 금색 테두리가 돌고 은은하게 빛남, 큰 깃발, Who’s coming의 캡틴 얼굴에 깃발
-- 테이블 화면의 브리핑 카드에 미션 셋과 진행 막대
-- 중간에 캡틴이 바뀌면 그때는 캡틴 알림 발송
-- 캡틴이 안 들어올 때의 안전장치
-  - 캡틴이 초대장도 테이블도 안 열었으면: 공개 후 12시간(남은 시간이 짧으면 그 35%)이 지나면, 이미 열어 본 테이블 멤버에게 캡틴을 넘김 (원래 캡틴에게는 "자리는 그대로" 알림)
-  - 열었지만 예약을 안 하면: 이틀 전 리마인더, 36시간 전 다른 사람에게 넘김 (기존)
-  - 마감 4시간 전까지 아무도 예약을 안 하면: 테이블 전원에게 "누구나 예약 가능, 예약한 사람이 캡틴" 알림, 테이블 화면과 홈에 I’ll book it 버튼
-  - 마감(당일 오후 2시)까지 예약이 없으면 테이블 취소, 다음 주 우선 배정, 당번에게 알림 (기존)
-  - 캡틴이 취소하면 즉시 다른 사람이 캡틴, 열어 본 사람과 디너에 와 본 사람 우선
-  - 캡틴이 당일 안 나타나도 예약자 이름이 테이블 전원에게 공개돼 있어 다른 사람이 체크인 가능
-- 미션 1, 장소 예약: 목록에서 최대 4곳 중 골라 직접 예약하고 "I booked it"으로 시간과 예약자 이름 입력
-  - 원래 시간이 없으면 앞뒤 1시간 안에서 예약 가능, 테이블 화면과 초대장에 예약한 시간 표시
-  - 테이블에는 캡틴이 장소를 예약했다는 사실만 알리고, 장소는 당일 정오에 공개
-  - 제휴 식당이 잡아둔 곳이면 예약 없이 Keep 또는 다른 곳 선택
-  - 예약이 깨지면 "It fell through"로 되돌리고 다시 예약
-- 미션 2, 투표 끌어내기: Tonight’s question에 테이블의 4분의 3 이상 투표
-  - Nudge 두 번까지(3시간 간격), 단톡방에 캡틴 메시지와 투표 버튼, 아직 안 한 사람에게 알림
-- 미션 3, 각자 계산: 자리에 앉을 때 separate checks 요청, 저녁 당일부터 다음 날까지 Done 체크
-- 문 앞에서 "Hash Table, party of six"로 일행 확인은 그대로
-- 세 미션을 모두 하면 스트라이프 하나, 다음 날 아침 리포트 카드와 축하 효과
-- 테이블 사람들은 다음 날 아침 "Thank Jordan for captaining"으로 감사 표시
-- 등급: 스트라이프 1개 Captain, 3개 Senior captain, 5개 Commodore, Me 탭의 Captain’s log에 기록
-- 서버 코드: `missions`, `captainStats`, `spotOptions`, `bookLink`, `captainSpot`, `captainBook`, `captainNudge`, `captainChecks`, `briefCaptain`, API `/api/captain-spot`, `/api/captain-book`, `/api/captain-nudge`, `/api/captain-checks`
+- One member per table takes a turn as captain, with people who have been to a dinner preferred over first-timers (so nobody gets a job with their first invitation)
+- When first published, there's no separate captain notification; the invitation notification just adds one line: "There's a small job inside for you"
+- A sealed invitation only shows a gold "Open this one first" ("Open soon" if there's only one invitation); the word captain isn't mentioned before opening
+- Inside the invitation, the captain role is explained in plain words: the remaining missions, the booking deadline, and that it can be handed off if wanted
+- Only after the invitation is opened does a "You're the captain" line and the next mission appear right below that invitation on home (e.g. Next: book the spot by Sunday at noon)
+- Captains get clear animations
+  - Sealed envelope: a gold border circles, it glows brightly and wiggles every 2 to 3 seconds, a gold flag bounces on the seal, and the gold "Open this one first" tag pulses
+  - On first open: a "You're the captain!" gold card appears in the center for 3 seconds with rotating light rays and gold confetti, then a gold Captain stamp appears in the corner of the letter
+  - Home: the whole captain line shimmers gold and the flag waves
+  - Table screen: a thick gold border circles the briefing card with a soft glow, a large flag, and a flag on the captain's face in Who's coming
+- The briefing card on the table screen shows the three missions and a progress bar
+- If the captain changes midway, a captain notification is sent at that point
+- Safeguards when the captain doesn't show up
+  - If the captain hasn't opened the invitation or the table: after 12 hours from publishing (or 35% of the remaining time if short), captain passes to a table member who has opened it (the original captain is told "your seat stays")
+  - If opened but not booked: reminder two days before, handoff to someone else 36 hours before (existing)
+  - If nobody has booked 4 hours before the deadline: everyone at the table is told "anyone can book, and whoever books is captain", with an I'll book it button on the table screen and home
+  - If there's no booking by the deadline (2pm on the day), the table is canceled, with priority seating next week and an alert to the person on duty (existing)
+  - If the captain cancels, someone else becomes captain immediately, preferring people who opened it and people who have been to a dinner
+  - Even if the captain doesn't show up on the day, the name on the reservation is visible to everyone at the table, so someone else can check in
+- Mission 1, book the venue: pick from up to 4 places in the list, book directly, and enter the time and name on the reservation with "I booked it"
+  - If the original time isn't available, booking within an hour either side is allowed; the booked time is shown on the table screen and invitation
+  - The table is only told that the captain booked a venue; the venue is revealed at noon on the day
+  - If it's a place a partner restaurant is holding, choose Keep or another place with no booking
+  - If the booking falls through, revert with "It fell through" and book again
+- Mission 2, get the vote out: at least three quarters of the table votes on Tonight's question
+  - Up to two Nudges (3 hours apart): a captain message and vote button in the group chat, and a notification to people who haven't voted
+- Mission 3, separate checks: ask for separate checks when sitting down, and check Done from the evening of the dinner through the next day
+- Confirming the party at the door with "Hash Table, party of six" stays the same
+- Completing all three missions earns one stripe, with a report card and celebration effect the next morning
+- People at the table can say thanks the next morning with "Thank Jordan for captaining"
+- Ranks: 1 stripe Captain, 3 Senior captain, 5 Commodore, recorded in the Captain's log on the Me tab
+- Server code: `missions`, `captainStats`, `spotOptions`, `bookLink`, `captainSpot`, `captainBook`, `captainNudge`, `captainChecks`, `briefCaptain`; API `/api/captain-spot`, `/api/captain-book`, `/api/captain-nudge`, `/api/captain-checks`
 
-## Industry table: 캡틴 우선
+## Industry table: captains first
 
-- 업계 게스트(창업자, 투자자, 현업 엔지니어 등)가 함께하는 테크 테이블
-- 관리자 Tables 탭의 A special night에서 Industry table로 생성, 게스트 이름과 역할, 한 줄 소개 입력
-- 처음 48시간은 스트라이프가 있는 캡틴만 신청 가능, 이후 모두에게 오픈
-- 테이블을 짤 때도 스트라이프가 많은 순서로 먼저 배정
-- 열리면 캡틴에게 바로 알림, 48시간 뒤 전체 알림 (Ping everyone을 켠 경우)
+- A tech table joined by an industry guest (a founder, investor, working engineer, etc.)
+- Created as an Industry table under A special night in the admin Tables tab, entering the guest's name, role, and a one-line intro
+- For the first 48 hours only captains with stripes can sign up; then it opens to everyone
+- When building the table, people with more stripes are seated first
+- When it opens, captains are notified right away, and everyone 48 hours later (if Ping everyone is on)
 
 ## Board
 
-- Harvard와 MIT 사람들의 게시판
-- 글 종류: Worth reading, Ask, Hot take, Shipped, Event, 채용 공고는 Roles 탭
-- 핫테이크는 Agree, Disagree 투표, 모든 글에 하트와 댓글
-- People은 회원 명부가 아니라 내가 만난 사람 목록, 서버도 그 사람들만 전송
+- A board for people at Harvard and MIT
+- Post types: Worth reading, Ask, Hot take, Shipped, Event; job postings go in the Roles tab
+- Hot takes get Agree/Disagree votes; every post gets hearts and comments
+- People is not a member directory but a list of people you've met, and the server only sends those people
 
-## 테이블 구성 규칙
+## Table building rules
 
-- 코드는 [server/tables.js](server/tables.js), 테스트는 `test/tables.test.js`
-- 필수 조건: 4~6명, 두 학교 이상, 한 학교가 절반 이하, 서로 차단하거나 신고한 사람 제외
-- 신고는 차단을 풀어도 유지, 다른 저녁 빈자리 배정에서도 같은 테이블 제외
-- 테이블 수는 적은 쪽 학교 인원에 맞춤 (적은 학교 2명당 최대 1테이블), 한 명씩 흩어져 테이블이 깨지는 일 방지
-- 이미 같이 앉았던 사람끼리는 최대한 다른 테이블 (재회 테이블은 예외)
-- 매칭 비중: 테크 테이블은 주제 60, 사람 40 / 소셜 테이블은 주제 20, 사람 80
-- 사람이 모자란 트랙은 가까운 트랙과 합치고, 트랙이 대부분 작으면 한데 모아 같은 트랙끼리 앉힘
-- 트랙별 배정 후 남은 사람끼리 4명 이상이면 섞어서 한 테이블, 테이블 이름은 가장 많이 겹치는 트랙
-- 정규 배정 뒤 "아무도 빠지지 않게" 2차 배정, 아래 순서로 가장 작은 양보부터
-  - 원하는 종류 테이블의 빈자리 (같은 트랙 우선, 작은 테이블 우선)
-  - 그날 남은 사람끼리 3명 이상 새 테이블
-  - 학교 비율 완화 (두 학교는 반드시 포함)
-  - 그날 혼자 남은 사람: 같은 저녁을 고른 2~3명을 데려와 새 테이블, 6명 테이블에서 빼거나 한 번 더 원한 사람, 다른 저녁의 여유 있는 테이블에서 이동 (이동한 사람도 디너 수는 그대로)
-  - 그래도 없으면 다른 종류 테이블, 마지막으로 그날 한 학교만 있을 때만 한 학교 테이블
-- 원래 테이블에서 사람을 데려올 때 그 테이블의 학교 비율과 4명 이상은 유지
-- 2차 배정으로 앉은 자리는 seats의 `rescued`, 비율을 완화한 테이블은 `loose`로 표시, 관리자 화면에 school mix 표시
-- 그 주에 같은 저녁을 고른 사람이 아무도 없을 때만 배정 불가, 이 경우 그 저녁들의 빈자리 대기(종류 무관)와 다음 주 우선 배정
-- 2차 배정은 소셜만 원하는 사람을 테크로 옮기지 않음, 혼자 남은 사람을 위해 다른 종류에 앉힐 때만 초대장에 이유를 쓰고 빠지기 무료
-- 서로 고른 두 사람(재회)은 2차 배정에서도 떼어놓지 않음
-- 무료 변경 기간에 3명 테이블에서 한 명이 빠지면 그 저녁을 고른 사람으로 먼저 채움
-- 같은 seed면 같은 결과
+- Code in [server/tables.js](server/tables.js), tests in `test/tables.test.js`
+- Hard requirements: 4 to 6 people, at least two schools, no school over half, excluding people who blocked or reported each other
+- Reports persist even if a block is lifted, and also exclude seating together when filling empty seats on other evenings
+- The number of tables is set by the smaller school's headcount (at most 1 table per 2 people from the smaller school), preventing tables from breaking with people scattered one by one
+- People who have already sat together are placed at different tables as much as possible (except reunion tables)
+- Matching weights: tech tables topic 60, people 40 / social tables topic 20, people 80
+- Tracks short on people merge with the closest track; if most tracks are small, everyone is pooled and same-track people sit together
+- After assignment by track, if 4 or more people remain, they're mixed into one table named after the track with the most overlap
+- After regular assignment, a second pass makes sure "nobody is left out", in this order from the smallest concession
+  - An empty seat at a table of the preferred kind (same track first, smaller tables first)
+  - A new table of 3+ from the people left that day
+  - Relaxing the school ratio (two schools must still be included)
+  - Someone alone that day: bring in 2 to 3 people who picked the same evening to make a new table, taking them from six-person tables, people who wanted one more dinner, or tables with room on other evenings (people who move keep their dinner count)
+  - If still none, a table of the other kind; finally, a single-school table only if only one school is present that day
+- When taking people from their original table, that table keeps its school ratio and at least 4 people
+- Seats filled in the second pass are marked `rescued` in seats, tables with a relaxed ratio are marked `loose`, and the admin screen shows the school mix
+- Assignment fails only when nobody else picked the same evening that week; in that case the person waits for empty seats on those evenings (any kind) and gets priority seating next week
+- The second pass never moves people who only want social tables to tech tables; only when seating someone alone at the other kind does the invitation give the reason, with dropping free
+- Two people who picked each other (a reunion) are never separated in the second pass either
+- During the free-change period, if one person drops from a 3-person table, it's filled first with someone who picked that evening
+- The same seed gives the same result
 
-## 출시 전 리허설
+## Pre-launch rehearsal
 
 ```bash
 npm run simulate
 ```
 
-- 가상의 회원 50명(Harvard 25, MIT 25)이 가짜 시계로 4주를 보내는 시뮬레이션, 실제 데이터는 건드리지 않음
-- 매주 저녁 고르기, 일요일 자동 배정, 캡틴 예약과 투표, 취소와 노쇼, 다음 날 피드백, round two까지 진행
-- 같은 날 두 테이블, 3~6명, 학교 비율, 차단한 사람, 캡틴, 요청한 횟수와 저녁, 중단된 회원 규칙을 매 단계 검사
-- 당일 예약이 깨지는 경우(20건 중 1건)와 다시 예약, 닫힌 테이블의 예약 취소 알림, 예약 없는 장소 표시도 검사
-- 옵션: `--people 100`, `--weeks 6`, `--seed 3`, `--flat`(트랙을 고르게 퍼뜨린 가장 어려운 경우)
-- 2026-10-17 기준 결과(20명~100명, 8가지 설정): 저녁을 고른 사람의 100%가 매주 디너 확보, 2차 배정으로 앉은 사람은 한 주 평균 2~6명
-- 테크 테이블 좌석의 46~50%가 자기 트랙, 인접 트랙 포함 61~73%, 트랙을 고르게 퍼뜨린 최악의 경우 39~44%
-- 규칙 위반 0, 장소 없이 저녁을 맞은 테이블 0, 회원 화면 응답 중앙값 3~10ms
-- 매칭 엔진 별도 검증: 무작위 200개 구성과 서버 120주, 학교 비율과 차단 규칙 위반 0, 같은 데이터면 같은 결과
-- 일요일 자동 배정 시간: 50명 1.8초, 100명 3.5초 (전원이 5일 모두 고른 최악의 경우), 150명 넘으면 별도 작업으로 분리 검토
+- A simulation of 50 fictional members (25 Harvard, 25 MIT) spending 4 weeks on a fake clock; real data is untouched
+- Runs through picking evenings each week, automatic Sunday assignment, captain bookings and votes, cancellations and no-shows, next-day feedback, and round two
+- Checks at every step: two tables on the same day, 3 to 6 people, school ratio, blocked people, captains, requested counts and evenings, and rules for paused members
+- Also checks same-day booking failures (1 in 20) and rebooking, booking cancellation reminders for closed tables, and venue display without a booking
+- Options: `--people 100`, `--weeks 6`, `--seed 3`, `--flat` (the hardest case, with tracks spread evenly)
+- Results as of 2026-10-17 (20 to 100 people, 8 configurations): 100% of people who picked evenings got a dinner every week, with an average of 2 to 6 people a week seated by the second pass
+- 46 to 50% of tech table seats are in the person's own track, 61 to 73% including adjacent tracks, and 39 to 44% in the worst case with tracks spread evenly
+- 0 rule violations, 0 tables reaching the evening without a venue, median member screen response 3 to 10ms
+- Separate validation of the matching engine: 200 random configurations and 120 server weeks with 0 school ratio or block rule violations, and the same data gives the same result
+- Automatic Sunday assignment time: 1.8 seconds for 50 people, 3.5 seconds for 100 (worst case, with everyone picking all 5 days); beyond 150, consider moving it to a separate job
 
-### 실제 서버로 끝까지
+### End to end on a real server
 
 ```bash
 npm run e2e
 ```
 
-- 진짜 서버를 임시 데이터 폴더로 띄우고, 가상의 회원 50명이 휴대폰처럼 HTTP로 사용
-- 클럽 링크로 가입, 학교 이메일 코드 인증, 카드 작성, 주간 계획, 일요일 배정과 공개, 초대장 열기, 단톡방, 투표, 캡틴 예약, 일정 변경, 신고, Hang, Board, People, 계정 삭제까지
-- 매 응답의 상태와 규칙(빠진 사람 없음, 한 저녁 두 테이블 없음, 3~6명, 학교 비율, 정오 전 식당 비공개, 이메일 비노출)을 검사
-- Chrome이 있으면 같은 서버를 헤드리스 Chrome 휴대폰 화면으로 열어 화면 렌더링, 채팅 입력, 콘솔 오류까지 확인
-- 웹앱 항목도 검사: 설치 manifest(id, 여백 있는 아이콘), 보안 헤더, 영상 ETag, 앱 버전 표시, 초대만 받고 인증 안 한 사람의 이메일 로그인, 인터넷 끊김 후 자동 재연결
-- 옵션: `--people 80`, `--no-ui`
-- 2026-10-18 결과: 50명과 80명 모두 전원 가입, 저녁 고른 사람 전원 배정, 규칙 위반 0, 응답 중앙값 2ms, 웹앱 항목 전부 통과
+- Starts the real server with a temporary data folder, and 50 fictional members use it over HTTP like phones
+- From sign-up via a club link, school email code verification, filling out the card, the weekly plan, Sunday assignment and publishing, opening invitations, group chats, voting, captain booking, schedule changes, reporting, Hang, Board, People, through account deletion
+- Checks the status and rules of every response (nobody left out, no two tables on one evening, 3 to 6 people, school ratio, restaurant hidden before noon, no email exposure)
+- If Chrome is available, opens the same server in a headless Chrome phone screen to check rendering, chat input, and console errors
+- Also checks web app items: install manifest (id, icons with padding), security headers, video ETag, app version display, email sign-in for people who were invited but never verified, automatic reconnect after losing the connection
+- Options: `--people 80`, `--no-ui`
+- Results on 2026-10-18: with both 50 and 80 people, everyone signed up, everyone who picked an evening was seated, 0 rule violations, median response 2ms, all web app items passed
 
-## 배포 (Railway)
+## Deployment (Railway)
 
 ```bash
 npm install -g @railway/cli
 ```
 
-- 이 폴더에서 `railway login`, `railway init`, `railway up`, `railway domain` 순서로 실행
-- Railway 대시보드에서 Volume을 `/data`에 연결 (없으면 서버가 시작을 거부), 볼륨 백업도 켜기
-- 환경 변수 `SIXTOP_ADMIN_KEY`, `SIXTOP_DATA_DIR=/data`, `SIXTOP_PUBLIC_URL`, `RESEND_API_KEY`, `SIXTOP_MAIL_FROM`, `SIXTOP_VAPID_SUBJECT` 입력
-- 푸시 알림은 HTTPS에서만 동작, 아이폰은 홈 화면에 추가해야 알림 사용 가능 (iOS 16.4 이상)
-- 실제 도메인을 정한 뒤 출시, 홈 화면 앱과 알림 구독은 주소에 묶여 있어 나중에 도메인을 바꾸면 회원 전원 재설치와 재로그인 필요
-- `SIXTOP_PUBLIC_URL`이 https면 http 접속은 https로 이동, HSTS 헤더 추가
+- From this folder, run `railway login`, `railway init`, `railway up`, `railway domain` in that order
+- In the Railway dashboard, attach a Volume at `/data` (the server refuses to start without one), and turn on volume backups too
+- Set the environment variables `SIXTOP_ADMIN_KEY`, `SIXTOP_DATA_DIR=/data`, `SIXTOP_PUBLIC_URL`, `RESEND_API_KEY`, `SIXTOP_MAIL_FROM`, `SIXTOP_VAPID_SUBJECT`
+- Push notifications only work over HTTPS; on iPhone, notifications require adding it to the home screen (iOS 16.4 or later)
+- Launch only after settling on the real domain; home screen apps and notification subscriptions are tied to the address, so changing the domain later means every member must reinstall and sign in again
+- If `SIXTOP_PUBLIC_URL` is https, http requests redirect to https and an HSTS header is added
 
-## 웹앱으로 쓸 때
+## Using it as a web app
 
-- 아이폰: 웹 알림은 홈 화면에 추가한 앱에서만 동작, 그래서 페르소나 결과 다음에 홈 화면 추가 방법을 4단계로 안내 (카카오톡, 인스타그램 같은 앱 안 브라우저면 Safari로 열기부터)
-- 홈 화면 앱은 Safari와 저장 공간이 따로라 한 번 더 로그인 필요, 홈 화면 앱에서는 Sign in 버튼이 앞에 표시
-- 안드로이드와 데스크톱: 결과 다음에 알림 켜기 안내, Not now를 누르면 3일 뒤 다시 안내, 브라우저에서 차단하면 더 묻지 않음
-- 알림을 안 켠 회원: 초대장, 장소 공개, 장소 변경, 테이블 취소, 캡틴 관련 알림을 이메일로 대신 발송 (하루 최대 3통)
-- 코드 확인하러 메일 앱에 다녀오는 사이 앱이 새로 열려도 코드 입력 단계 유지 (15분), 가입 중 답변도 단계별로 휴대폰에 보관 (사진 제외)
-- 연결이 끊기면 로그인을 유지한 채 다시 시도 버튼 표시, 연결이 돌아오면 자동으로 재접속
-- 새 버전 배포 후 오래 켜 둔 앱은 다음에 다시 열 때 스스로 새로고침
-- 키보드가 올라와도 채팅 입력창이 가려지지 않도록 화면 높이를 보이는 영역에 맞춤, 아이폰 지도 링크는 Apple 지도
-- 알림 배지(안드로이드 상단 바)는 투명 배경의 # 모양, 홈 화면 아이콘 숫자 배지는 안 읽은 메시지 수
-- 실제 아이폰과 안드로이드 기기에서 키보드, 알림, 홈 화면 추가를 한 번씩 직접 확인 필요 (자동 테스트는 Chrome 기준)
+- iPhone: web notifications only work in an app added to the home screen, so after the persona result there's a 4-step guide to adding it (starting with opening in Safari if in an in-app browser like KakaoTalk or Instagram)
+- The home screen app has separate storage from Safari, so it needs one more sign-in; the Sign in button is shown first in the home screen app
+- Android and desktop: after the result, a prompt to turn on notifications; tapping Not now asks again 3 days later, and if blocked in the browser it stops asking
+- Members without notifications: invitations, venue reveals, venue changes, table cancellations, and captain-related notifications are sent by email instead (up to 3 a day)
+- If the app reopens while you're in your mail app checking the code, it stays on the code entry step (15 minutes), and sign-up answers are saved on the phone step by step (except photos)
+- If the connection drops, a retry button is shown while staying signed in, and it reconnects automatically when the connection returns
+- After a new version is deployed, an app left open for a long time refreshes itself the next time it's opened
+- The screen height fits the visible area so the chat input isn't hidden when the keyboard comes up; map links on iPhone open Apple Maps
+- The notification badge (Android status bar) is a # shape on a transparent background, and the home screen icon's number badge is the unread message count
+- Keyboard, notifications, and add-to-home-screen need to be checked by hand once each on real iPhone and Android devices (automated tests use Chrome)
 
-## 데이터와 개인정보
+## Data and privacy
 
-- 데이터 폴더에 이름, 학교 이메일, 사진, 생활 단계 저장, 외부 공개 금지, 파일럿 후 삭제
-- 하루 한 번 `backups/`에 데이터 백업, 최근 14일치 보관
-- `db.json`이 깨졌거나 사진만 있고 `db.json`이 없으면 서버가 시작을 멈춤 (빈 데이터로 덮어쓰지 않음), 이때는 백업 파일을 `db.json`으로 복원
-- 모든 회원은 Harvard 또는 MIT 이메일을 6자리 코드로 인증, 인증 전에는 이용 불가
-- 프로필 사진은 필수, 인증된 회원에게만 표시
-- 생활 단계는 매칭에만 사용, 테이블에서는 두 명 이상일 때 숫자로만 언급
-- 샘플 회원 얼굴은 AI로 만든 초상화 (실제 인물 아님)
-- Delete my account를 누르면 사진과 프로필 즉시 삭제
+- The data folder stores names, school emails, photos, and life stage; never make it public, and delete it after the pilot
+- Data is backed up to `backups/` once a day, keeping the last 14 days
+- If `db.json` is corrupted, or there are photos but no `db.json`, the server stops starting (it never overwrites with empty data); in that case restore a backup file as `db.json`
+- Every member verifies a Harvard or MIT email with a 6-digit code and can't use the app before verifying
+- A profile photo is required and shown only to verified members
+- Life stage is used only for matching, and at the table it's mentioned only as a number when two or more people share it
+- Sample member faces are AI-generated portraits (not real people)
+- Delete my account deletes the photo and profile immediately
 
-## 아직 없는 것
+## Not built yet
 
-| 항목 | 지금 | 다음 단계 |
+| Item | Now | Next step |
 |---|---|---|
-| 학교 이메일 발송 | Resend 연동 완료, 실제 발송은 미확인 | 보내는 도메인 인증, harvard.edu와 mit.edu 수신 확인 |
-| 개인정보 동의 | 없음 | 베타 전 가입 동의 화면 추가 |
-| 가입 여부 노출 | 로그인 화면에서 가입한 이메일인지 알 수 있음 | 필요하면 가입 여부와 상관없이 같은 안내로 변경 |
-| 동문 메일 | alum.mit.edu 같은 동문 주소도 가입 가능 | 학생만 받을지 결정 필요 |
-| 늦은 변경 수수료 | 점수제 | 카드 등록 후 1인 약 $15, 가입 때 미리 고지 |
-| 식당 예약 시스템 연동 | 메일, 식당 전용 페이지, 전화 | 규모가 커지면 OpenTable, Resy 공식 제휴 신청 |
+| Sending school email | Resend integration done; real delivery not yet confirmed | Verify the sending domain; confirm delivery to harvard.edu and mit.edu |
+| Privacy consent | None | Add a consent screen at sign-up before the beta |
+| Sign-up status exposure | The sign-in screen reveals whether an email has signed up | If needed, show the same message whether or not the email is registered |
+| Alumni email | Alumni addresses like alum.mit.edu can also sign up | Decide whether to accept students only |
+| Late-change fee | Point system | About $15 per person after card registration, disclosed at sign-up |
+| Restaurant booking system integration | Email, dedicated restaurant page, phone | Apply for official OpenTable and Resy partnerships once scale grows |
 
-## 파일
+## Files
 
 ```
-server/server.js   API, 관리자 API, 저장, 알림, 정적 파일
-server/tables.js   테이블 구성 (점수, 규칙, Charlie의 "왜 이 사람들")
-server/push.js     웹 푸시
-public/index.html  회원 화면
-public/admin.html  관리자 페이지
-public/place.html  제휴 식당 전용 페이지
-public/shared.js   화면과 서버가 함께 쓰는 질문, 트랙, 페르소나, 질문 카드
-public/app.css     디자인, 첫 화면 영상, 배경
-public/manifest.webmanifest, public/sw.js  홈 화면 추가와 푸시 알림
-public/video/      첫 화면 영상
-art/make-film.js   첫 화면 영상 제작
-scripts/seed.js    샘플 데이터 (실제 데이터에는 사용 금지)
-scripts/dev.js     로컬 개발용 실행
-scripts/build-demo.js  폰 데모 생성 (dist/와 저장소의 demo/)
-test/              npm test (테이블 구성 11개, 서버 52개)
-scripts/simulate.js  50명 4주 리허설 (npm run simulate)
+server/server.js   API, admin API, storage, notifications, static files
+server/tables.js   Table building (scores, rules, Charlie's "why these people")
+server/push.js     Web push
+public/index.html  Member screens
+public/admin.html  Admin page
+public/place.html  Dedicated partner restaurant page
+public/shared.js   Questions, tracks, personas, and question cards shared by the screens and server
+public/app.css     Design, first-screen video, backgrounds
+public/manifest.webmanifest, public/sw.js  Add to home screen and push notifications
+public/video/      First-screen video
+art/make-film.js   Builds the first-screen video
+scripts/seed.js    Sample data (never use on real data)
+scripts/dev.js     Run for local development
+scripts/build-demo.js  Builds the phone demo (dist/ and the repository's demo/)
+test/              npm test (11 table building tests, 52 server tests)
+scripts/simulate.js  50-person, 4-week rehearsal (npm run simulate)
 ```

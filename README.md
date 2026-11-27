@@ -1,44 +1,44 @@
 # Hash Table
 
-MIT x Harvard에서 시작하는 동부 Tech 커뮤니티 플랫폼
+An East Coast tech community platform starting at MIT x Harvard
 
 ## Pain point
 
-- 테크 클럽과 네트워킹 행사는 많지만 대부분 일회성 이벤트 중심
-- 관심사가 맞는 사람을 다시 만나며 관계를 쌓을 구조 부족
-- 사람 찾기, 일정 조율, 장소 예약까지 개인이 맡아야 하는 부담
+- Plenty of tech clubs and networking events, but most are one-off events
+- No structure for meeting people with shared interests again and building relationships
+- Individuals carry the burden of finding people, coordinating schedules, and booking venues
 
 ## Solution
 
-- 같은 관심사를 가진 사람들이 소규모로 꾸준히 다시 만나는 테크 커뮤니티 플랫폼
-- 사람 연결, 일정 조율, 장소 확보, 대화 주제 준비까지 플랫폼이 담당
+- A tech community platform where people with the same interests meet again and again in small groups
+- The platform handles connecting people, coordinating schedules, securing venues, and preparing conversation topics
 
 ## How it works
 
-- 하버드 3명 + MIT 3명의 테크 테이블, 매주 두 차례 초대장 발송
-- 생성형 AI, 로보틱스, 바이오테크, 헬스케어 등 관심 분야별 소그룹 연결
-- 저녁을 고른 사람은 한 명도 빠짐없이 그 주 디너 배정, 그날 혼자인 경우만 예외
-- 그 주 이슈로 만든 밸런스 게임과 토론 주제 사전 제공
-- 테이블마다 돌아가며 맡는 캡틴: 장소를 골라 OpenTable, Resy, 전화로 직접 예약, 토론 주제 투표 독려, 각자 계산 리드
-- 캡틴이 예약을 못 하면 다른 회원에게 자동으로 넘어가고, 당일까지 장소가 없으면 테이블 취소
-- 세 미션을 모두 하면 캡틴 스트라이프, 업계 사람과 만나는 Industry table 우선 배정
-- 앱 설치 없이 링크 하나로 쓰는 웹앱
+- Tech tables of 3 Harvard + 3 MIT members, with invitations sent twice a week
+- Small groups matched by field of interest: generative AI, robotics, biotech, healthcare, and more
+- Everyone who picks an evening is seated at a dinner that week, with no exceptions unless they would be alone that day
+- A would-you-rather game and discussion topics built on that week's news, provided in advance
+- A rotating captain at each table: picks the venue and books it directly via OpenTable, Resy, or phone, encourages voting on discussion topics, and leads splitting the bill
+- If the captain can't make a booking, the role passes automatically to another member; if there is still no venue by the day of, the table is canceled
+- Completing all three missions earns a captain stripe and priority for Industry tables, where members meet people from the industry
+- A web app that works from a single link, no app install
 
-## What’s next
+## What's next
 
-- 동문, VC, 테크 기업 실무자로 참여 대상 확대
-- 제휴 식당 네트워크와 멤버십 기반 수익 구조
+- Expand to alumni, VCs, and practitioners at tech companies
+- Revenue from a partner restaurant network and memberships
 
-## 데모
+## Demo
 
-- 폰 데모 링크: https://claude.ai/artifact/P8rAwZFR773s1wuQcWjDqd (공유가 켜진 경우에만 열림)
-- 설치 없이 보기: 저장소를 내려받아(Code → Download ZIP) [demo/hash-table-demo.html](demo/hash-table-demo.html)을 브라우저로 열기
-- 첫 화면의 Join을 누르면 세 가지 중 선택, 입력한 내용은 내 브라우저에만 저장
-  - Start as someone new: 클럽 링크로 가입부터 Charlie의 질문, 페르소나, 첫 초대장까지
-  - Skip to after sign-up: 가입이 끝난 새 회원으로 바로 시작, 봉인된 첫 초대장 두 장부터
-  - Try it as Jordan: 샘플 회원 40명과 한 주가 지나간 상태 (초대장, round two, 친구, 캡틴)
+- Phone demo link: https://claude.ai/artifact/P8rAwZFR773s1wuQcWjDqd (opens only if sharing is turned on)
+- View without installing: download the repository (Code → Download ZIP) and open [demo/hash-table-demo.html](demo/hash-table-demo.html) in a browser
+- Tap Join on the first screen to choose one of three paths; anything you enter is stored only in your own browser
+  - Start as someone new: from signing up via a club link through Charlie's questions, the persona, and the first invitation
+  - Skip to after sign-up: start as a new member who has finished signing up, beginning with two sealed first invitations
+  - Try it as Jordan: 40 sample members after one week has passed (invitations, round two, friends, captain)
 
-## 실행
+## Running it
 
 ```
 cd app
@@ -46,5 +46,5 @@ npm run seed
 npm run dev
 ```
 
-- Node 18 이상 필요
-- 자세한 내용은 [app/README.md](app/README.md)
+- Requires Node 18 or later
+- For details, see [app/README.md](app/README.md)
